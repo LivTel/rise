@@ -1,5 +1,5 @@
 # Makefile -*- mode: Fundamental;-*-
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/java/Makefile,v 0.7 1999-08-23 13:53:53 cjm Exp $ 
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/java/Makefile,v 0.8 1999-08-23 13:54:36 cjm Exp $ 
 include ../../Makefile.common
 include ../Makefile.common
 
@@ -38,3 +38,6 @@ checkout:
 
 checkin:
 	$(CI) $(SRCS)
+#
+# $Log: not supported by cvs2svn $
+#
