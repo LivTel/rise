@@ -1,0 +1,10 @@
+# $Header: /space/home/eng/cjm/cvs/rise/ccs/Makefile.common,v 1.1 2003-11-14 15:31:40 cjm Exp $
+
+CCS_HOME		=	ccs
+CCS_SRC_HOME		= 	$(LT_SRC_HOME)/$(CCS_HOME)
+CCS_BIN_HOME		= 	$(LT_BIN_HOME)/$(CCS_HOME)
+CCS_DOC_HOME		= 	$(LT_DOC_HOME)/$(CCS_HOME)
+
+#
+# $Log: not supported by cvs2svn $
+#
