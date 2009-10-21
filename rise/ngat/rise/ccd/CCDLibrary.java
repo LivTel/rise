@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CCDLibrary.java
-// $Header: /space/home/eng/cjm/cvs/rise/ngat/rise/ccd/CCDLibrary.java,v 1.1 2009-10-15 10:23:09 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ngat/rise/ccd/CCDLibrary.java,v 1.2 2009-10-21 13:49:21 cjm Exp $
 package ngat.rise.ccd;
 
 import java.lang.*;
@@ -29,14 +29,14 @@ import ngat.util.logging.*;
 /**
  * This class supports an interface to the SDSU CCD Controller library, for controlling CCDs.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CCDLibrary
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.1 2009-10-15 10:23:09 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibrary.java,v 1.2 2009-10-21 13:49:21 cjm Exp $");
 // ccd_dsp.h
 	/* These constants should be the same as those in ccd_dsp.h */
 	/**
@@ -610,7 +610,7 @@ public class CCDLibrary
 	 */
 	static
 	{
-		System.loadLibrary("ccd");
+		System.loadLibrary("rise_ccd");
 	}
 
 // constructor
@@ -1729,6 +1729,9 @@ public class CCDLibrary
  
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:23:09  cjm
+// Initial revision
+//
 // Revision 0.45  2006/05/16 17:41:33  cjm
 // gnuify: Added GNU General Public License.
 //
