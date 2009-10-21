@@ -19,13 +19,13 @@
 */
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.1 2009-10-15 10:16:23 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.2 2009-10-21 13:53:10 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -58,7 +58,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.1 2009-10-15 10:16:23 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.2 2009-10-21 13:53:10 cjm Exp $";
 
 /* #defines */
 /**
@@ -351,7 +351,7 @@ int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
 	Setup_Data.Dimension_Complete = FALSE;
 
 	/* Load the parameter file */
-	eSTAR_Config_Parse_File("ccs.properties",&rProperties);	
+	eSTAR_Config_Parse_File("rise.ccs.properties",&rProperties);	
 	eSTAR_Config_Print_Error();
 	eSTAR_Config_Get_Int(&rProperties,"ccs.libccd.cooling",&(mrParams.ccdCool));
 	
@@ -1625,6 +1625,9 @@ static int Setup_Controller_Windows(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/15 10:16:23  cjm
+** Initial revision
+**
 ** Revision 0.28  2006/05/17 18:01:59  cjm
 ** Fixed unused variables.
 **
