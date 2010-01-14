@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TWILIGHT_CALIBRATEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TWILIGHT_CALIBRATEImplementation.java,v 1.2 2010-01-14 16:12:49 cjm Exp $
 import java.io.*;
 import java.lang.*;
 import java.util.*;
@@ -44,14 +44,14 @@ import ngat.util.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to the Ccs just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.2 2010-01-14 16:12:49 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -490,6 +490,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("TAGID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("USERID"));
+			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROGID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROPID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("GROUPID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("OBSID"));
@@ -2339,6 +2340,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 1.2  2008/11/28 10:27:29  wasp
 // Update preformed months ago, yet seems to be working ok, thus committing to CVS.
 //

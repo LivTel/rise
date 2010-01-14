@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // MULTRUNImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MULTRUNImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MULTRUNImplementation.java,v 1.2 2010-01-14 16:12:39 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -37,14 +37,14 @@ import ngat.message.ISS_INST.MULTRUN_DONE;
  * This class provides the implementation for the MULTRUN command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: MULTRUNImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: MULTRUNImplementation.java,v 1.2 2010-01-14 16:12:39 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -239,6 +239,7 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 		
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("TAGID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("USERID"));
+			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROGID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROPID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("GROUPID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("OBSID"));
@@ -483,6 +484,9 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 1.3  2009/03/13 11:34:03  wasp
 // Update to the logging and submitting current rise config file
 //
