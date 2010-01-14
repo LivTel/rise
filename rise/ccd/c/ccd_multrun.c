@@ -19,7 +19,7 @@
 */
 /* ccd_multrun.c
 ** Functions to perform multruns
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.2 2009-12-18 10:54:38 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.3 2010-01-14 16:13:07 cjm Exp $
 */
 /**
  * ccd_multrun.c includes a rewrite of the ccd_exposure.c code with andor function calls. It had to incorporate 
@@ -80,7 +80,7 @@
 
 /* Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_multrun.c,v 1.2 2009-12-18 10:54:38 cjm Exp $";
+static char rcsid[] = "$Id: ccd_multrun.c,v 1.3 2010-01-14 16:13:07 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_multrun.
@@ -214,29 +214,30 @@ int CCD_Multrun_Expose(int open_shutter, long startTime, int exposure_time, long
 
 	strcpy(fileHeaders.tagid,headers[28]);
 	strcpy(fileHeaders.userid,headers[29]);
-	strcpy(fileHeaders.propid,headers[30]);
-	strcpy(fileHeaders.groupid,headers[31]);
-	strcpy(fileHeaders.obsid,headers[32]);
+	strcpy(fileHeaders.progid,headers[30]);
+	strcpy(fileHeaders.propid,headers[31]);
+	strcpy(fileHeaders.groupid,headers[32]);
+	strcpy(fileHeaders.obsid,headers[33]);
 
-	strcpy(fileHeaders.exptotal,headers[33]);
-	strcpy(fileHeaders.prescan,headers[34]);
-	strcpy(fileHeaders.postscan,headers[35]);
-	strcpy(fileHeaders.rotcentx,headers[36]);
-	strcpy(fileHeaders.rotcenty,headers[37]);
-	strcpy(fileHeaders.poicentx,headers[38]);
-	strcpy(fileHeaders.poicenty,headers[39]);
-	strcpy(fileHeaders.filteri1,headers[40]);
+	strcpy(fileHeaders.exptotal,headers[34]);
+	strcpy(fileHeaders.prescan,headers[35]);
+	strcpy(fileHeaders.postscan,headers[36]);
+	strcpy(fileHeaders.rotcentx,headers[37]);
+	strcpy(fileHeaders.rotcenty,headers[38]);
+	strcpy(fileHeaders.poicentx,headers[39]);
+	strcpy(fileHeaders.poicenty,headers[40]);
+	strcpy(fileHeaders.filteri1,headers[41]);
 
-	strcpy(fileHeaders.ccdscale,	headers[41]);
-	strcpy(fileHeaders.radecsys,	headers[42]);
-	strcpy(fileHeaders.equinox,	headers[43]);
-	strcpy(fileHeaders.grouptimng,headers[44]);
-	strcpy(fileHeaders.groupnumob,headers[45]);
-	strcpy(fileHeaders.groupuid,	headers[46]);
-	strcpy(fileHeaders.groupnomex,headers[47]);
-	strcpy(fileHeaders.groupmonp,	headers[48]);
-	strcpy(fileHeaders.filter1,	headers[49]);
-	strcpy(fileHeaders.rotangle,	headers[50]);
+	strcpy(fileHeaders.ccdscale,	headers[42]);
+	strcpy(fileHeaders.radecsys,	headers[43]);
+	strcpy(fileHeaders.equinox,	headers[44]);
+	strcpy(fileHeaders.grouptimng,headers[45]);
+	strcpy(fileHeaders.groupnumob,headers[46]);
+	strcpy(fileHeaders.groupuid,	headers[47]);
+	strcpy(fileHeaders.groupnomex,headers[48]);
+	strcpy(fileHeaders.groupmonp,	headers[49]);
+	strcpy(fileHeaders.filter1,	headers[50]);
+	strcpy(fileHeaders.rotangle,	headers[51]);
 
 	error=expose(expose_exposure_time, CCD_Setup_Get_NCols(), CCD_Setup_Get_NRows(), 
 		      expose_exposures,&recalculate_exposure_length);
@@ -353,29 +354,30 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 	strcpy(fileHeaders.readnoise,headers[27]);
 	strcpy(fileHeaders.tagid,headers[28]);
 	strcpy(fileHeaders.userid,headers[29]);
-	strcpy(fileHeaders.propid,headers[30]);
-	strcpy(fileHeaders.groupid,headers[31]);
-	strcpy(fileHeaders.obsid,headers[32]);
+	strcpy(fileHeaders.progid,headers[30]);
+	strcpy(fileHeaders.propid,headers[31]);
+	strcpy(fileHeaders.groupid,headers[32]);
+	strcpy(fileHeaders.obsid,headers[33]);
 
-	strcpy(fileHeaders.exptotal,headers[33]);
-	strcpy(fileHeaders.prescan,headers[34]);
-	strcpy(fileHeaders.postscan,headers[35]);
-	strcpy(fileHeaders.rotcentx,headers[36]);
-	strcpy(fileHeaders.rotcenty,headers[37]);
-	strcpy(fileHeaders.poicentx,headers[38]);
-	strcpy(fileHeaders.poicenty,headers[39]);
-	strcpy(fileHeaders.filteri1,headers[40]);
+	strcpy(fileHeaders.exptotal,headers[34]);
+	strcpy(fileHeaders.prescan,headers[35]);
+	strcpy(fileHeaders.postscan,headers[36]);
+	strcpy(fileHeaders.rotcentx,headers[37]);
+	strcpy(fileHeaders.rotcenty,headers[38]);
+	strcpy(fileHeaders.poicentx,headers[39]);
+	strcpy(fileHeaders.poicenty,headers[40]);
+	strcpy(fileHeaders.filteri1,headers[41]);
 
-	strcpy(fileHeaders.ccdscale,	headers[41]);
-	strcpy(fileHeaders.radecsys,	headers[42]);
-	strcpy(fileHeaders.equinox,	headers[43]);
-	strcpy(fileHeaders.grouptimng,headers[44]);
-	strcpy(fileHeaders.groupnumob,headers[45]);
-	strcpy(fileHeaders.groupuid,	headers[46]);
-	strcpy(fileHeaders.groupnomex,headers[47]);
-	strcpy(fileHeaders.groupmonp,	headers[48]);
-	strcpy(fileHeaders.filter1,headers[49]);
-	strcpy(fileHeaders.rotangle,	headers[50]);
+	strcpy(fileHeaders.ccdscale,	headers[42]);
+	strcpy(fileHeaders.radecsys,	headers[43]);
+	strcpy(fileHeaders.equinox,	headers[44]);
+	strcpy(fileHeaders.grouptimng,headers[45]);
+	strcpy(fileHeaders.groupnumob,headers[46]);
+	strcpy(fileHeaders.groupuid,	headers[47]);
+	strcpy(fileHeaders.groupnomex,headers[48]);
+	strcpy(fileHeaders.groupmonp,	headers[49]);
+	strcpy(fileHeaders.filter1,headers[50]);
+	strcpy(fileHeaders.rotangle,	headers[51]);
 
 #if LOGGING > 1
 	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multflat_Expose:exptime: %f  flat_run_time: %ld sec",
@@ -741,7 +743,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 			return FALSE;
 		}
 
-		if( GetNumberNewImages(&first,&last)==DRV_SUCCESS)
+		if(GetNumberNewImages(&first,&last)==DRV_SUCCESS)
 		{
 			buffer_images_remaining = last-first; 
 			images_remaining = nimages-series;
@@ -1136,7 +1138,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 
 
 	/* update DATE keyword */
-	if(exposure_start_time_string==NULL) strncpy(exposure_start_time_string,"UNKNOWN-NULL",80);
 	Exposure_TimeSpec_To_Date_String(Multrun_Data.Exposure_Start_Time,exposure_start_time_string);
 	retval = fits_update_key(fp,TSTRING,"DATE",exposure_start_time_string,"Exposure start",&status);
 	if(retval)
@@ -1150,7 +1151,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update DATE-OBS keyword */
-	if(exposure_start_time_string==NULL) strncpy (exposure_start_time_string,"UNKNOWN-NULL",80);
 	Exposure_TimeSpec_To_Date_Obs_String(Multrun_Data.Exposure_Start_Time,exposure_start_time_string);
 	retval = fits_update_key(fp,TSTRING,"DATE-OBS",exposure_start_time_string,"Date of observation",&status);
 	if(retval)
@@ -1164,7 +1164,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update UTSTART keyword */
-	if(exposure_start_time_string==NULL) strncpy(exposure_start_time_string,"UNKNOWN-NULL",80);
 	Exposure_TimeSpec_To_UtStart_String(Multrun_Data.Exposure_Start_Time,exposure_start_time_string);
 	retval = fits_update_key(fp,TSTRING,"UTSTART",exposure_start_time_string,"Start of observation",&status);
 	if(retval)
@@ -1179,7 +1178,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 	/* update MJD keyword 
 	** note leap second correction not implemented yet (always FALSE). */
-	if(exposure_start_time_string==NULL) strncpy(exposure_start_time_string,"UNKNOWN-NULL",80);
 	Exposure_TimeSpec_To_Mjd(Multrun_Data.Exposure_Start_Time,FALSE,&mjd);
 	retval = fits_update_key_fixdbl(fp,"MJD",mjd,6,NULL,&status);
 	if(retval)
@@ -1194,7 +1192,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update MRSTART keyword, defining the start time of the multrun cycle */
-	if(exposure_start_time_string==NULL) strncpy(exposure_start_time_string,"UNKNOWN-NULL",80);
 	Exposure_TimeSpec_To_Date_Obs_String(Multrun_Data.Multrun_Start_Time,exposure_start_time_string);
 	retval = fits_update_key(fp,TSTRING,"MRSTART",exposure_start_time_string,"Time of start of Multrun",&status);
 	if(retval)
@@ -1209,7 +1206,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update CCDATEMP keyword  */
-	if(&(Multrun_Data.temperature)==NULL) Multrun_Data.temperature = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"CCDATEMP",Multrun_Data.temperature,3,"CCD Temperature at START of multrun",&status);
 	if(retval)
 	{
@@ -1223,8 +1219,10 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update FILENAME keyword  */
-	if(filename==NULL) strncpy(filename,"UNKNOWN-NULL",80);;
-	retval = fits_update_key(fp,TSTRING,"FILENAME",filename,"Current filename",&status);
+	if(filename!=NULL) 
+		retval = fits_update_key(fp,TSTRING,"FILENAME",filename,"Current filename",&status);
+	else
+		retval = fits_update_key(fp,TSTRING,"FILENAME","UNKNOWN","Current filename",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1237,7 +1235,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update EXPTIME keyword  */
-	if(&(Multrun_Data.Exposure_Length)==NULL) Multrun_Data.Exposure_Length = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"EXPTIME",Multrun_Data.Exposure_Length,4,"Andor Corrected (true) exposure time ",&status);
 	if(retval)
 	{
@@ -1251,7 +1248,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update REQEXP keyword  */
-	if(&(Multrun_Data.requestedExposureTime)==NULL) Multrun_Data.requestedExposureTime = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"REQEXP",Multrun_Data.requestedExposureTime,4,"Exposure time requested by user",&status);
 	if(retval)
 	{
@@ -1265,7 +1261,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update MEDIAN keyword  */
-	if(&(Multrun_Data.median_value)==NULL) Multrun_Data.median_value = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"MEDIAN",Multrun_Data.median_value,6,"The approx median of the centre values",&status);
 	if(retval)
 	{
@@ -1279,7 +1274,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update TIMECORR keyword  */
-	if(&(Multrun_Data.TimeCorrection)==NULL) Multrun_Data.TimeCorrection = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"TIMECORR",Multrun_Data.TimeCorrection,0,"Time correction in ns for readout, FT and exposure",&status);
 	if(retval)
 	{
@@ -1293,7 +1287,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update EXPEPOCH keyword, defining the start time of the multrun cycle */
-	/*if(&(Multrun_Data.Exposure_Epoch_Time)==NULL) Multrun_Data.Exposure_Epoch_Time = 0; */
 	Exposure_TimeSpec_To_Date_Obs_String(Multrun_Data.Exposure_Epoch_Time,exposure_epoch_time_string);
 	retval = fits_update_key(fp,TSTRING,"EXPEPOCH",exposure_epoch_time_string,"Actual end of exposure time",&status);
 	if(retval)
@@ -1334,7 +1327,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update OBSTYPE keyword  */
-	if(fileHeaders.obstype==NULL) strncpy(fileHeaders.obstype, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"OBSTYPE",fileHeaders.obstype,"Observation type",&status);
 	if(retval)
 	{
@@ -1348,7 +1340,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update RUNNUM keyword  */
-	if(&(ff.multRunNumber)==NULL) ff.multRunNumber = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"RUNNUM",(float)(ff.multRunNumber),0,"Multrun Number",&status);
 	if(retval)
 	{
@@ -1362,7 +1353,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update EXPNUM keyword  */
-	if(&(ff.runNumber)==NULL) ff.runNumber = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"EXPNUM",(float)(ff.runNumber),0,"Number of exposure in Multrun",&status);
 	if(retval)
 	{
@@ -1376,7 +1366,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update RA keyword  */
-	if(fileHeaders.ra==NULL) strncpy(fileHeaders.ra, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"RA",fileHeaders.ra,"Telescope returned RA",&status);
 	if(retval)
 	{
@@ -1390,7 +1379,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update DEC keyword  */
-	if(fileHeaders.dec==NULL) strncpy(fileHeaders.dec, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"DEC",fileHeaders.dec,"Telescope returned DEC",&status);
 	if(retval)
 	{
@@ -1403,9 +1391,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update LATITUDE keyword  */
-	if(fileHeaders.latitude==NULL) strncpy(fileHeaders.latitude, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"LATITUDE",atof(fileHeaders.latitude),4,"Latitude of telescope",&status);
 	if(retval)
 	{
@@ -1418,9 +1404,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update LONGITUDE keyword  */
-	if(fileHeaders.longitude==NULL) strncpy(fileHeaders.longitude, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"LONGITUD",atof(fileHeaders.longitude),4,"Longitude of telescope",&status);
 	if(retval)
 	{
@@ -1434,7 +1418,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update NTPTIME keyword  */
-	if(Multrun_Data.ntpTime==NULL) strncpy(Multrun_Data.ntpTime, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"NTPTIME",Multrun_Data.ntpTime,"Last time NTP status was checked",&status);
 	if(retval)
 	{
@@ -1448,7 +1431,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update NTPSERVE keyword  */
-	if(Multrun_Data.ntpServer==NULL) strncpy(Multrun_Data.ntpServer, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"NTPSERVE",Multrun_Data.ntpServer,"Address of ntp server",&status);
 	if(retval)
 	{
@@ -1461,7 +1443,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update NTPERROR keyword  */
-	if(&(Multrun_Data.ntpDrift)==NULL) Multrun_Data.ntpDrift = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"NTPERROR",Multrun_Data.ntpDrift,3,"Uncertainty in ntp time in msec",&status);
 	if(retval)
 	{
@@ -1474,7 +1455,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update AIRMASS keyword  */
-	if(fileHeaders.airmass==NULL) strncpy(fileHeaders.airmass, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"AIRMASS",atof(fileHeaders.airmass),4,"The airmass",&status);
 	if(retval)
 	{
@@ -1487,7 +1467,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update TELFOCUS keyword  */
-	if(fileHeaders.telfocus==NULL) strncpy(fileHeaders.telfocus, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"TELFOCUS",atof(fileHeaders.telfocus),4,"The focus position of telescope in m",&status);
 	if(retval)
 	{
@@ -1500,7 +1479,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update VSSPEED keyword  */
-	if(&(Multrun_Data.VSspeed)==NULL) Multrun_Data.VSspeed = -9998.0;
 	retval = fits_update_key_fixdbl(fp,"VSSPEED",Multrun_Data.VSspeed,1,"Andor Verical Shift speed in us per pixel",&status);
 	if(retval)
 	{
@@ -1513,7 +1491,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update HSSPEED keyword  */
-	if(&(Multrun_Data.HSspeed)==NULL) Multrun_Data.HSspeed =-9998;
 	retval = fits_update_key_fixdbl(fp,"HSSPEED",Multrun_Data.HSspeed,1,"Andor Horizontal Shift speed in us per pixel",&status);
 	if(retval)
 	{
@@ -1526,7 +1503,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update CONFIGID keyword  */
-	if(fileHeaders.configid==NULL) strncpy(fileHeaders.configid, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"CONFIGID",atoi(fileHeaders.configid),0,"Unique configuration ID.",&status);
 	if(retval)
 	{
@@ -1540,7 +1516,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update ORIGIN keyword  */
-	if(fileHeaders.origin==NULL) strncpy(fileHeaders.origin, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"ORIGIN",fileHeaders.origin,"",&status);
 	if(retval)
 	{
@@ -1554,7 +1529,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update INSTATUS keyword  */
-	if(fileHeaders.instatus==NULL) strncpy(fileHeaders.instatus, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"INSTATUS",fileHeaders.instatus,"The instrument status.",&status);
 	if(retval)
 	{
@@ -1568,7 +1542,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update TELESCOP keyword  */
-	if(fileHeaders.telescop==NULL) strncpy(fileHeaders.telescop, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"TELESCOP",fileHeaders.telescop,"",&status);
 	if(retval)
 	{
@@ -1582,7 +1555,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update TELMODE keyword  */
-	if(fileHeaders.telmode==NULL) strncpy(fileHeaders.telmode, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"TELMODE",fileHeaders.telmode,"",&status);
 	if(retval)
 	{
@@ -1596,7 +1568,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update LST keyword  */
-	if(fileHeaders.lst==NULL) strncpy(fileHeaders.lst, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"LST",fileHeaders.lst,"[hours] As retrieved from the TCS",&status);
 	if(retval)
 	{
@@ -1610,7 +1581,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update CAT-RA keyword  */
-	if(fileHeaders.catra==NULL) strncpy(fileHeaders.catra, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"CAT-RA",fileHeaders.catra,"[hours] Source catalogue position",&status);
 	if(retval)
 	{
@@ -1624,7 +1594,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update CAT-DEC keyword  */
-	if(fileHeaders.catdec==NULL) strncpy(fileHeaders.catdec, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"CAT-DEC",fileHeaders.catdec,"[hours] Source catalogue position",&status);
 
 	if(retval)
@@ -1639,7 +1608,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update TELSTAT keyword  */
-	if(fileHeaders.telstat==NULL) strncpy(fileHeaders.telstat, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"TELSTAT",fileHeaders.telstat,"Status of telescope",&status);
 
 	if(retval)
@@ -1654,7 +1622,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update AUTOGUID keyword  */
-	if(fileHeaders.autoguid==NULL) strncpy(fileHeaders.autoguid, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"AUTOGUID",fileHeaders.autoguid,"",&status);
 
 	if(retval)
@@ -1669,7 +1636,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update ROTMODE keyword  */
-	if(fileHeaders.rotmode==NULL) strncpy(fileHeaders.rotmode, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"ROTMODE",fileHeaders.rotmode,"Rotator mode",&status);
 
 	if(retval)
@@ -1683,9 +1649,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update ROTSKYPA keyword  */
-	if(fileHeaders.rotskypa==NULL) strncpy(fileHeaders.rotskypa, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"ROTSKYPA",atof(fileHeaders.rotskypa),7,"[degrees] Turntable position angle",&status);
 	if(retval)
 	{
@@ -1698,9 +1662,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update WINDSPEE keyword  */
-	if(fileHeaders.windspee==NULL) strncpy(fileHeaders.windspee, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"WINDSPEE",atof(fileHeaders.windspee),7,
 					"[m/s] Recorded by WMS, at start of exposure",&status);
 	if(retval)
@@ -1715,7 +1677,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update REFTEMP keyword  */
-	if(fileHeaders.wmstemp==NULL) strncpy(fileHeaders.wmstemp,"UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"WMSTEMP",atof(fileHeaders.wmstemp),7,
 					"[Kelvin] Current external temperature",&status);
 	if(retval)
@@ -1730,7 +1691,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update WMSHUMID keyword  */
-	if(fileHeaders.wmshumid==NULL) strncpy(fileHeaders.wmshumid, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"WMSHUMID",atof(fileHeaders.wmshumid),7,
 					"[percent] Current percentage humidity",&status);
 	if(retval)
@@ -1745,7 +1705,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update OBJECT keyword  */
-	if(fileHeaders.object==NULL) strncpy(fileHeaders.object, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"OBJECT",fileHeaders.object,"Object Name",&status);
 
 	if(retval)
@@ -1759,9 +1718,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update INSTRUME keyword  */
-	if(fileHeaders.instrument==NULL) strncpy(fileHeaders.instrument, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"INSTRUME",fileHeaders.instrument,"Instrument",&status);
 
 	if(retval)
@@ -1775,9 +1732,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update CONFNAME keyword  */
-	if(fileHeaders.confname==NULL) strncpy(fileHeaders.confname, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"CONFNAME",fileHeaders.confname,"Config in use",&status);
 
 	if(retval)
@@ -1792,7 +1747,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update DETECTOR keyword  */
-	if(fileHeaders.detector==NULL) strncpy(fileHeaders.detector, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"DETECTOR",fileHeaders.detector,"Detector",&status);
 
 	if(retval)
@@ -1807,7 +1761,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update GAIN keyword  */
-	if(fileHeaders.gain==NULL) strncpy(fileHeaders.gain, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"GAIN",atof(fileHeaders.gain),7,
 					"[unknown]",&status);
 	if(retval)
@@ -1822,7 +1775,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update READNOIS keyword  */
-	if(fileHeaders.readnoise==NULL) strncpy(fileHeaders.readnoise, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"READNOIS",atof(fileHeaders.readnoise),7,
 					"[unknown]",&status);
 	if(retval)
@@ -1837,7 +1789,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update TAGID keyword  */
-	if(fileHeaders.tagid==NULL) strncpy(fileHeaders.tagid, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"TAGID",fileHeaders.tagid,"TAG ID",&status);
 
 	if(retval)
@@ -1852,7 +1803,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update USERID keyword  */
-	if(fileHeaders.userid==NULL) strncpy(fileHeaders.userid, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"USERID",fileHeaders.userid,"USER ID",&status);
 
 	if(retval)
@@ -1866,9 +1816,20 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
+	/* update PROGID keyword  */
+	retval = fits_update_key(fp,TSTRING,"PROGID",fileHeaders.progid,"Programme ID",&status);
+	if(retval)
+	{
+		fits_get_errstatus(status,buff);
+		fits_report_error(stderr,status);
+		fits_close_file(fp,&status);
+		Multrun_Error_Number = 4;
+		sprintf(Multrun_Error_String,"Exposure_Save: Updating PROGID failed(%s,%d,%s).",filename,
+			status,buff);
+		return FALSE;
+	}
 
 	/* update PROPID keyword  */
-	if(fileHeaders.propid==NULL) strncpy(fileHeaders.propid, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"PROPID",fileHeaders.propid,"Proposal ID",&status);
 
 	if(retval)
@@ -1881,9 +1842,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 			status,buff);
 		return FALSE;
 	}
-
 	/* update GROUPID keyword  */
-	if(fileHeaders.groupid==NULL) strncpy(fileHeaders.groupid, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"GROUPID",fileHeaders.groupid,"Group ID",&status);
 
 	if(retval)
@@ -1898,9 +1857,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update OBSID keyword  */
-	if(fileHeaders.obsid==NULL) strncpy(fileHeaders.obsid, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"OBSID",fileHeaders.obsid,"Obs ID",&status);
-
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1912,11 +1869,9 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* Post 2008-11 header corrections */
 
 	/* update EXPTOTAL keyword  */
-	if(fileHeaders.exptotal==NULL) strncpy(fileHeaders.exptotal, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"EXPTOTAL",atoi(fileHeaders.exptotal),0,"Total number of exposures requested for this multrun",&status);
 	if(retval)
 	{
@@ -1929,9 +1884,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update PRESCAN keyword  */
-	if(fileHeaders.prescan==NULL) strncpy(fileHeaders.prescan, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"PRESCAN",atoi(fileHeaders.prescan),0,"Columns of prescan",&status);
 	if(retval)
 	{
@@ -1945,7 +1898,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update POSTSCAN keyword  */
-	if(fileHeaders.postscan==NULL) strncpy(fileHeaders.postscan, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"POSTSCAN",atoi(fileHeaders.postscan),0,"Columns of postscan",&status);
 	if(retval)
 	{
@@ -1959,7 +1911,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update ROTCENTX keyword  */
-	if(fileHeaders.rotcentx==NULL) strncpy(fileHeaders.rotcentx, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"ROTCENTX",atoi(fileHeaders.rotcentx),0,"Pixel Coord of mechanical rotator centre",&status);
 	if(retval)
 	{
@@ -1972,9 +1923,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update ROTCENTY keyword  */
-	if(fileHeaders.rotcenty==NULL) strncpy(fileHeaders.rotcenty, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"ROTCENTY",atoi(fileHeaders.rotcenty),0,"Pixel Coord of mechanical rotator centre",&status);
 	if(retval)
 	{
@@ -1989,7 +1938,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 
 
 	/* update POICENTX keyword  */
-	if(fileHeaders.poicentx==NULL) strncpy(fileHeaders.poicentx, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"POICENTX",atoi(fileHeaders.poicentx),0,"Pixel of pointing model centre after APERTURE command",&status);
 	if(retval)
 	{
@@ -2003,7 +1951,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update POICENTY keyword  */
-	if(fileHeaders.poicenty==NULL) strncpy(fileHeaders.poicenty, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"POICENTY",atoi(fileHeaders.poicenty),0,"Pixel of pointing model centre after APERTURE command",&status);
 	if(retval)
 	{
@@ -2017,7 +1964,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update FILTER1 keyword  */
-	if(fileHeaders.filter1==NULL) strncpy(fileHeaders.filter1, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"FILTER1",fileHeaders.filter1,"Name of filter type",&status);
 
 	if(retval)
@@ -2032,7 +1978,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update FILTERI1 keyword  */
-	if(fileHeaders.filteri1==NULL) strncpy(fileHeaders.filteri1, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"FILTERI1",fileHeaders.filteri1,"Filter ID",&status);
 
 	if(retval)
@@ -2048,7 +1993,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 
 
 	/* update CCDSCALE keyword  */
-	if(fileHeaders.ccdscale==NULL) strncpy(fileHeaders.ccdscale, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"CCDSCALE",atof(fileHeaders.ccdscale),5,"arcsec/pix unbinned",&status);
 	if(retval)
 	{
@@ -2063,7 +2007,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 
 
 	/* update RADECSYS keyword  */
-	if(fileHeaders.radecsys==NULL) strncpy(fileHeaders.radecsys, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"RADECSYS",fileHeaders.radecsys,"RADEC System",&status);
 
 	if(retval)
@@ -2079,7 +2022,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 
 
 	/* update EQUINOX keyword  */
-	if(fileHeaders.equinox==NULL) strncpy(fileHeaders.equinox, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"EQUINOX",atof(fileHeaders.equinox),1,"Coordinate system date",&status);
 	if(retval)
 	{
@@ -2094,7 +2036,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 
 
 	/* update GRPTIMNG keyword  */
-	if(fileHeaders.grouptimng==NULL) strncpy(fileHeaders.grouptimng, "UNKNOWN-NULL",80);
 	retval = fits_update_key(fp,TSTRING,"GRPTIMNG",fileHeaders.grouptimng,"Group timing constraint class",&status);
 
 	if(retval)
@@ -2108,10 +2049,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
-
 	/* update GRPNUMOB keyword  */
-	if(fileHeaders.groupnumob==NULL) strncpy(fileHeaders.groupnumob, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"GRPNUMOB",atof(fileHeaders.groupnumob),0,"Number of Observations in group",&status);
 	if(retval)
 	{
@@ -2124,11 +2062,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
-
-
 	/* update GRPUID keyword  */
-	if(fileHeaders.groupuid==NULL) strncpy(fileHeaders.groupuid, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"GRPUID",atof(fileHeaders.groupuid),0,"Group unique ID",&status);
 	if(retval)
 	{
@@ -2141,10 +2075,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
-
 	/* update GRPNOMEX keyword  */
-	if(fileHeaders.groupnomex==NULL) strncpy(fileHeaders.groupnomex, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"GRPNOMEX",atof(fileHeaders.groupnomex),6,"Group nominal exec time",&status);
 	if(retval)
 	{
@@ -2157,10 +2088,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
-
 	/* update GRPMONP keyword  */
-	if(fileHeaders.groupmonp==NULL) strncpy(fileHeaders.groupmonp, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"GRPMONP",atof(fileHeaders.groupmonp),6,"Group monitor period",&status);
 	if(retval)
 	{
@@ -2173,9 +2101,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 
-
 	/* update ROTANGLE keyword  */
-	if(fileHeaders.rotangle==NULL) strncpy(fileHeaders.rotangle, "UNKNOWN-NULL",80);
 	retval = fits_update_key_fixdbl(fp,"ROTANGLE",atof(fileHeaders.rotangle),6,"Mount angle at start of Multrun",&status);
 	if(retval)
 	{
@@ -2187,9 +2113,6 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 			atof(fileHeaders.rotangle),filename, status,buff);
 		return FALSE;
 	}
-
-
-
 
 	/* Finished writing headers! */
 
@@ -2807,6 +2730,12 @@ void CCD_Multrun_Error_String(char *error_string)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2009/12/18 10:54:38  cjm
+** Changed expose routine to return TRUE on success and FALSE on failure.
+** Added recalculate_exposure_length to allow expose to tell CCD_Multflat_Expose
+** that the exposure length is wrong.
+** Logging and other ridying.
+**
 ** Revision 1.1  2009/10/15 10:16:23  cjm
 ** Initial revision
 **

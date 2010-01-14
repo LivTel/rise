@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* ccd_multrun.h
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_multrun.h,v 1.1 2009-10-15 10:16:27 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_multrun.h,v 1.2 2010-01-14 16:13:06 cjm Exp $
 */
 #ifndef CCD_MULTRUN_H
 #define CCD_MULTRUN_H
@@ -151,6 +151,7 @@ struct Header {
  char readnoise[80];
  char tagid[80];
  char userid[80];
+ char progid[80];
  char propid[80];
  char groupid[80];
  char obsid[80];
