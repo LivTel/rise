@@ -19,14 +19,14 @@
 */
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_exposure.c,v 1.1 2009-10-15 10:16:23 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_exposure.c,v 1.2 2010-02-09 11:52:40 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -143,7 +143,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.1 2009-10-15 10:16:23 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.2 2010-02-09 11:52:40 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_exposure.
@@ -1052,7 +1052,7 @@ static int Exposure_Save(char *filename,unsigned long *exposure_data,int ncols,i
 	}
 	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save: Ended printing");
 #endif
-	
+
 	/* try to open file */
 	retval = fits_open_file(&fp,filename,READWRITE,&status);
 	if(retval)
@@ -1402,6 +1402,9 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/15 10:16:23  cjm
+** Initial revision
+**
 ** Revision 0.33  2006/05/17 18:06:20  cjm
 ** Fixed unused variables and mismatches sprintfs.
 **
