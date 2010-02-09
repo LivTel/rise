@@ -19,7 +19,7 @@
 */
 /* ccd_multrun.c
 ** Functions to perform multruns
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.3 2010-01-14 16:13:07 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.4 2010-02-09 14:56:45 cjm Exp $
 */
 /**
  * ccd_multrun.c includes a rewrite of the ccd_exposure.c code with andor function calls. It had to incorporate 
@@ -46,7 +46,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include<math.h>
+#include <sys/stat.h>
+#include <math.h>
 #ifndef _POSIX_TIMERS
 #include <sys/time.h>
 #endif
@@ -80,7 +81,7 @@
 
 /* Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_multrun.c,v 1.3 2010-01-14 16:13:07 cjm Exp $";
+static char rcsid[] = "$Id: ccd_multrun.c,v 1.4 2010-02-09 14:56:45 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_multrun.
@@ -155,6 +156,10 @@ int getSquareRegion(const long *inArray, double *sqrArray, int x, int y, int R);
 int getNtpDriftFile (char *file);
 static int getNextFilename (char *NewFileName, int NewMultRun);
 static char *ConstructNextFilename (struct FitsFilename *ff, int MMR, int MR, int startMR, char *NFN);
+static int Fits_Filename_Lock(char *filename);
+static int Fits_Filename_UnLock(char *filename);
+static int Lock_Filename_Get(char *filename,char *lock_filename);
+static int fexist(char *filename);
 
 /**
  * Do a normal multrun.
@@ -1081,6 +1086,8 @@ float getNewExposureTime( double oldCounts, float oldExposure){
  * @see #Exposure_TimeSpec_To_Date_Obs_String
  * @see #Exposure_TimeSpec_To_UtStart_String
  * @see #Exposure_TimeSpec_To_Mjd
+ * @see #Fits_Filename_Lock
+ * @see #Fits_Filename_UnLock
  */
 int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols,int nrows)
 {
@@ -1095,20 +1102,33 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 #if LOGGING > 4
 	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Started.");
 #endif
-	
 	naxes[0] = (long)ncols; naxes[1] = (long)nrows;
 
-	/* try to open file */
-
+	/* lock FITS filename */
+	if(!Fits_Filename_Lock(filename))
+		return FALSE;
+	/* create new FITS file */
 	retval = fits_create_file(&fp, filename, &status);
+	if(retval)
+	{
+		fits_get_errstatus(status,buff);
+		fits_report_error(stderr,status);
+		Fits_Filename_UnLock(filename);
+		Multrun_Error_Number = 53;
+		sprintf(Multrun_Error_String,"Exposure_Save: File open failed(%s,%d,%s).",filename,status,buff);
+		return FALSE;
+	}
+
 	retval = fits_create_img(fp, LONG_IMG, 2, naxes, &status);
 
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
-		Multrun_Error_Number = 53;
-		sprintf(Multrun_Error_String,"Exposure_Save: File open failed(%s,%d,%s).",filename,status,buff);
+		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
+		Multrun_Error_Number = 5;
+		sprintf(Multrun_Error_String,"Exposure_Save: Create image failed(%s,%d,%s).",filename,status,buff);
 		return FALSE;
 	}
 	
@@ -1119,6 +1139,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 54;
 		sprintf(Multrun_Error_String,"Exposure_Save: File write failed(%s,%d,%s).",filename,status,buff);
 		return FALSE;
@@ -1145,6 +1166,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 55;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating DATE failed(%s,%d,%s).",filename,status,buff);
 		return FALSE;
@@ -1158,6 +1180,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 56;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating DATE-OBS failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1171,6 +1194,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 57;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating UTSTART failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1185,6 +1209,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 58;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating MJD failed(%.2f,%s,%d,%s).",mjd,filename,
 			status,buff);
@@ -1199,6 +1224,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 28;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating MRSTART failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1212,6 +1238,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 62;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CCDATEMP failed(%.2f,%s,%d,%s).",
 			Multrun_Data.temperature,filename, status,buff);
@@ -1228,6 +1255,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 63;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating FILENAME failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1241,6 +1269,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 29;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating EXPTIME failed(%.2f,%s,%d,%s).",
 			Multrun_Data.Exposure_Length,filename, status,buff);
@@ -1254,6 +1283,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 30;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating EXPTIME failed(%.2f,%s,%d,%s).",
 			Multrun_Data.Exposure_Length,filename, status,buff);
@@ -1267,6 +1297,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 64;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating MEDIAN failed(%.2f,%s,%d,%s).",
 			Multrun_Data.median_value,filename, status,buff);
@@ -1280,6 +1311,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 65;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating TIMECORR failed(%.2f,%s,%d,%s).",
 			Multrun_Data.TimeCorrection,filename, status,buff);
@@ -1294,6 +1326,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 60;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating EXPEPOCH failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1307,6 +1340,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 31;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CCDXBIN failed(%.2f,%s,%d,%s).",
 			(float)CCD_Setup_Get_NSBin(),filename, status,buff);
@@ -1320,6 +1354,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 32;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CCDYBIN failed(%.2f,%s,%d,%s).",
 			(float)CCD_Setup_Get_NSBin(),filename, status,buff);
@@ -1333,6 +1368,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 33;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating OBSTYPE failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1346,6 +1382,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 34;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating RUNNUM failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1359,6 +1396,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 35;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating EXPNUM failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1372,6 +1410,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 36;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating RA failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1385,6 +1424,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 37;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating DEC failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1398,6 +1438,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 38;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating LATITUDE failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.latitude),filename, status,buff);
@@ -1411,6 +1452,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 39;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating LONGITUD failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.longitude),filename, status,buff);
@@ -1424,6 +1466,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 40;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating NTPTIME failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1437,6 +1480,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 41;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating NTPSERVE failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1449,6 +1493,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 42;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating NTPERROR failed(%.2f,%s,%d,%s).",
 			Multrun_Data.temperature,filename, status,buff);
@@ -1461,6 +1506,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 43;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating AIRMASS failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.airmass),filename, status,buff);
@@ -1473,6 +1519,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 44;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating TELFOCUS failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.telfocus),filename, status,buff);
@@ -1485,6 +1532,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 45;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating VSSPEED failed(%.2f,%s,%d,%s).",
 			Multrun_Data.VSspeed,filename, status,buff);
@@ -1497,6 +1545,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 46;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating HSSPEED failed(%.2f,%s,%d,%s).",
 			Multrun_Data.HSspeed,filename, status,buff);
@@ -1509,6 +1558,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 66;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CONFIGID failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.configid),filename, status,buff);
@@ -1522,6 +1572,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 47;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ORIGIN failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1535,6 +1586,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 48;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ORIGIN failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1548,6 +1600,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 49;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating TELESCOP failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1561,6 +1614,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 50;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating TELMODE failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1574,6 +1628,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 51;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating LST failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1587,6 +1642,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 52;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CAT-RA failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1601,6 +1657,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 61;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CAT-DEC failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1615,6 +1672,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 67;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CAT-DEC failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1629,6 +1687,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 68;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating AUTOGUID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1643,6 +1702,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 69;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ROTMODE failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1656,6 +1716,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 70;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ROTSKYPA failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.rotskypa),filename, status,buff);
@@ -1670,6 +1731,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 71;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating WINDSPEE failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.windspee),filename, status,buff);
@@ -1684,6 +1746,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 72;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating WMSTEMP failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.wmstemp),filename, status,buff);
@@ -1698,6 +1761,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 73;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating WMSHUMID failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.wmshumid),filename, status,buff);
@@ -1712,6 +1776,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 74;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating OBJECT failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1726,6 +1791,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 75;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating INSTRUME failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1740,6 +1806,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 76;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CONFNAME failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1754,6 +1821,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 77;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CONFNAME failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1768,6 +1836,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 78;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GAIN failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.gain),filename, status,buff);
@@ -1782,6 +1851,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 79;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating READNOIS failed(%.2f,%s,%d,%s).",
 			atof(fileHeaders.readnoise),filename, status,buff);
@@ -1796,6 +1866,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 80;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating TAGID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1810,6 +1881,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 81;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating USERID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1823,6 +1895,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 4;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating PROGID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1837,6 +1910,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 82;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating PROPID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1850,6 +1924,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 83;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GROUPID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1863,6 +1938,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 84;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating OBSID failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1878,6 +1954,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 85;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating EXPTOTAL failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.exptotal),filename, status,buff);
@@ -1891,6 +1968,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 86;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating PRESCAN failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.prescan),filename, status,buff);
@@ -1904,6 +1982,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 87;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating POSTSCAN failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.postscan),filename, status,buff);
@@ -1917,6 +1996,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 88;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ROTCENTX failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.rotcentx),filename, status,buff);
@@ -1930,6 +2010,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 89;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ROTCENTY failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.rotcenty),filename, status,buff);
@@ -1944,6 +2025,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 90;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating POICENTX failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.poicentx),filename, status,buff);
@@ -1957,6 +2039,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 91;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating POICENTY failed(%d,%s,%d,%s).",
 			atoi(fileHeaders.poicenty),filename, status,buff);
@@ -1971,6 +2054,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 92;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating FILTER1 failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1985,6 +2069,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 93;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating FILTERI1 failed(%s,%d,%s).",filename,
 			status,buff);
@@ -1999,6 +2084,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 94;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CCDSCALE failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.ccdscale),filename, status,buff);
@@ -2014,6 +2100,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 95;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating RADECSYS failed(%s,%d,%s).",filename,
 			status,buff);
@@ -2028,6 +2115,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 96;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating EQUINOX failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.equinox),filename, status,buff);
@@ -2043,6 +2131,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 97;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GRPTIMNG failed(%s,%d,%s).",filename,
 			status,buff);
@@ -2056,6 +2145,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 98;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GRPNUMOB failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.groupnumob),filename, status,buff);
@@ -2069,6 +2159,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 99;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GRPUID failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.groupuid),filename, status,buff);
@@ -2082,6 +2173,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 100;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GRPNOMEX failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.groupnomex),filename, status,buff);
@@ -2095,6 +2187,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 101;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating GRPMONP failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.groupmonp),filename, status,buff);
@@ -2108,6 +2201,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
 		fits_close_file(fp,&status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 102;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating ROTANGLE failed(%.5f,%s,%d,%s).",
 			atof(fileHeaders.rotangle),filename, status,buff);
@@ -2124,10 +2218,14 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	{
 		fits_get_errstatus(status,buff);
 		fits_report_error(stderr,status);
+		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 59;
 		sprintf(Multrun_Error_String,"Exposure_Save: File close failed(%s,%d,%s).",filename,status,buff);
 		return FALSE;
 	}
+	/* unlock FITS file lock */
+	if(!Fits_Filename_UnLock(filename))
+		return FALSE;
 #if LOGGING > 4
 	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Finished, CFITSIO status %d",status);
 	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save: File %s saved.",filename);
@@ -2727,9 +2825,169 @@ void CCD_Multrun_Error_String(char *error_string)
 		Multrun_Error_Number,Multrun_Error_String);
 }
 
+/**
+ * Lock the FITS file specified, by creating a '.lock' file based on it's filename.
+ * This allows interaction with the data transfer processes, so the FITS image will not be
+ * data transferred until the lock file is removed.
+ * @param filename The filename of the '.fits' FITS filename.
+ * @return The routine returns TRUE on success and FALSE on failure.
+ * @see #Lock_Filename_Get
+ * @see #CCD_GLOBAL_ERROR_STRING_LENGTH
+ */
+static int Fits_Filename_Lock(char *filename)
+{
+	char lock_filename[CCD_GLOBAL_ERROR_STRING_LENGTH];
+	int fd,open_errno;
+
+	/* check arguments */
+	if(filename == NULL)
+	{
+		Multrun_Error_Number = 6;
+		sprintf(Multrun_Error_String,"Fits_Filename_Lock:filename was NULL.");
+		return FALSE;
+	}
+	if(strlen(filename) >= CCD_GLOBAL_ERROR_STRING_LENGTH)
+	{
+		Multrun_Error_Number = 7;
+		sprintf(Multrun_Error_String,"Fits_Filename_Lock:FITS filename was too long(%d).",
+			strlen(filename));
+		return FALSE;
+	}
+	/* get lock filename */
+	if(!Lock_Filename_Get(filename,lock_filename))
+		return FALSE;
+	/* try to open lock file. */
+	/* O_CREAT|O_WRONLY|O_EXCL : create file, O_EXCL means the call will fail if the file already exists. 
+	** Note atomic creation probably fails on NFS systems. */
+	fd = open((const char*)lock_filename,O_CREAT|O_WRONLY|O_EXCL);
+	if(fd == -1)
+	{
+		open_errno = errno;
+		Multrun_Error_Number = 8;
+		sprintf(Multrun_Error_String,
+			"Fits_Filename_Lock:Failed to create lock filename(%s):error %d.",
+			lock_filename,open_errno);
+		return FALSE;
+	}
+	/* close created file */
+	close(fd);
+	return TRUE;
+}
+
+/**
+ * UnLock the FITS file specified, by removing the previously created '.lock' file based on it's filename.
+ * This allows interaction with the data transfer processes, so the FITS image will not be
+ * data transferred until the lock file is removed.
+ * @param filename The filename of the '.fits' FITS filename.
+ * @return The routine returns TRUE on success and FALSE on failure.
+ * @see #Lock_Filename_Get
+ * @see #fexist
+ */
+static int Fits_Filename_UnLock(char *filename)
+{
+	char lock_filename[CCD_GLOBAL_ERROR_STRING_LENGTH];
+	int retval,remove_errno;
+
+	/* check arguments */
+	if(filename == NULL)
+	{
+		Multrun_Error_Number = 9;
+		sprintf(Multrun_Error_String,"Fits_Filename_UnLock:filename was NULL.");
+		return FALSE;
+	}
+	if(strlen(filename) >= CCD_GLOBAL_ERROR_STRING_LENGTH)
+	{
+		Multrun_Error_Number = 10;
+		sprintf(Multrun_Error_String,"Fits_Filename_UnLock:FITS filename was too long(%d).",
+			strlen(filename));
+		return FALSE;
+	}
+	/* get lock filename */
+	if(!Lock_Filename_Get(filename,lock_filename))
+		return FALSE;
+	/* check existence */
+	if(fexist(lock_filename))
+	{
+		/* remove lock file */
+		retval = remove(lock_filename);
+		if(retval == -1)
+		{
+			remove_errno = errno;
+			Multrun_Error_Number = 11;
+			sprintf(Multrun_Error_String,
+				"Fits_Filename_UnLock:Failed to unlock filename '%s':(%d,%d).",
+				lock_filename,retval,remove_errno);
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+/**
+ * Given a FITS filename derive a suitable '.lock' filename.
+ * @param filename The FITS filename.
+ * @param lock_filename A buffer. On return, this is filled with a suitable lock filename for the FITS image.
+ * @return Returns TRUE if the routine succeeds and returns FALSE if an error occurs.
+ * @see #CCD_GLOBAL_ERROR_STRING_LENGTH
+ */
+static int Lock_Filename_Get(char *filename,char *lock_filename)
+{
+	char *ch_ptr = NULL;
+
+	if(filename == NULL)
+	{
+		Multrun_Error_Number = 12;
+		sprintf(Multrun_Error_String,"Lock_Filename_Get:filename was NULL.");
+		return FALSE;
+	}
+	if(strlen(filename) >= CCD_GLOBAL_ERROR_STRING_LENGTH)
+	{
+		Multrun_Error_Number = 13;
+		sprintf(Multrun_Error_String,"Lock_Filename_Get:FITS filename was too long(%d).",
+			strlen(filename));
+		return FALSE;
+	}
+	/* lock filename starts the same as FITS filename */
+	strcpy(lock_filename,filename);
+	/* Find FITS filename '.fits' extension in lock_filename buffer */
+	/* This does allow for multiple '.fits' to be present in the FITS filename.
+	** This should never occur. */
+	ch_ptr = strstr(lock_filename,".fits");
+	if(ch_ptr == NULL)
+	{
+		Multrun_Error_Number = 14;
+		sprintf(Multrun_Error_String,"Lock_Filename_Get:'.fits' not found in filename %s.",
+			filename);
+		return FALSE;
+	}
+	/* terminate lock filename at start of '.fits' (removing '.fits') */
+	(*ch_ptr) = '\0';
+	/* add '.lock' to lock filename */
+	strcat(lock_filename,".lock");
+	return TRUE;
+}
+
+/**
+ * Return whether the specified filename exists or not.
+ * @param filename A string representing the filename to test.
+ * @return The routine returns TRUE if the filename exists, and FALSE if it does not exist. 
+ */
+static int fexist(char *filename)
+{
+	FILE *fptr = NULL;
+
+	fptr = fopen(filename,"r");
+	if(fptr == NULL)
+		return FALSE;
+	fclose(fptr);
+	return TRUE;
+}
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2010/01/14 16:13:07  cjm
+** Added PROGID FITS headers setting.
+**
 ** Revision 1.2  2009/12/18 10:54:38  cjm
 ** Changed expose routine to return TRUE on success and FALSE on failure.
 ** Added recalculate_exposure_length to allow expose to tell CCD_Multflat_Expose
