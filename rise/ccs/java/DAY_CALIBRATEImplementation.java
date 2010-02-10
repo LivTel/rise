@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // DAY_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DAY_CALIBRATEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DAY_CALIBRATEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 import java.io.*;
 import java.lang.*;
 import java.util.*;
@@ -37,14 +37,14 @@ import ngat.util.*;
  * Java Message System. It performs a series of BIAS and DARK frames from a configurable list,
  * taking into account frames done in previous invocations of this command (it saves it's state).
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential day calibrations to
 	 * perform from a Java property file.
@@ -724,6 +724,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	 * <li>The FITS headers are saved using saveFitsHeaders.
 	 * <li>The frame is taken, using libccd. If the <b>type</b> is BIAS, CCDLibrary's CCDExposureBias
 	 * 	method is called, otherwise CCDExposureExpose is used.
+	 * <li>The FITS file lock created in saveFitsHeaders is removed with unLockFile.
 	 * <li>testAbort is called to see if this command implementation has been aborted.
 	 * <li>reduceCalibrate is called to pass the frame to the Real Time Data Pipeline for processing.
 	 * </ul>
@@ -740,6 +741,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 * @see FITSImplementation#ccsFilename
 	 * @see FITSImplementation#libccd
 	 * @see ngat.rise.ccd.CCDLibrary#CCDExposureBias
@@ -799,7 +801,10 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			ccsFilename.nextRunNumber();
 			filename = ccsFilename.getFilename();
 			if(saveFitsHeaders(dayCalibrateCommand,dayCalibrateDone,filename) == false)
+			{
+				unLockFile(dayCalibrateCommand,dayCalibrateDone,filename);
 				return false;
+			}
 			status.setExposureFilename(filename);
 		// do exposure
 			try
@@ -822,8 +827,12 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				dayCalibrateDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+2210);
 				dayCalibrateDone.setErrorString(errorString+e);
 				dayCalibrateDone.setSuccessful(false);
+				unLockFile(dayCalibrateCommand,dayCalibrateDone,filename);
 				return false;
 			}
+		// remove lock files created in saveFitsHeaders
+			if(unLockFile(dayCalibrateCommand,dayCalibrateDone,filename) == false)
+				return false;
 		// send with filename back to client
 		// time to complete is reduction time, we will send another ACK after reduceCalibrate
 			if(sendDayCalibrateAck(dayCalibrateCommand,dayCalibrateDone,readoutOverhead,filename) == false)
@@ -1333,6 +1342,9 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 1.7  2006/05/16 14:25:50  cjm
 // gnuify: Added GNU General Public License.
 //

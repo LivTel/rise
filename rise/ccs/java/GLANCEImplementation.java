@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // GLANCEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/GLANCEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/GLANCEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -32,14 +32,14 @@ import ngat.message.ISS_INST.GLANCE_DONE;
  * This class provides the implementation for the GLANCE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class GLANCEImplementation extends EXPOSEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: GLANCEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: GLANCEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 
 	/**
 	 * Constructor. 
@@ -87,6 +87,7 @@ public class GLANCEImplementation extends EXPOSEImplementation implements JMSCom
 	 * <li>It moves the fold mirror to the correct location.
 	 * <li>It starts the autoguider.
 	 * <li>It performs an exposure and saves the data from this to disc.
+	 * <li>It removes the lock file created by saving the FITS headers to disk.
 	 * <li>It stops the autoguider.
 	 * <li>Note it does <b>NOT</b> call the Real Time Data Pipeline to reduce the data.
 	 * </ul>
@@ -99,6 +100,7 @@ public class GLANCEImplementation extends EXPOSEImplementation implements JMSCom
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 * @see ngat.rise.ccd.CCDLibrary#CCDExposureExpose
 	 * @see EXPOSEImplementation#reduceExpose
 	 */
@@ -146,13 +148,20 @@ public class GLANCEImplementation extends EXPOSEImplementation implements JMSCom
 			file.delete();
 	// save FITS headers
 		if(saveFitsHeaders(glanceCommand,glanceDone,filename) == false)
+		{
+			unLockFile(glanceCommand,glanceDone,filename);
 			return glanceDone;
+		}
 	// autoguider on
 		if(autoguiderStart(glanceCommand,glanceDone) == false)
+		{
+			unLockFile(glanceCommand,glanceDone,filename);
 			return glanceDone;
+		}
 		if(testAbort(glanceCommand,glanceDone) == true)
 		{
 			autoguiderStop(glanceCommand,glanceDone,false);
+			unLockFile(glanceCommand,glanceDone,filename);
 			return glanceDone;
 		}
 	// do glance
@@ -170,6 +179,13 @@ public class GLANCEImplementation extends EXPOSEImplementation implements JMSCom
 			glanceDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+1000);
 			glanceDone.setErrorString(e.toString());
 			glanceDone.setSuccessful(false);
+			autoguiderStop(glanceCommand,glanceDone,false);
+			unLockFile(glanceCommand,glanceDone,filename);
+			return glanceDone;
+		}
+		// remove lock files created in saveFitsHeaders
+		if(unLockFile(glanceCommand,glanceDone,filename) == false)
+		{
 			autoguiderStop(glanceCommand,glanceDone,false);
 			return glanceDone;
 		}
@@ -196,6 +212,9 @@ public class GLANCEImplementation extends EXPOSEImplementation implements JMSCom
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.16  2006/05/16 14:25:54  cjm
 // gnuify: Added GNU General Public License.
 //

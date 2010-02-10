@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // RUNATImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/RUNATImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/RUNATImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import java.util.*;
@@ -32,14 +32,14 @@ import ngat.message.ISS_INST.RUNAT_DONE;
  * This class provides the implementation for the RUNAT command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class RUNATImplementation extends EXPOSEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: RUNATImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: RUNATImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -97,6 +97,7 @@ public class RUNATImplementation extends EXPOSEImplementation implements JMSComm
 	 * <li>It starts the autoguider.
 	 * <li>It waits until the specified start time occurs.
 	 * <li>It performs an exposure and saves the data from this to disc.
+	 * <li>It removes the FITS file locks previously created by saving the FITS headers.
 	 * <li>It stops the autoguider.
 	 * <li>It calls the Real Time Data Pipeline to reduce the data, if applicable.
 	 * </ul>
@@ -108,6 +109,7 @@ public class RUNATImplementation extends EXPOSEImplementation implements JMSComm
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFiles
 	 * @see ngat.rise.ccd.CCDLibrary#CCDExposureExpose
 	 * @see EXPOSEImplementation#reduceExpose
 	 */
@@ -165,7 +167,6 @@ public class RUNATImplementation extends EXPOSEImplementation implements JMSComm
 			runatDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+1601);
 			runatDone.setErrorString(e.toString());
 			runatDone.setSuccessful(false);
-			autoguiderStop(runatCommand,runatDone,false);
 			return runatDone;
 		}
 		ccsFilename.nextRunNumber();
@@ -174,17 +175,27 @@ public class RUNATImplementation extends EXPOSEImplementation implements JMSComm
 	// save FITS headers.
 		filenameList = new Vector();
 		if(saveFitsHeaders(runatCommand,runatDone,filenameList) == false)
+		{
+			unLockFiles(runatCommand,runatDone,filenameList);
 			return runatDone;
+		}
 		runatDone.setFilename(filename);
 // diddly 1st window filename only
 		if(testAbort(runatCommand,runatDone) == true)
+		{
+			unLockFiles(runatCommand,runatDone,filenameList);
 			return runatDone;
+		}
 	// autoguider on
 		if(autoguiderStart(runatCommand,runatDone) == false)
+		{
+			unLockFiles(runatCommand,runatDone,filenameList);
 			return runatDone;
+		}
 		if(testAbort(runatCommand,runatDone) == true)
 		{
 			autoguiderStop(runatCommand,runatDone,false);
+			unLockFiles(runatCommand,runatDone,filenameList);
 			return runatDone;
 		}
 	// do exposure
@@ -203,6 +214,12 @@ public class RUNATImplementation extends EXPOSEImplementation implements JMSComm
 			runatDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+1600);
 			runatDone.setErrorString(e.toString());
 			runatDone.setSuccessful(false);
+			autoguiderStop(runatCommand,runatDone,false);
+			unLockFiles(runatCommand,runatDone,filenameList);
+			return runatDone;
+		}
+		if(unLockFiles(runatCommand,runatDone,filenameList) == false)
+		{
 			autoguiderStop(runatCommand,runatDone,false);
 			return runatDone;
 		}
@@ -241,6 +258,9 @@ public class RUNATImplementation extends EXPOSEImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.20  2006/05/16 14:26:02  cjm
 // gnuify: Added GNU General Public License.
 //

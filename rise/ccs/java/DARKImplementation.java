@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // DARKImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DARKImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DARKImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -31,14 +31,14 @@ import ngat.message.ISS_INST.DARK_DONE;
  * This class provides the implementation for the DARK command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class DARKImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: DARKImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: DARKImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -90,6 +90,7 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 * @see ngat.rise.ccd.CCDLibrary#CCDExposureExpose
 	 * @see CALIBRATEImplementation#reduceCalibrate
 	 */
@@ -135,7 +136,10 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 		ccsFilename.nextRunNumber();
 		filename = ccsFilename.getFilename();
 		if(saveFitsHeaders(command,darkDone,filename) == false)
+		{
+			unLockFile(command,darkDone,filename);
 			return darkDone;
+		}
 	// do exposure
 		status.setExposureFilename(filename);
 		try
@@ -150,8 +154,12 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 			darkDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+900);
 			darkDone.setErrorString(e.toString());
 			darkDone.setSuccessful(false);
+			unLockFile(command,darkDone,filename);
 			return darkDone;
 		}
+		// remove lock files created in saveFitsHeaders
+		if(unLockFile(command,darkDone,filename) == false)
+			return darkDone;
 	// Test abort status.
 		if(testAbort(command,darkDone) == true)
 			return darkDone;
@@ -169,6 +177,9 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.14  2006/05/16 14:25:49  cjm
 // gnuify: Added GNU General Public License.
 //

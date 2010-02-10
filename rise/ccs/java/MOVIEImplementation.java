@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // MOVIEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MOVIEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MOVIEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -35,14 +35,14 @@ import ngat.message.ISS_INST.MOVIE_DONE;
  * This class provides the implementation for the MOVIE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class MOVIEImplementation extends EXPOSEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: MOVIEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: MOVIEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -98,6 +98,7 @@ public class MOVIEImplementation extends EXPOSEImplementation implements JMSComm
 	 * 	<li>It generates some FITS headers from the CCD setup and the ISS.
 	 * 	<li>Get a unique filename. Save some FITS headers.
 	 * 	<li>Do the exposure and save the data to disk.
+	 *      <li>Remove the FITS lock file created by saving the FITS headers.
 	 * 	<li>Send an acknowledgement back with the filename just completed.
 	 * 	<li>If an ABORT/STOP message has been sent to the CCS, come out of the loop.
 	 *      </ul>
@@ -110,6 +111,7 @@ public class MOVIEImplementation extends EXPOSEImplementation implements JMSComm
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 */
 	public COMMAND_DONE processCommand(COMMAND command)
 	{
@@ -186,6 +188,7 @@ public class MOVIEImplementation extends EXPOSEImplementation implements JMSComm
 			if(saveFitsHeaders(movieCommand,movieDone,filename) == false)
 			{
 				autoguiderStop(movieCommand,movieDone,false);
+				unLockFile(movieCommand,movieDone,filename);
 				return movieDone;
 			}
 		// do an exposure
@@ -202,6 +205,7 @@ public class MOVIEImplementation extends EXPOSEImplementation implements JMSComm
 				movieDone.setErrorString(e.toString());
 				movieDone.setSuccessful(false);
 				autoguiderStop(movieCommand,movieDone,false);
+				unLockFile(movieCommand,movieDone,filename);
 				return movieDone;
 			}
 		// send acknowledge to say frame is completed.
@@ -220,6 +224,13 @@ public class MOVIEImplementation extends EXPOSEImplementation implements JMSComm
 				movieDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+1102);
 				movieDone.setErrorString(e.toString());
 				movieDone.setSuccessful(false);
+				autoguiderStop(movieCommand,movieDone,false);
+				unLockFile(movieCommand,movieDone,filename);
+				return movieDone;
+			}
+			// remove lock files created in saveFitsHeaders
+			if(unLockFile(movieCommand,movieDone,filename) == false)
+			{
 				autoguiderStop(movieCommand,movieDone,false);
 				return movieDone;
 			}
@@ -254,6 +265,9 @@ public class MOVIEImplementation extends EXPOSEImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.20  2006/05/16 14:25:58  cjm
 // gnuify: Added GNU General Public License.
 //

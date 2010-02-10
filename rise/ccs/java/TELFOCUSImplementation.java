@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // TELFOCUSImplementation.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TELFOCUSImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TELFOCUSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -48,14 +48,14 @@ import ngat.message.INST_DP.INST_TO_DP_DONE;
  * focus the telescope. An exposure is taken at each focus position, and then reduced.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class TELFOCUSImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TELFOCUSImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: TELFOCUSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 	/**
 	 * A small number. Used in getFocus to prevent a division by zero.
 	 * @see #getFocus
@@ -443,6 +443,7 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 	 * 	(clearFitsHeaders, setFitsHeaders, getFitsHeadersFromISS).
 	 * <li>The FITS headers for this frame are saved using the saveFitsHeaders method.
 	 * <li>The exposure is performed and saved in the filename, using CCDExposureExpose.
+	 * <li>The FITS file lock created in saveFitsHeaders is removed using unLockFile.
 	 * <li>The frameParameters filename field is set to the saved filename.
 	 * </ul>
 	 * testAbort is called during this method to see if the command has been aborted.
@@ -456,10 +457,11 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 	 * @return The method returns true if the exposure was completed successfully. Otherwise false is returned,
 	 * 	and the error fields in telFocusDone are filled in.
 	 * @exception CCDLibraryNativeException Thrown if the exposure fails (CCDExposureExpose).
-	 * @see #clearFitsHeaders
-	 * @see #setFitsHeaders
-	 * @see #getFitsHeadersFromISS
-	 * @see #saveFitsHeaders
+	 * @see FITSImplementation#clearFitsHeaders
+	 * @see FITSImplementation#setFitsHeaders
+	 * @see FITSImplementation#getFitsHeadersFromISS
+	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 * @see #testAbort
 	 * @see CCDLibrary#CCDExposureExpose
 	 */
@@ -490,12 +492,20 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 			return false;
 	// save FITS headers
 		if(saveFitsHeaders(telFocusCommand,telFocusDone,filename) == false)
+		{
+			unLockFile(telFocusCommand,telFocusDone,filename);
 			return false;
+		}
 		if(testAbort(telFocusCommand,telFocusDone) == true)
+		{
+			unLockFile(telFocusCommand,telFocusDone,filename);
 			return false;
+		}
 	// do glance
 		status.setExposureFilename(filename);
 		libccd.CCDExposureExpose(true,-1,exposureTime,filename);
+		if(unLockFile(telFocusCommand,telFocusDone,filename) == false)
+			return false;
 		if(testAbort(telFocusCommand,telFocusDone) == true)
 			return false;
 		frameParameters.setFilename(filename);
@@ -1143,6 +1153,9 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.17  2007/06/21 13:41:50  cjm
 // Added resetFocusOffset to reset DFOCUS to 0.
 //

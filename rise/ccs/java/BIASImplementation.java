@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // BIASImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/BIASImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/BIASImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -30,14 +30,14 @@ import ngat.message.ISS_INST.BIAS_DONE;
  * This class provides the implementation for the BIAS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class BIASImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: BIASImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: BIASImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -87,6 +87,7 @@ public class BIASImplementation extends CALIBRATEImplementation implements JMSCo
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 * @see ngat.ccd.CCDLibrary#CCDExposureBias
 	 * @see CALIBRATEImplementation#reduceCalibrate
 	 */
@@ -126,7 +127,10 @@ public class BIASImplementation extends CALIBRATEImplementation implements JMSCo
 		ccsFilename.nextRunNumber();
 		filename = ccsFilename.getFilename();
 		if(saveFitsHeaders(command,biasDone,filename) == false)
+		{
+			unLockFile(command,biasDone,filename);
 			return biasDone;
+		}
 	// do exposure
 		try
 		{
@@ -140,8 +144,12 @@ public class BIASImplementation extends CALIBRATEImplementation implements JMSCo
 			biasDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+700);
 			biasDone.setErrorString(e.toString());
 			biasDone.setSuccessful(false);
+			unLockFile(command,biasDone,filename);
 			return biasDone;
 		}
+		// remove lock files created in saveFitsHeaders
+		if(unLockFile(command,biasDone,filename) == false)
+			return biasDone;
 	// Test abort status.
 		if(testAbort(command,biasDone) == true)
 			return biasDone;
@@ -159,6 +167,9 @@ public class BIASImplementation extends CALIBRATEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.11  2006/05/16 14:25:38  cjm
 // gnuify: Added GNU General Public License.
 //

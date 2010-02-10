@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // SKYFLATImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/SKYFLATImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/SKYFLATImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -31,14 +31,14 @@ import ngat.message.ISS_INST.SKYFLAT_DONE;
  * This class provides the implementation for the SKYFLAT command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class SKYFLATImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: SKYFLATImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: SKYFLATImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -107,6 +107,7 @@ public class SKYFLATImplementation extends CALIBRATEImplementation implements JM
 	 * @see FITSImplementation#setFitsHeaders
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
+	 * @see FITSImplementation#unLockFile
 	 * @see ngat.rise.ccd.CCDLibrary#CCDExposureExpose
 	 * @see CALIBRATEImplementation#reduceCalibrate
 	 */
@@ -168,13 +169,20 @@ public class SKYFLATImplementation extends CALIBRATEImplementation implements JM
 		filename = ccsFilename.getFilename();
 	// save FITS headers
 		if(saveFitsHeaders(skyFlatCommand,skyFlatDone,filename) == false)
+		{
+			unLockFile(skyFlatCommand,skyFlatDone,filename);
 			return skyFlatDone;
+		}
 	// start autoguider
 		if(autoguiderStart(skyFlatCommand,skyFlatDone) == false)
+		{
+			unLockFile(skyFlatCommand,skyFlatDone,filename);
 			return skyFlatDone;
+		}
 		if(testAbort(skyFlatCommand,skyFlatDone) == true)
 		{
 			autoguiderStop(skyFlatCommand,skyFlatDone,false);
+			unLockFile(skyFlatCommand,skyFlatDone,filename);
 			return skyFlatDone;
 		}
 	// do sky-flat command here
@@ -191,8 +199,12 @@ public class SKYFLATImplementation extends CALIBRATEImplementation implements JM
 			skyFlatDone.setErrorString(e.toString());
 			skyFlatDone.setSuccessful(false);
 			autoguiderStop(skyFlatCommand,skyFlatDone,false);
+			unLockFile(skyFlatCommand,skyFlatDone,filename);
 			return skyFlatDone;
 		}
+		// remove FITS lock file created in saveFitsHeaders
+		if(unLockFile(skyFlatCommand,skyFlatDone,filename) == false)
+			return skyFlatDone;
 	// stop autoguider
 		if(autoguiderStop(skyFlatCommand,skyFlatDone,true) == false)
 			return skyFlatDone;
@@ -214,6 +226,9 @@ public class SKYFLATImplementation extends CALIBRATEImplementation implements JM
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.14  2006/05/16 14:26:05  cjm
 // gnuify: Added GNU General Public License.
 //
