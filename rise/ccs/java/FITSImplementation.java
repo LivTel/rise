@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
 
 import java.lang.*;
 import java.util.Date;
@@ -29,20 +29,21 @@ import ngat.message.base.*;
 import ngat.message.ISS_INST.*;
 import ngat.rise.ccd.*;
 import ngat.fits.*;
+import ngat.util.*;
 
 /**
  * This class provides the generic implementation of commands that write FITS files. It extends those that
  * use the SDSU CCD Library as this is needed to generate FITS files.
  * @see CCDLibraryImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class FITSImplementation extends CCDLibraryImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
 	/**
 	 * A reference to the CcsStatus class instance that holds status information for the Ccs.
 	 */
@@ -613,6 +614,8 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 
 	/**
 	 * This routine uses the Fits Header object, stored in the ccs object, to save the headers to disc.
+	 * A lock file is created before the FITS header is written, this allows synchronisation with the
+	 * data transfer software. This will need deleting after the image data has been saved to the FITS header.
 	 * This method also updates the RUNNUM and EXPNUM keywords with the current multRun and runNumber values
 	 * in the ccsFilename object, as they must be correct when the file is saved.
 	 * @param command The command being implemented that made this call to the ISS. This is used
@@ -626,9 +629,12 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 	 * @see #ccsFilename
 	 * @see ngat.fits.FitsFilename#getMultRunNumber
 	 * @see ngat.fits.FitsFilename#getRunNumber
+	 * @see ngat.util.LockFile2
 	 */
 	public boolean saveFitsHeaders(COMMAND command,COMMAND_DONE done,String filename)
 	{
+		LockFile2 lockFile = null;
+
 		try
 		{
 			ccsFitsHeader.add("RUNNUM",new Integer(ccsFilename.getMultRunNumber()),
@@ -656,6 +662,23 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 			done.setSuccessful(false);
 			return false;
 		}
+		// create lock file
+		try
+		{
+			lockFile = new LockFile2(filename);
+			lockFile.lock();
+		}
+		catch(Exception e)
+		{
+			String s = new String("Command "+command.getClass().getName()+
+					":saveFitsHeaders:Creating lock file failed for file:"+filename+":"+e);
+			ccs.error(s,e);
+			done.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+313);
+			done.setErrorString(s);
+			done.setSuccessful(false);
+			return false;			
+		}
+		// write FITS header to FITS filename
 		try
 		{
 			ccsFitsHeader.writeFitsHeader(filename);
@@ -674,7 +697,44 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 	}
 
 	/**
+	 * This method tries to unlock the FITS filename.
+	 * It first checks the lock file exists and only attempts to unlock locked files. This is because
+	 * this method can be called after a partial failure, where the specified FITS file may or may not have been
+	 * locked.
+	 * @param command The command being implemented. This is used for error logging.
+	 * @param done A COMMAND_DONE subclass specific to the command being implemented. If an
+	 * 	error occurs the relevant fields are filled in with the error.
+	 * @param filename The FITS filename which should have an associated lock file.
+	 * @return true if the method succeeds, false if a failure occurs.
+	 * @see ngat.util.LockFile2
+	 */
+	public boolean unLockFile(COMMAND command,COMMAND_DONE done,String filename)
+	{
+		LockFile2 lockFile = null;
+
+		try
+		{
+			lockFile = new LockFile2(filename);
+			if(lockFile.isLocked())
+				lockFile.unLock();
+		}
+		catch(Exception e)
+		{
+			String s = new String("Command "+command.getClass().getName()+
+					      ":unLockFile:Unlocking lock file failed for file:"+filename+":"+e);
+			ccs.error(s,e);
+			done.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+314);
+			done.setErrorString(s);
+			done.setSuccessful(false);
+			return false;
+		}
+		return true;
+	}
+
+	/**
 	 * This routine uses the Fits Header object, stored in the ccs object, to save the headers to disc.
+	 * A lock file is created before the FITS header is written, this allows synchronisation with the
+	 * data transfer software.
 	 * This method also updates the RUNNUM and EXPNUM keywords with the current multRun and runNumber values
 	 * in the ccsFilename object, as they must be correct when the file is saved. 
 	 * A list of windows are defined from the setup's window flags, and a set of headers
@@ -697,6 +757,7 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 	{
 		FitsHeaderCardImage cardImage = null;
 		CCDLibrarySetupWindow window = null;
+		LockFile2 lockFile = null;
 		List windowIndexList = null;
 		String filename = null;
 		int windowIndex,windowFlags,ncols,nrows,xbin,ybin;
@@ -818,6 +879,23 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 				done.setSuccessful(false);
 				return false;
 			}
+			// create lock file
+			try
+			{
+				lockFile = new LockFile2(filename);
+				lockFile.lock();
+			}
+			catch(Exception e)
+			{
+				String s = new String("Command "+command.getClass().getName()+
+						":saveFitsHeaders:Create lock file failed for file:"+filename+":"+e);
+				ccs.error(s,e);
+				done.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+315);
+				done.setErrorString(s);
+				done.setSuccessful(false);
+				return false;
+			}
+			// actually write FITS header
 			try
 			{
 				ccsFitsHeader.writeFitsHeader(filename);
@@ -834,6 +912,46 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 				return false;
 			}
 		}// end for
+		return true;
+	}
+
+	/**
+	 * This method tries to unlock files associated with the FITS filename in filenameList.
+	 * It first checks the lock file exists and only attempts to unlocked locked files. This is because
+	 * this method can be called after a partial failure, where only some of the specified FITS files had been
+	 * locked.
+	 * @param command The command being implemented. This is used for error logging.
+	 * @param done A COMMAND_DONE subclass specific to the command being implemented. If an
+	 * 	error occurs the relevant fields are filled in with the error.
+	 * @param filenameList A list containing FITS filenames which should have associated lock files.
+	 * @return true if the method succeeds, false if a failure occurs
+	 * @see ngat.util.LockFile2
+	 */
+	public boolean unLockFiles(COMMAND command,COMMAND_DONE done,List filenameList)
+	{
+		LockFile2 lockFile = null;
+		String filename = null;
+
+		for(int i = 0; i < filenameList.size(); i++)
+		{
+			try
+			{
+				filename = (String)(filenameList.get(i));
+				lockFile = new LockFile2(filename);
+				if(lockFile.isLocked())
+					lockFile.unLock();
+			}
+			catch(Exception e)
+			{
+				String s = new String("Command "+command.getClass().getName()+
+						":unLockFiles:Unlocking lock file failed for file:"+filename+":"+e);
+				ccs.error(s,e);
+				done.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+316);
+				done.setErrorString(s);
+				done.setSuccessful(false);
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -1037,6 +1155,9 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.30  2006/05/16 14:25:52  cjm
 // gnuify: Added GNU General Public License.
 //
