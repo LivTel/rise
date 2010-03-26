@@ -19,7 +19,7 @@
 */
 /* ccd_temperature.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_temperature.c,v 1.1 2009-10-15 10:16:23 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_temperature.c,v 1.2 2010-03-26 14:39:49 cjm Exp $
 */
 
 /**
@@ -32,7 +32,7 @@
  * to-voltage conversion factor is needed to use the formula given by
  * Omega Engineering.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -46,6 +46,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include "log_udp.h"
 #include "ccd_global.h"
 #include "ccd_dsp.h"
 #include "ccd_temperature.h"
@@ -55,7 +56,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_temperature.c,v 1.1 2009-10-15 10:16:23 cjm Exp $";
+static char rcsid[] = "$Id: ccd_temperature.c,v 1.2 2010-03-26 14:39:49 cjm Exp $";
 
 /**
  * The number of coefficients used to calculate the temperature.
@@ -257,12 +258,12 @@ int CCD_Temperature_Get(double *temperature)
 	error=GetTemperatureF(&temp);
 	*temperature = (double)temp;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Get: Temperature %f degC %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get: Temperature %f degC %d",
 			      *temperature,error);
 #endif
 	GetStatus(&error);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Get: Current Status %d",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get: Current Status %d",error);
 #endif
 	return TRUE;
 
@@ -283,7 +284,7 @@ int CCD_Temperature_Get_Utility_Board_ADU(int *adu)
 
 	Temperature_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Get_Utility_Board() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Utility_Board() started.");
 #endif
 	if(adu == NULL)
 	{
@@ -301,7 +302,7 @@ int CCD_Temperature_Get_Utility_Board_ADU(int *adu)
 	}
 	(*adu) = retval;
 #if LOGGING > 9
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Get_Utility_Board():returned %d.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Utility_Board():returned %d.",
 			      (*adu));
 #endif
 	return TRUE;
@@ -324,7 +325,7 @@ int CCD_Temperature_Set(double target_temperature)
 
 	Temperature_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Set(temperature=%.2f) started.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Set(temperature=%.2f) started.",
 		target_temperature);
 #endif
 	/* get the target adu count from target_temperature using the setup data */
@@ -340,7 +341,7 @@ int CCD_Temperature_Set(double target_temperature)
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Set() returned TRUE.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Set() returned TRUE.");
 #endif
 	return TRUE;
 }
@@ -361,7 +362,7 @@ int CCD_Temperature_Get_Heater_ADU(int *heater_adu)
 
 	Temperature_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Get_Heater_ADU() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Heater_ADU() started.");
 #endif
 	if(heater_adu == NULL)
 	{
@@ -378,7 +379,7 @@ int CCD_Temperature_Get_Heater_ADU(int *heater_adu)
 	}
 	(*heater_adu) = retval;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_TEMPERATURE,"CCD_Temperature_Get_Heater_ADU() returned %#x.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Heater_ADU() returned %#x.",
 		(*heater_adu));
 #endif
 	return TRUE;
@@ -547,6 +548,9 @@ static int Temperature_Calc_Temp_ADU(float temp_coeff[], int n,float vu, float v
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/15 10:16:23  cjm
+** Initial revision
+**
 ** Revision 0.12  2006/05/16 14:14:08  cjm
 ** gnuify: Added GNU General Public License.
 **

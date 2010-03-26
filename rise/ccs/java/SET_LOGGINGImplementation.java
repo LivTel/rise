@@ -18,26 +18,27 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // SET_LOGGINGImplementation.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/SET_LOGGINGImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/SET_LOGGINGImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import ngat.message.base.*;
 import ngat.message.ISS_INST.SET_LOGGING;
 import ngat.message.ISS_INST.SET_LOGGING_DONE;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation for the SET_LOGGING command sent to a server using the
  * Java Message System. It extends SETUPImplementation.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class SET_LOGGINGImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: SET_LOGGINGImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: SET_LOGGINGImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -86,13 +87,8 @@ public class SET_LOGGINGImplementation extends SETUPImplementation implements JM
 		SET_LOGGING_DONE setLoggingDone = new SET_LOGGING_DONE(command.getId());
 
 	// log whats level we are setting
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,"Command:"+setLoggingCommand.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_INTERMEDIATE,"Command:"+setLoggingCommand.getClass().getName()+
 			":Level:"+setLoggingCommand.getLevel()+".");
-		for(int i=0; i< 32; i++)
-		{
-			if((setLoggingCommand.getLevel()&(1<<i)) > 0)
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,"\tBit "+i+" is set.");
-		}
 	// set log level
 		ccs.getStatus().setLogLevel(setLoggingCommand.getLevel());
 		ccs.setLogLevelFilter(setLoggingCommand.getLevel());
@@ -107,6 +103,9 @@ public class SET_LOGGINGImplementation extends SETUPImplementation implements JM
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.8  2006/05/16 14:26:04  cjm
 // gnuify: Added GNU General Public License.
 //

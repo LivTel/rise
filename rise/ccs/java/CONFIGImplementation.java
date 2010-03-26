@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CONFIGImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CONFIGImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CONFIGImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -29,20 +29,21 @@ import ngat.message.ISS_INST.OFFSET_FOCUS;
 import ngat.message.ISS_INST.OFFSET_FOCUS_DONE;
 import ngat.message.ISS_INST.INST_TO_ISS_DONE;
 import ngat.phase2.*;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation for the CONFIG command sent to a server using the
  * Java Message System. It extends SETUPImplementation.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CONFIGImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * The number of filter wheels.
 	 */
@@ -270,7 +271,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 			}
 			else
 			{
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+
+				ccs.log(Logging.VERBOSITY_TERSE,this.getClass().getName()+
 					":processCommand:Filter wheels not enabled:Filter wheels NOT moved.");
 			}
 		}
@@ -338,11 +339,11 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		focusOffset = 0.0f;
 	// get default focus offset
 		focusOffset += status.getPropertyDouble("ccs.focus.offset");
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+":setFocusOffset:Master offset is "+
+		ccs.log(Logging.VERBOSITY_TERSE,this.getClass().getName()+":setFocusOffset:Master offset is "+
 			focusOffset+".");
 	// set the commands focus offset
 		focusOffsetCommand.setFocusOffset(focusOffset);
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+":setFocusOffset:Total offset is "+
+		ccs.log(Logging.VERBOSITY_TERSE,this.getClass().getName()+":setFocusOffset:Total offset is "+
 			focusOffset+".");
 		instToISSDone = ccs.sendISSCommand(focusOffsetCommand,serverConnectionThread);
 		if(instToISSDone.getSuccessful() == false)
@@ -360,6 +361,9 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.28  2007/06/19 16:39:46  cjm
 // Added default focus offset from ccs.focus.offset property.
 //

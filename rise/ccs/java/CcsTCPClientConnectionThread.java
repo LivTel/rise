@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CcsTCPClientConnectionThread.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CcsTCPClientConnectionThread.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CcsTCPClientConnectionThread.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import java.io.*;
@@ -27,6 +27,7 @@ import java.util.Date;
 
 import ngat.net.*;
 import ngat.message.base.*;
+import ngat.util.logging.*;
 
 /**
  * The CcsTCPClientConnectionThread extends TCPClientConnectionThread. 
@@ -34,14 +35,14 @@ import ngat.message.base.*;
  * The CCS starts one of these threads each time
  * it wishes to send a message to the ISS/DP(RT).
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CcsTCPClientConnectionThread extends TCPClientConnectionThreadMA
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CcsTCPClientConnectionThread.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: CcsTCPClientConnectionThread.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * The commandThread was spawned by the Ccs to deal with a Ccs command request. As part of the running of
 	 * the commandThread, this client connection thread was created. We need to know the server thread so
@@ -92,7 +93,7 @@ public class CcsTCPClientConnectionThread extends TCPClientConnectionThreadMA
 				command.getClass().getName()+":acknowledge was null.");
 			return;
 		}
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_ACKS,this.getClass().getName()+":processAcknowledge:Command:"+
+		ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":processAcknowledge:Command:"+
 			command.getClass().getName()+" sent ACK with time to complete "+
 			acknowledge.getTimeToComplete()+".");
 	// send acknowledge to Ccs client.
@@ -139,6 +140,9 @@ public class CcsTCPClientConnectionThread extends TCPClientConnectionThreadMA
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.10  2006/05/16 14:25:45  cjm
 // gnuify: Added GNU General Public License.
 //

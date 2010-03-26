@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // DAY_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DAY_CALIBRATEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DAY_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
 import java.io.*;
 import java.lang.*;
 import java.util.*;
@@ -31,20 +31,21 @@ import ngat.message.ISS_INST.DAY_CALIBRATE_ACK;
 import ngat.message.ISS_INST.DAY_CALIBRATE_DP_ACK;
 import ngat.message.ISS_INST.DAY_CALIBRATE_DONE;
 import ngat.util.*;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation of a DAY_CALIBRATE command sent to a server using the
  * Java Message System. It performs a series of BIAS and DARK frames from a configurable list,
  * taking into account frames done in previous invocations of this command (it saves it's state).
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
+	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential day calibrations to
 	 * perform from a Java property file.
@@ -363,7 +364,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			// add calibration instance to list
 				calibrationList.add(calibration);
 			// log
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_DAY_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_VERBOSE,
 					"Command:"+dayCalibrateCommand.getClass().getName()+
 					":Loaded calibration "+index+
 					"\n\ttype:"+calibration.getType()+
@@ -454,7 +455,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			count = calibration.getCount();
 			lastTime = dayCalibrateState.getLastTime(type,bin,useWindowAmplifier,exposureTime,count);
 			calibration.setLastTime(lastTime);
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_DAY_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_VERBOSE,
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
@@ -498,7 +499,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	// We don't want to do any more calibrations, return false.
 		if(now > (implementationStartTime+dayCalibrateCommand.getTimeToComplete()))
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_DAY_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_VERBOSE,
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Testing Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
@@ -515,7 +516,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	// too soon to do the calibration again.
 		if((now-calibration.getLastTime()) < calibration.getFrequency())
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_DAY_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_VERBOSE,
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Testing Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
@@ -542,7 +543,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	// if it's going to take us longer than the remaining time to do this, return false
 		if((now+calibrationCompletionTime) > (implementationStartTime+dayCalibrateCommand.getTimeToComplete()))
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_DAY_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_VERBOSE,
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Testing Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
@@ -582,7 +583,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		long lastTime;
 		boolean useWindowAmplifier;
 
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_DAY_CALIBRATE,
+		ccs.log(Logging.VERBOSITY_VERBOSE,
 			"Command:"+dayCalibrateCommand.getClass().getName()+
 			":doCalibrate:type:"+calibration.getType()+":bin:"+calibration.getBin()+
 			":use window amplifier:"+calibration.useWindowAmplifier()+
@@ -1342,6 +1343,9 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/02/10 11:03:07  cjm
+// Added FITS lock file support.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //

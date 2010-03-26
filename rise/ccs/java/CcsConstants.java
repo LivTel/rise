@@ -18,21 +18,21 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CcsConstants.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CcsConstants.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CcsConstants.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 import java.lang.*;
 import java.io.*;
 
 /**
  * This class holds some constant values for the Ccs program. 
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CcsConstants
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CcsConstants.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: CcsConstants.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 
 	/**
 	 * Error code. No error.
@@ -47,41 +47,6 @@ public class CcsConstants
 	 * Logging level. Don't do any logging.
 	 */
 	public final static int CCS_LOG_LEVEL_NONE 			= 0;
-	/**
-	 * Logging level. Log Commands messages received/sent.
-	 */
-	public final static int CCS_LOG_LEVEL_COMMANDS 			= (1<<0);
-	/**
-	 * Logging level. Log Commands message replies received/sent.
-	 */
-	public final static int CCS_LOG_LEVEL_REPLIES 			= (1<<1);
-	/**
-	 * Logging level. Log acknowledgement messages received/sent.
-	 */
-	public final static int CCS_LOG_LEVEL_ACKS 			= (1<<2);
-	/**
-	 * Logging level. Extra TELFOCUS logging, on intermediate/accuracy (chi-squared) values
-	 * for the quadratic fitting process.
-	 */
-	public final static int CCS_LOG_LEVEL_TELFOCUS 			= (1<<3);
-	/**
-	 * Logging level. Extra DAY_CALIBRATE logging.
-	 */
-	public final static int CCS_LOG_LEVEL_DAY_CALIBRATE 		= (1<<4);
-	/**
-	 * Logging level. Extra TWILIGHT_CALIBRATE logging.
-	 */
-	public final static int CCS_LOG_LEVEL_TWILIGHT_CALIBRATE 	= (1<<5);
-	/**
-	 * Logging level. Extra FITS header related logging.
-	 */
-	public final static int CCS_LOG_LEVEL_FITS 	                = (1<<6);
-	/**
-	 * Logging level. Log if any logging is turned on.
-	 */
-	public final static int CCS_LOG_LEVEL_ALL 			= (CCS_LOG_LEVEL_COMMANDS|
-		CCS_LOG_LEVEL_REPLIES|CCS_LOG_LEVEL_ACKS|CCS_LOG_LEVEL_TELFOCUS|CCS_LOG_LEVEL_DAY_CALIBRATE|
-		CCS_LOG_LEVEL_TWILIGHT_CALIBRATE|CCS_LOG_LEVEL_FITS);
 	/**
 	 * Logging level used by the error logger. We want to log all errors,
 	 * hence this value should be used for all errors.
@@ -118,6 +83,9 @@ public class CcsConstants
 }
 
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.25  2006/05/16 14:25:41  cjm
 // gnuify: Added GNU General Public License.
 //

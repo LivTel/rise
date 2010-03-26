@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CcsTCPServerConnectionThread.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CcsTCPServerConnectionThread.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CcsTCPServerConnectionThread.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 import java.lang.*;
 import java.io.*;
 import java.net.*;
@@ -34,18 +34,18 @@ import ngat.message.INST_DP.EXPOSE_REDUCE;
 import ngat.message.INST_DP.EXPOSE_REDUCE_DONE;
 import ngat.message.INST_DP.INST_TO_DP_DONE;
 import ngat.phase2.*;
-
+import ngat.util.logging.*;
 /**
  * This class extends the TCPServerConnectionThread class for the Ccs application.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CcsTCPServerConnectionThread extends TCPServerConnectionThread
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CcsTCPServerConnectionThread.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: CcsTCPServerConnectionThread.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * Default time taken to respond to a command. This is a class-wide field.
 	 */
@@ -216,7 +216,7 @@ public class CcsTCPServerConnectionThread extends TCPServerConnectionThread
 			acknowledgeTime = acknowledge.getTimeToComplete();
 		else
 			acknowledgeTime = 0;
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_ACKS,"Command:"+command.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+command.getClass().getName()+
 			" calculating ACK with time to complete "+acknowledgeTime+".");
 		return acknowledge;
 	}
@@ -260,7 +260,7 @@ public class CcsTCPServerConnectionThread extends TCPServerConnectionThread
 			done.setSuccessful(false);
 			return;
 		}
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,"Command:"+command.getClass().getName()+" Started.");
+		ccs.log(Logging.VERBOSITY_TERSE,"Command:"+command.getClass().getName()+" Started.");
 		if(!ccs.getStatus().commandCanBeRun((ISS_TO_INST)command))
 		{
 			// ccs.getStatus().getCurrentCommand() may have been set to null between
@@ -311,8 +311,8 @@ public class CcsTCPServerConnectionThread extends TCPServerConnectionThread
 			ccs.getStatus().setCurrentThread(null);
 		}
 	// log command/done
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,"Command:"+command.getClass().getName()+" Completed.");
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_REPLIES,"Done:"+done.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_TERSE,"Command:"+command.getClass().getName()+" Completed.");
+		ccs.log(Logging.VERBOSITY_TERSE,"Done:"+done.getClass().getName()+
 			":successful:"+done.getSuccessful()+
 			":error number:"+done.getErrorNum()+":error string:"+done.getErrorString());
 	}
@@ -331,7 +331,7 @@ public class CcsTCPServerConnectionThread extends TCPServerConnectionThread
 	{
 		if(setThreadAckTime)
 			acknowledgeTime = acknowledge.getTimeToComplete();
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_ACKS,"Command:"+command.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+command.getClass().getName()+
 			" sending ACK with time to complete "+acknowledge.getTimeToComplete()+".");
 		super.sendAcknowledge(acknowledge);
 	}
@@ -350,6 +350,9 @@ public class CcsTCPServerConnectionThread extends TCPServerConnectionThread
 }
 
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 1.40  2006/05/16 14:25:46  cjm
 // gnuify: Added GNU General Public License.
 //

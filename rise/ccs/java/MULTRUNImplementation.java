@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // MULTRUNImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MULTRUNImplementation.java,v 1.2 2010-01-14 16:12:39 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MULTRUNImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -37,14 +37,14 @@ import ngat.message.ISS_INST.MULTRUN_DONE;
  * This class provides the implementation for the MULTRUN command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: MULTRUNImplementation.java,v 1.2 2010-01-14 16:12:39 cjm Exp $");
+	public final static String RCSID = new String("$Id: MULTRUNImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -148,7 +148,6 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 		ccs.error(this.getClass().getName()+": Begin Multrun with " + 
 			multRunCommand.getNumberExposures()+ " exposures of " + 
 			multRunCommand.getExposureTime() + " ms");
-      //ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+":Begin Multrun.");
 		try
 		{
 			if(multRunCommand.getStandard())
@@ -484,6 +483,9 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/01/14 16:12:39  cjm
+// Added PROGID FITS header setting.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //

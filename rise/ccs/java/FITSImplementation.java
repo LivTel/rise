@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import java.util.Date;
@@ -30,20 +30,21 @@ import ngat.message.ISS_INST.*;
 import ngat.rise.ccd.*;
 import ngat.fits.*;
 import ngat.util.*;
+import ngat.util.logging.*;
 
 /**
  * This class provides the generic implementation of commands that write FITS files. It extends those that
  * use the SDSU CCD Library as this is needed to generate FITS files.
  * @see CCDLibraryImplementation
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class FITSImplementation extends CCDLibraryImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * A reference to the CcsStatus class instance that holds status information for the Ccs.
 	 */
@@ -316,7 +317,7 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 		boolean filterWheelEnable;
 		int preScan,postScan;
 
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+":setFitsHeaders:Started.");
+		ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":setFitsHeaders:Started.");
 		try
 		{
 			filterWheelEnable = status.getPropertyBoolean("ccs.config.filter_wheel.enable");
@@ -489,23 +490,23 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 			{
 				windowNumber=0;
 				window = libccd.CCDSetupGetWindow(windowNumber);
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+				ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 					":setFitsHeaders:Using window "+windowNumber+" : "+window+".");
 			}
 			else
 			{
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+				ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 					":setFitsHeaders:Default window X size = "+
 					ccsFitsHeaderDefaults.getValueInteger("CCDWXSIZ")+" / "+xbin+" = "+
 					(ccsFitsHeaderDefaults.getValueInteger("CCDWXSIZ")/xbin)+".");
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+				ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 					":setFitsHeaders:Default window Y size = "+
 					ccsFitsHeaderDefaults.getValueInteger("CCDWYSIZ")+" / "+ybin+" = "+
 					(ccsFitsHeaderDefaults.getValueInteger("CCDWYSIZ")/ybin)+".");
 				window = new CCDLibrarySetupWindow(0,0,
 				       ccsFitsHeaderDefaults.getValueInteger("CCDWXSIZ")/xbin,
 				       ccsFitsHeaderDefaults.getValueInteger("CCDWYSIZ")/ybin);
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+				ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 					":setFitsHeaders:Using default window : "+window+".");
 			}
 		// CCDWXOFF
@@ -516,13 +517,13 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 			cardImage.setValue(new Integer(window.getYStart()));
 		// CCDWXSIZ
 			cardImage = ccsFitsHeader.get("CCDWXSIZ");
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+			ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 				":setFitsHeaders:CCDWXSIZ = xend "+window.getXEnd()+" - xstart "+window.getXStart()+
 				" = "+(window.getXEnd()-window.getXStart())+".");
 			cardImage.setValue(new Integer(window.getXEnd()-window.getXStart()));
 		// CCDWYSIZ
 			cardImage = ccsFitsHeader.get("CCDWYSIZ");
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+			ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 				":setFitsHeaders:CCDWYSIZ = yend "+window.getYEnd()+" - ystart "+window.getYStart()+
 				" = "+(window.getYEnd()-window.getYStart())+".");
 			cardImage.setValue(new Integer(window.getYEnd()-window.getYStart()));
@@ -816,18 +817,18 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 					// get current binning for later
 					xbin = libccd.CCDSetupGetNSBin();
 					ybin = libccd.CCDSetupGetNPBin();
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+					ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 						":saveFitsHeaders:Default window X size = "+
 						ccsFitsHeaderDefaults.getValueInteger("CCDWXSIZ")+" / "+xbin+" = "+
 						(ccsFitsHeaderDefaults.getValueInteger("CCDWXSIZ")/xbin)+".");
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+					ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 						":saveFitsHeaders:Default window Y size = "+
 						ccsFitsHeaderDefaults.getValueInteger("CCDWYSIZ")+" / "+ybin+" = "+
 						(ccsFitsHeaderDefaults.getValueInteger("CCDWYSIZ")/ybin)+".");
 					window = new CCDLibrarySetupWindow(0,0,
 							  ccsFitsHeaderDefaults.getValueInteger("CCDWXSIZ")/xbin,
 							  ccsFitsHeaderDefaults.getValueInteger("CCDWYSIZ")/ybin);
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_FITS,this.getClass().getName()+
+					ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+
 						":saveFitsHeaders:Using default window : "+window+".");
 					ccsFilename.setWindowNumber(1);
 					ncols = libccd.CCDSetupGetNCols();
@@ -1155,6 +1156,9 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/02/10 11:03:07  cjm
+// Added FITS lock file support to saveFitsHeaders, and unLockFile(s) methods.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //

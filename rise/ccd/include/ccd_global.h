@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* ccd_global.h
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_global.h,v 1.1 2009-10-15 10:16:27 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_global.h,v 1.2 2010-03-26 14:40:00 cjm Exp $
 */
 
 #ifndef CCD_GLOBAL_H
@@ -56,42 +56,6 @@ extern eSTAR_Config_Properties_t rProperties;
  * is two, as some parts assume 16 bit values.
  */
 #define CCD_GLOBAL_BYTES_PER_PIXEL	2
-/**
- * Value to pass into logging calls, used for all setup code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_SETUP	(1<<8)
-/**
- * Value to pass into logging calls, used for all exposure code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_EXPOSURE	(1<<9)
-/**
- * Value to pass into logging calls, used for all filter wheel code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_FILTER_WHEEL	(1<<10)
-/**
- * Value to pass into logging calls, used for all temperature code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_TEMPERATURE	(1<<11)
-/**
- * Value to pass into logging calls, used for all DSP code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_DSP		(1<<12)
-/**
- * Value to pass into logging calls, used for all interface code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_INTERFACE	(1<<13)
-/**
- * Value to pass into logging calls, used for global code logging.
- * @see #CCD_Global_Log
- */
-#define CCD_GLOBAL_LOG_BIT_GLOBAL	(1<<14)
-
 /**
  * The number of nanoseconds in one second. A struct timespec has fields in nanoseconds.
  */

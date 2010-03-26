@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // TELFOCUSImplementation.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TELFOCUSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TELFOCUSImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -40,6 +40,7 @@ import ngat.message.ISS_INST.INST_TO_ISS_DONE;
 import ngat.message.INST_DP.EXPOSE_REDUCE;
 import ngat.message.INST_DP.EXPOSE_REDUCE_DONE;
 import ngat.message.INST_DP.INST_TO_DP_DONE;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation for the TELFOCUS command sent to a server using the
@@ -48,14 +49,14 @@ import ngat.message.INST_DP.INST_TO_DP_DONE;
  * focus the telescope. An exposure is taken at each focus position, and then reduced.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class TELFOCUSImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TELFOCUSImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
+	public final static String RCSID = new String("$Id: TELFOCUSImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * A small number. Used in getFocus to prevent a division by zero.
 	 * @see #getFocus
@@ -382,7 +383,7 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 	// do not apply focus offset?
 	// set the commands focus offset
 		focusOffsetCommand.setFocusOffset(focusOffset);
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+":resetFocusOffset:To "+
+		ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+":resetFocusOffset:To "+
 			focusOffset+".");
 		instToISSDone = ccs.sendISSCommand(focusOffsetCommand,serverConnectionThread);
 		if(instToISSDone.getSuccessful() == false)
@@ -806,21 +807,21 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 		quadraticFit = new QuadraticFit();
 	// set parameter step count - print log if requested
 		quadraticFit.setParameterStepCount(parameterStepCount);
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"Command:"+telFocusCommand.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+telFocusCommand.getClass().getName()+
 			":quadraticFit:parameter step count = "+parameterStepCount+".");
 	// set parameter start values - print log if requested
 		for(int i=0;i<QuadraticFit.PARAMETER_COUNT;i++)
 		{
 			quadraticFit.setParameterStartValues(i,parameterStartMinValue[i],parameterStartMaxValue[i],
 				parameterStartStepSize[i]);
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"Command:"+telFocusCommand.getClass().getName()+
+			ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+telFocusCommand.getClass().getName()+
 				":quadraticFit:parameter start values:"+QuadraticFit.PARAMETER_NAME_LIST[i]+
 				":min = "+parameterStartMinValue[i]+
 				":max = "+parameterStartMaxValue[i]+
 				":step size = "+parameterStartStepSize[i]+".");
 		}
 	// set data points to fit - print log if required
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"Command:"+telFocusCommand.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+telFocusCommand.getClass().getName()+
 			":quadraticFit:data points.");
 		for(int i = 0; i < list.size(); i++)
 		{
@@ -828,10 +829,10 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 			focus = frameParameters.getFocus();
 			seeing = frameParameters.getSeeing();
 			quadraticFit.addPoint(focus,seeing);
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"\tx(focus) = "+focus+",y(seeing) = "+seeing+".");
+			ccs.log(Logging.VERBOSITY_VERBOSE,"\tx(focus) = "+focus+",y(seeing) = "+seeing+".");
 		}// end for on reduced exposures
 	// do quadratic fit - print log if requested
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"Command:"+telFocusCommand.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+telFocusCommand.getClass().getName()+
 			":quadraticFit:loop count = "+loopCount+
 			":target chi squared = "+targetChiSquared+".");
 		quadraticFit.quadraticFit(loopCount,targetChiSquared);
@@ -841,13 +842,13 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 		c = quadraticFit.getC();
 		// Note, getChiSquared assumes one three degree of freedom method called.
 		chiSquared = quadraticFit.getChiSquared();
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"Command:"+telFocusCommand.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+telFocusCommand.getClass().getName()+
 			":quadraticFit:"+"\n\ta = "+a+":b = "+b+":c = "+c+":chi squared ="+chiSquared+".");
 	// get focus - use 1st differential to find bottom of curve
 		focus = (float)getFocus(a,b);
 	// plug focus back in as x position to get model seeing at this focus.
 		seeing = (float)quadraticY(focus,a,b,c);
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TELFOCUS,"Command:"+telFocusCommand.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_VERBOSE,"Command:"+telFocusCommand.getClass().getName()+
 			":quadraticFit:"+"\n\tfocus = "+focus+":seeing = "+seeing+".");
 	// test focus is in range min - max
 		if((focus < startFocus) || (focus > endFocus))
@@ -1153,6 +1154,9 @@ public class TELFOCUSImplementation extends SETUPImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/02/10 11:03:07  cjm
+// Added FITS lock file support.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //

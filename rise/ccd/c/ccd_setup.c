@@ -19,13 +19,13 @@
 */
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.2 2009-10-21 13:53:10 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.3 2010-03-26 14:39:49 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -47,6 +47,7 @@
 #ifndef _POSIX_TIMERS
 #include <sys/time.h>
 #endif
+#include "log_udp.h"
 #include "ccd_global.h"
 #include "ccd_dsp.h"
 #include "ccd_dsp_download.h"
@@ -58,7 +59,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.2 2009-10-21 13:53:10 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.3 2010-03-26 14:39:49 cjm Exp $";
 
 /* #defines */
 /**
@@ -327,18 +328,18 @@ int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup(pci_load_type=%d,"
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup(pci_load_type=%d,"
 		"timing_load_type=%d,timing_application=%d,utility_load_type=%d,utility_application=%d,"
 		"temperature=%.2f,gain=%d,gain_speed=%d,idle=%d) started.",pci_load_type,
 		timing_load_type,timing_application_number,utility_load_type,utility_application_number,
 		target_temperature,gain,gain_speed,idle);
 	if(pci_filename != NULL)
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup has pci_filename=%s.",pci_filename);
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup has pci_filename=%s.",pci_filename);
 	if(timing_filename != NULL)
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup has timing_filename=%s.",
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup has timing_filename=%s.",
 				      timing_filename);
 	if(utility_filename != NULL)
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup has utility_filename=%s.",
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup has utility_filename=%s.",
 				      utility_filename);
 #endif
 /* we are in a setup routine */
@@ -366,8 +367,8 @@ int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
 	sleep(1);
 	error = Initialize("/usr/local/etc/andor");
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup:Andor Camera %d selected",iSelectedCamera);
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup:ANDOR initialise %d",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup:Andor Camera %d selected",iSelectedCamera);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup:ANDOR initialise %d",error);
 #endif
 	sleep(5);
 
@@ -379,57 +380,57 @@ int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
 	}
 	error=SetReadMode(4);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup:ANDOR SetReadMode IMAGE %lu",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup:ANDOR SetReadMode IMAGE %lu",error);
 #endif
 	error=SetAcquisitionMode(1);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup:ANDOR SetAquisitionMode Single Scan %lu",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup:ANDOR SetAquisitionMode Single Scan %lu",
 			      error);
 #endif
 	error = SetTemperature(andorTargetTemp);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: Temperature target set at %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: Temperature target set at %d",
 			      andorTargetTemp);
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: ANDOR SetTemperature returned %lu",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: ANDOR SetTemperature returned %lu",error);
 #endif
 	if(mrParams.ccdCool==1) 
 	{
 		error=CoolerON();
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: CoolerON called %lu",error);
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: CoolerON called %lu",error);
 #endif
 	} 
 	else 
 	{
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"Cooling disabled...");
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"Cooling disabled...");
 #endif
 	}
 #ifdef FTMODE
 #if FTMODE > 0
 	error=SetFrameTransferMode(1);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: SetFrameTransferMode ON %lu",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: SetFrameTransferMode ON %lu",error);
 #endif
 #endif
 #else
 	error=SetFrameTransferMode(0);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: SetFrameTransferMode OFF %lu",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: SetFrameTransferMode OFF %lu",error);
 #endif
 #endif
       
 	while (GetTemperature(&cTemp)!=DRV_TEMPERATURE_STABILIZED && mrParams.ccdCool==1)
 	{
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: Cooling (%d degC)...please wait",
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: Cooling (%d degC)...please wait",
 				      cTemp);
 #endif
 		sleep (10);
 	}
 
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Startup: Initialisation complete...");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: Initialisation complete...");
 #endif
 	Setup_Data.Setup_In_Progress = FALSE;
 	return TRUE;
@@ -452,7 +453,7 @@ int CCD_Setup_Shutdown(void)
 	int cTemp = 999;
  
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Stutdown() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Stutdown() started.");
 #endif       
         andor_error=SetTemperature(shutdown_temp);
         andor_error=GetTemperature(&cTemp);
@@ -460,7 +461,7 @@ int CCD_Setup_Shutdown(void)
 	{ 
 		andor_error=GetTemperature(&cTemp);
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
 				      "CCD_Setup_Shutdown: Shutting down...raising to %d (%d)",
 				      shutdown_temp,cTemp);
 #endif
@@ -469,11 +470,11 @@ int CCD_Setup_Shutdown(void)
 
         CoolerOFF();
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Shutdown: Sent Cooler off to CCD at temp %d",cTemp);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Shutdown: Sent Cooler off to CCD at temp %d",cTemp);
 #endif        
         ShutDown();     
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Shutdown: Sent ShutDown() to CCD");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Shutdown: Sent ShutDown() to CCD");
 #endif
 	eSTAR_Config_Destroy_Properties(&rProperties);
 
@@ -523,7 +524,7 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Dimensions(ncols=%d,nrows=%d,nsbin=%d,npbin=%d,"
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions(ncols=%d,nrows=%d,nsbin=%d,npbin=%d,"
 		"amplifier=%d,deinterlace_type=%d,window_flags=%d) started.",ncols,nrows,nsbin,npbin,
 		amplifier,deinterlace_type,window_flags);
 #endif
@@ -585,8 +586,8 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 	
 	error = SetImage(npbin,nsbin,1,ncols,1,nrows);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Dimensions: binning COLSxROWS %dx%d",npbin,nsbin);
-        CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Dimensions: SetImage %dx%d  %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions: binning COLSxROWS %dx%d",npbin,nsbin);
+        CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions: SetImage %dx%d  %d",
 			      ncols/npbin,nrows/nsbin,error);
 #endif
 
@@ -608,7 +609,7 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 /* reset in progress information */
 	Setup_Data.Setup_In_Progress = FALSE;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Dimensions() returned TRUE.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions() returned TRUE.");
 #endif
 	return TRUE;
 }
@@ -736,7 +737,7 @@ int CCD_Setup_Hardware_Test(int test_count)
 void CCD_Setup_Abort(void)
 {
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Abort() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Abort() started.");
 #endif
 	CCD_DSP_Set_Abort(TRUE);
 }
@@ -811,7 +812,7 @@ int CCD_Setup_Get_Readout_Pixel_Count(void)
 		/* the NCols and NRows variables should already have been adjusted for binning. */
 		pixel_count = Setup_Data.NCols*Setup_Data.NRows;
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
 				      "CCD_Setup_Get_Readout_Pixel_Count: Rows: %d Cols: %d",
 				      Setup_Data.NRows,Setup_Data.NCols);
 #endif
@@ -1057,7 +1058,7 @@ int CCD_Setup_Get_Setup_Complete(void)
 	if (status==20001 || status==20073) 
 	{
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Setup_Complete:ANDOR return ok %d",
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Setup_Complete:ANDOR return ok %d",
 				      status);
 #endif
 		return (TRUE); /* For andor  IT*/ 
@@ -1065,7 +1066,7 @@ int CCD_Setup_Get_Setup_Complete(void)
         else 
 	{ 
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
 				      "CCD_Setup_Get_Setup_Complete:ANDOR *** Not ready *** %d",status);
 #endif
 		return (FALSE); 
@@ -1096,7 +1097,7 @@ int CCD_Setup_Get_Setup_In_Progress(void)
  * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
  * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
  * @see ccd_global.html#CCD_Global_Log
- * @see ccd_global.html#CCD_GLOBAL_LOG_BIT_SETUP
+ * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
  */
 int CCD_Setup_Get_High_Voltage_Analogue_ADU(int *hv_adu)
 {
@@ -1104,7 +1105,7 @@ int CCD_Setup_Get_High_Voltage_Analogue_ADU(int *hv_adu)
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_High_Voltage_Analogue_ADU() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_High_Voltage_Analogue_ADU() started.");
 #endif
 	if(hv_adu == NULL)
 	{
@@ -1121,7 +1122,7 @@ int CCD_Setup_Get_High_Voltage_Analogue_ADU(int *hv_adu)
 	}
 	(*hv_adu) = retval;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_High_Voltage_Analogue_ADU() returned %#x.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_High_Voltage_Analogue_ADU() returned %#x.",
 		(*hv_adu));
 #endif
 	return TRUE;
@@ -1138,7 +1139,7 @@ int CCD_Setup_Get_High_Voltage_Analogue_ADU(int *hv_adu)
  * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
  * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
  * @see ccd_global.html#CCD_Global_Log
- * @see ccd_global.html#CCD_GLOBAL_LOG_BIT_SETUP
+ * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
  */
 int CCD_Setup_Get_Low_Voltage_Analogue_ADU(int *lv_adu)
 {
@@ -1146,7 +1147,7 @@ int CCD_Setup_Get_Low_Voltage_Analogue_ADU(int *lv_adu)
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Low_Voltage_Analogue_ADU() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Low_Voltage_Analogue_ADU() started.");
 #endif
 	if(lv_adu == NULL)
 	{
@@ -1163,7 +1164,7 @@ int CCD_Setup_Get_Low_Voltage_Analogue_ADU(int *lv_adu)
 	}
 	(*lv_adu) = retval;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Low_Voltage_Analogue_ADU() returned %#x.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Low_Voltage_Analogue_ADU() returned %#x.",
 		(*lv_adu));
 #endif
 	return TRUE;
@@ -1180,7 +1181,7 @@ int CCD_Setup_Get_Low_Voltage_Analogue_ADU(int *lv_adu)
  * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
  * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
  * @see ccd_global.html#CCD_Global_Log
- * @see ccd_global.html#CCD_GLOBAL_LOG_BIT_SETUP
+ * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
  */
 int CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(int *minus_lv_adu)
 {
@@ -1188,7 +1189,7 @@ int CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(int *minus_lv_adu)
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU() started.");
 #endif
 	if(minus_lv_adu == NULL)
 	{
@@ -1205,7 +1206,7 @@ int CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(int *minus_lv_adu)
 	}
 	(*minus_lv_adu) = retval;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU() returned %#x.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU() returned %#x.",
 		(*minus_lv_adu));
 #endif
 	return TRUE;
@@ -1229,7 +1230,7 @@ int CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(int *minus_lv_adu)
  * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
  * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
  * @see ccd_global.html#CCD_Global_Log
- * @see ccd_global.html#CCD_GLOBAL_LOG_BIT_SETUP
+ * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
  * @see ccd_global.html#CCD_GLOBAL_ONE_MILLISECOND_NS
  */
 int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
@@ -1240,7 +1241,7 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_ADU() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU() started.");
 #endif
 	if(gauge_adu == NULL)
 	{
@@ -1249,7 +1250,7 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_ADU():Switch on gauge.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU():Switch on gauge.");
 #endif
 	retval = CCD_DSP_Command_VON();
 	if(retval == 0)
@@ -1268,7 +1269,7 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
 	for(i=0;i<SETUP_VACUUM_GAUGE_SAMPLE_COUNT;i++)
 	{
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
 			       "CCD_Setup_Get_Vacuum_Gauge_ADU():Read analogue voltage(%d).",i);
 #endif
 		retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_VACUUM_GAUGE_ADDRESS);
@@ -1279,7 +1280,7 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
 			return FALSE;
 		}
 #if LOGGING > 0
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
 				      "CCD_Setup_Get_Vacuum_Gauge_ADU() sample %d returned %d.",i,retval);
 #endif
 		adu_total += retval;
@@ -1291,8 +1292,8 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
 	}/* end for */
 	(*gauge_adu) = adu_total/SETUP_VACUUM_GAUGE_SAMPLE_COUNT;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_ADU() returned %d.",(*gauge_adu));
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_ADU():Switch off gauge.");
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU() returned %d.",(*gauge_adu));
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU():Switch off gauge.");
 #endif
 	retval = CCD_DSP_Command_VOF();
 	if(retval == 0)
@@ -1302,7 +1303,7 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_ADU():Finished.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU():Finished.");
 #endif
 	return TRUE;
 }
@@ -1318,7 +1319,7 @@ int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
  * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
  * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
  * @see ccd_global.html#CCD_Global_Log
- * @see ccd_global.html#CCD_GLOBAL_LOG_BIT_SETUP
+ * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
  */
 int CCD_Setup_Get_Vacuum_Gauge_MBar(double *gauge_mbar)
 {
@@ -1327,7 +1328,7 @@ int CCD_Setup_Get_Vacuum_Gauge_MBar(double *gauge_mbar)
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_MBar() started.");
+	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar() started.");
 #endif
 	if(gauge_mbar == NULL)
 	{
@@ -1338,7 +1339,7 @@ int CCD_Setup_Get_Vacuum_Gauge_MBar(double *gauge_mbar)
 	if(!CCD_Setup_Get_Vacuum_Gauge_ADU(&gauge_adu))
 		return FALSE;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_MBar(): Gauge ADU = %d.",gauge_adu);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar(): Gauge ADU = %d.",gauge_adu);
 #endif
 	/* 
 	** gauge_adu is in the range 0..4096, with 0=-3v, 2048 = 0v and 4096 = 3v.
@@ -1347,7 +1348,7 @@ int CCD_Setup_Get_Vacuum_Gauge_MBar(double *gauge_mbar)
 	*/
 	gauge_voltage = ((((double)gauge_adu)-2048.0)*10.0)/(2048.0);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
 			      "CCD_Setup_Get_Vacuum_Gauge_MBar(): Gauge voltage (0..10v) = %.2fv.",gauge_voltage);
 #endif
 	/*
@@ -1366,11 +1367,11 @@ int CCD_Setup_Get_Vacuum_Gauge_MBar(double *gauge_mbar)
 	*/
 	power_value = ((0.7875 * gauge_voltage)-4.875);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_MBar(): 10 ^ %g.",power_value);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar(): 10 ^ %g.",power_value);
 #endif
 	(*gauge_mbar) = pow(10.0,power_value);
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"CCD_Setup_Get_Vacuum_Gauge_MBar() returned %g mbar.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar() returned %g mbar.",
 		(*gauge_mbar));
 #endif
 	return TRUE;
@@ -1503,8 +1504,8 @@ static int Setup_Dimensions(int ncols,int nrows)
 	int error = GetDetector(&ncols,&nrows);
 	
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"Setup_Dimensions: Unbinned COLSxROWS %dx%d",ncols,nrows);
- 	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_SETUP,"Setup_Dimensions: GetDetector returned %d",error);	
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"Setup_Dimensions: Unbinned COLSxROWS %dx%d",ncols,nrows);
+ 	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"Setup_Dimensions: GetDetector returned %d",error);	
 #endif
 	
 	return TRUE;
@@ -1625,6 +1626,9 @@ static int Setup_Controller_Windows(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2009/10/21 13:53:10  cjm
+** Setup properties now read from rise.ccs.properties.
+**
 ** Revision 1.1  2009/10/15 10:16:23  cjm
 ** Initial revision
 **

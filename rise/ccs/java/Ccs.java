@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // Ccs.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/Ccs.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/Ccs.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import java.lang.reflect.Method;
@@ -39,14 +39,14 @@ import ngat.message.INST_DP.*;
 /**
  * This class is the start point for the CCD Control System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class Ccs
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: Ccs.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: Ccs.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -133,11 +133,6 @@ public class Ccs
 	 * The error logger.
 	 */
 	protected Logger errorLogger = null;
-	/**
-	 * The filter used to filter messages sent to the logging logger.
-	 * @see #logLogger
-	 */
-	protected BitFieldLogFilter logFilter = null;
 	/**
 	 * The thread monitor window.
 	 */
@@ -299,7 +294,6 @@ public class Ccs
 	 * @see #copyLogHandlers
 	 * @see #errorLogger
 	 * @see #logLogger
-	 * @see #logFilter
 	 */
 	protected void initLoggers()
 	{
@@ -317,11 +311,9 @@ public class Ccs
 		logLogger.setChannelID(LOGGER_CHANNEL_ID);
 		initLogHandlers(logLogger);
 		logLogger.setLogLevel(Logging.ALL);
-		logFilter = new BitFieldLogFilter(status.getLogLevel());
-		logLogger.setFilter(logFilter);
 	// CCDLibrary logging logger
-		copyLogHandlers(logLogger,LogManager.getLogger("ngat.rise.ccd.CCDLibrary"),logFilter);
-		copyLogHandlers(logLogger,LogManager.getLogger("ngat.net.TitServer"),logFilter);
+		copyLogHandlers(logLogger,LogManager.getLogger("ngat.rise.ccd.CCDLibrary"),null);
+		copyLogHandlers(logLogger,LogManager.getLogger("ngat.net.TitServer"),null);
 	}
 
 	/**
@@ -907,7 +899,7 @@ public class Ccs
 			}
 			else
 			{
-				log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+
+				log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
 					":startupController:Filter wheels not enabled:Filter wheels NOT reset.");
 			}
 		}
@@ -955,9 +947,9 @@ public class Ccs
 		titServer = new TitServer("TitServer on port "+titPortNumber,titPortNumber);
 		titServer.setPriority(status.getThreadPriorityTIT());
 		nowDate = new Date();
-		log(CcsConstants.CCS_LOG_LEVEL_ALL,
+		log(Logging.VERBOSITY_VERY_TERSE,
 			this.getClass().getName()+":run:server started at:"+nowDate.toString());
-		log(CcsConstants.CCS_LOG_LEVEL_ALL,
+		log(Logging.VERBOSITY_VERY_TERSE,
 			this.getClass().getName()+":run:server started on port:"+ccsPortNumber);
 		error(this.getClass().getName()+":run:server started at:"+nowDate.toString());
 		error(this.getClass().getName()+":run:server started on port:"+ccsPortNumber);
@@ -1115,14 +1107,18 @@ public class Ccs
 	}
 
 	/**
-	 * Method to set the level of logging filtered by the log level filter.
-	 * @param level An integer, used as a bit-field. Each bit set will allow
-	 * any messages with that level bit set to be logged. e.g. 0 logs no messages,
-	 * 127 logs any messages with one of the first 8 bits set.
+	 * Method to set the level of logging .
+	 * @param level An integer, from 0 to 5.
+	 * @see #logLogger
+	 * @see ngat.util.logging.Logging#VERBOSITY_VERY_TERSE
+	 * @see ngat.util.logging.Logging#VERBOSITY_TERSE
+	 * @see ngat.util.logging.Logging#VERBOSITY_INTERMEDIATE
+	 * @see ngat.util.logging.Logging#VERBOSITY_VERBOSE
+	 * @see ngat.util.logging.Logging#VERBOSITY_VERY_VERBOSE
 	 */
 	public void setLogLevelFilter(int level)
 	{
-		logFilter.setLevel(level);
+		logLogger.setLogLevel(level);
 	}
 
 	/**
@@ -1168,7 +1164,7 @@ public class Ccs
 		INST_TO_ISS_DONE done = null;
 		boolean finished = false;
 
-		log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,
+		log(Logging.VERBOSITY_TERSE,
 			this.getClass().getName()+":sendISSCommand:"+command.getClass().getName());
 		thread = new CcsTCPClientConnectionThread(issAddress,issPortNumber,command,commandThread);
 		thread.setCcs(this);
@@ -1220,7 +1216,7 @@ public class Ccs
 				done.setSuccessful(false);
 			}
 		}
-		log(CcsConstants.CCS_LOG_LEVEL_REPLIES,
+		log(Logging.VERBOSITY_TERSE,
 			"Done:"+done.getClass().getName()+":successful:"+done.getSuccessful()+
 			":error number:"+done.getErrorNum()+":error string:"+done.getErrorString());
 		return done;
@@ -1245,7 +1241,7 @@ public class Ccs
 		INST_TO_DP_DONE done = null;
 		boolean finished = false;
 
-		log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,
+		log(Logging.VERBOSITY_TERSE,
 			this.getClass().getName()+":sendDpRtCommand:"+command.getClass().getName());
 		thread = new CcsTCPClientConnectionThread(dprtAddress,dprtPortNumber,command,commandThread);
 		thread.setCcs(this);
@@ -1293,7 +1289,7 @@ public class Ccs
 				done.setSuccessful(false);
 			}
 		}
-		log(CcsConstants.CCS_LOG_LEVEL_REPLIES,
+		log(Logging.VERBOSITY_TERSE,
 			"Done:"+done.getClass().getName()+":successful:"+done.getSuccessful()+
 			":error number:"+done.getErrorNum()+":error string:"+done.getErrorString());
 		return done;
@@ -1447,6 +1443,9 @@ public class Ccs
 }
 
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 1.49  2006/05/16 14:25:42  cjm
 // gnuify: Added GNU General Public License.
 //

@@ -19,14 +19,14 @@
 */
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_exposure.c,v 1.2 2010-02-09 11:52:40 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_exposure.c,v 1.3 2010-03-26 14:39:49 cjm Exp $
 */
 /**
  * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -54,6 +54,7 @@
 #include <sys/time.h> 
 #endif
 #include <time.h>
+#include "log_udp.h"
 #include "ccd_exposure.h"
 #include "ccd_dsp.h"
 #include "ccd_setup.h"
@@ -143,7 +144,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.2 2010-02-09 11:52:40 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.3 2010-03-26 14:39:49 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_exposure.
@@ -298,7 +299,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 
 	Exposure_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose(clear_array=%d,open_shutter=%d,"
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose(clear_array=%d,open_shutter=%d,"
 			      "start_time_sec=%ld,exposure_time=%d,filename_count=%d) started.",
 			      clear_array,open_shutter,start_time.tv_sec,exposure_time,filename_count);
 #endif
@@ -322,7 +323,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: clear_array = %d",clear_array);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: clear_array = %d",clear_array);
 #endif
 	if(!CCD_GLOBAL_IS_BOOLEAN(open_shutter))
 	{
@@ -333,7 +334,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: open_shutter = %d",open_shutter);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: open_shutter = %d",open_shutter);
 #endif
 	if((exposure_time < 0)||(exposure_time > CCD_DSP_EXPOSURE_MAX_LENGTH))
 	{
@@ -343,7 +344,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: exposure_time = %d msec",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: exposure_time = %d msec",
 			      exposure_time);
 #endif
 	if(filename_count < 0)
@@ -354,7 +355,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: filename_count = %d",filename_count);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: filename_count = %d",filename_count);
 #endif
 	window_flags = CCD_Setup_Get_Window_Flags();
 	if((window_flags == 0)&&(filename_count > 1))
@@ -376,19 +377,19 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: expected_pixel_count =  %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: expected_pixel_count =  %d",
 			      expected_pixel_count);
 #endif
 
 /* setup the shutter control bit - which determines whether the SEX command has
 ** control to open and close the shutter at the appropriate times */
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose():Setting shutter control(%d).",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose():Setting shutter control(%d).",
 			      open_shutter);
 #endif
 /* write the time to memory so that SEX can read it */
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose():Setting exposure length(%d).",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose():Setting exposure length(%d).",
 			      exposure_time);
 #endif
 
@@ -396,7 +397,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 
 	andor_error = SetExposureTime((float)(exposure_time/1000));
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: Andor SetExposureTime %lu",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: Andor SetExposureTime %lu",
 			      andor_error);
 #endif
 /* initialise variables */
@@ -417,7 +418,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 			current_time.tv_nsec = gtod_current_time.tv_usec*CCD_GLOBAL_ONE_MICROSECOND_NS;
 #endif
 #if LOGGING > 4
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				       "CCD_Exposure_Expose():Waiting for exposure start time (%ld,%ld).",
 				       current_time.tv_sec,start_time.tv_sec);
 #endif
@@ -445,7 +446,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 	if(clear_array)
 	{
 #if LOGGING > 4
-		CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose():Clearing CCD array.");
+		CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose():Clearing CCD array.");
 #endif
 		Exposure_Data.Exposure_Status = CCD_EXPOSURE_STATUS_CLEAR;
 	}
@@ -460,18 +461,18 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 	} 
 /* Send the command to start the exposure, and monitor for completion. */
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose:Starting Exposure.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose:Starting Exposure.");
 #endif
 	/* Exposure status is set in CCD_DSP_Command_SEX, as this routine sleeps before starting
 	** the exposure. */
 	CCD_DSP_Set_Abort(FALSE);
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose:Waiting to Expose");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose:Waiting to Expose");
 #endif
 	while(status!=DRV_IDLE) 
 		GetStatus(&status);
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose:Starting Exposure  %d msec",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose:Starting Exposure  %d msec",
 			      exposure_time);
 #endif
 	Exposure_Data.Exposure_Status = CCD_EXPOSURE_STATUS_PRE_READOUT;
@@ -503,7 +504,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 	}
 	  
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose:Finished Exposure...Andor Status %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose:Finished Exposure...Andor Status %d",
 			      status);
 #endif
 	if(CCD_DSP_Get_Abort())
@@ -515,7 +516,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 		return TRUE;
 	}
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose():Getting reply data.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose():Getting reply data.");
 #endif
 
 	/* get data */
@@ -528,18 +529,18 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 	} 
 
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose:malloc'd in array %p",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose:malloc'd in array %p",
 		       (void *)exposure_data); 
 #endif
 	andor_error=GetAcquiredData(exposure_data,expected_pixel_count);
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose:GetAcquiredData returned %lu",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose:GetAcquiredData returned %lu",
 			      andor_error);
 #endif
 	Exposure_Data.Exposure_Status = CCD_EXPOSURE_STATUS_POST_READOUT;
 /* post-readout processing depends on whether we are windowing or not. */
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose: window_flags==%d",window_flags);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose: window_flags==%d",window_flags);
 #endif
 	
 	if(window_flags == 0)
@@ -554,7 +555,7 @@ int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_t
 /* reset exposure status */
 	Exposure_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Expose() returned TRUE.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Expose() returned TRUE.");
 #endif
 	CCD_DSP_Set_Abort(FALSE);
 	free(exposure_data); 
@@ -631,7 +632,7 @@ int CCD_Exposure_Pause(void)
 {
 	Exposure_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Pause() started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Pause() started.");
 #endif
 	if(!CCD_DSP_Command_PEX())
 	{
@@ -641,7 +642,7 @@ int CCD_Exposure_Pause(void)
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Pause() returned TRUE.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Pause() returned TRUE.");
 #endif
 	return TRUE;
 }
@@ -658,7 +659,7 @@ int CCD_Exposure_Resume(void)
 {
 	Exposure_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Resume() started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Resume() started.");
 #endif
 	if(!CCD_DSP_Command_REX())
 	{
@@ -668,7 +669,7 @@ int CCD_Exposure_Resume(void)
 		return FALSE;
 	}
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Resume() returned TRUE.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Resume() returned TRUE.");
 #endif
 	return TRUE;
 }
@@ -688,12 +689,12 @@ int CCD_Exposure_Abort(void)
 {
 	Exposure_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Abort() started with exposure status %d.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Abort() started with exposure status %d.",
 		       Exposure_Data.Exposure_Status);
 #endif
 	 CCD_DSP_Set_Abort(TRUE); 
 #if LOGGING > 0
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Exposure_Abort() finished.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Exposure_Abort() finished.");
 #endif
 	return TRUE;
 }
@@ -739,7 +740,7 @@ int CCD_Exposure_Set_Exposure_Status(enum CCD_EXPOSURE_STATUS status)
 	}
 	Exposure_Data.Exposure_Status = status;
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "CCD_Exposure_Set_Exposure_Status: Exposure_Data.Exposure_Status = %d\n",
 			      Exposure_Data.Exposure_Status);
 #endif
@@ -963,7 +964,7 @@ static int Exposure_Expose_Post_Readout_Full_Frame(unsigned long *exposure_data,
 	nrows = CCD_Setup_Get_NRows();
 	deinterlace_type = CCD_Setup_Get_DeInterlace_Type();
 #if LOGGING > 0
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "Exposure_Expose_Post_Readout_Full_Frame: ncols nrows deinterlace %d %d %d",
 			      ncols,nrows,deinterlace_type);
 #endif
@@ -1000,7 +1001,7 @@ static int Exposure_Expose_Post_Readout_Full_Frame(unsigned long *exposure_data,
 
 /* save the resultant image to disk */
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Expose_Post_Readout_Full_Frame:"
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Expose_Post_Readout_Full_Frame:"
 			      "Saving to filename %s.",filename);
 #endif
 	if(!Exposure_Save(filename,exposure_data,ncols,nrows))
@@ -1040,17 +1041,17 @@ static int Exposure_Save(char *filename,unsigned long *exposure_data,int ncols,i
 	double mjd;
 
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Started.");
 #endif
 	
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Printing first 5 data elements:");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Printing first 5 data elements:");
 	for(ii=0;ii<5;ii++) 
 	{
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:exposure_data[%d]:%lu",
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:exposure_data[%d]:%lu",
 				      ii,exposure_data[ii]);
 	}
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save: Ended printing");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save: Ended printing");
 #endif
 
 	/* try to open file */
@@ -1139,8 +1140,8 @@ static int Exposure_Save(char *filename,unsigned long *exposure_data,int ncols,i
 		return FALSE;
 	}
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Completed to file %s.",filename);
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Finished, CFITSIO status %d",status);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Completed to file %s.",filename);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Finished, CFITSIO status %d",status);
 #endif
 	return TRUE;
 }
@@ -1160,7 +1161,7 @@ static int Exposure_Save(char *filename,unsigned long *exposure_data,int ncols,i
 	int retval,error_number,nitems;
 
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Started.");
 #endif
 	/* try to open file */
 	fp = fopen(filename,"rb+");
@@ -1193,7 +1194,7 @@ static int Exposure_Save(char *filename,unsigned long *exposure_data,int ncols,i
 	}
 	fclose(fp);
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Completed.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Completed.");
 #endif
 	return TRUE;
 }
@@ -1349,14 +1350,14 @@ static int Exposure_Expose_Delete_Fits_Images(char **filename_list,int filename_
 	int i,retval,local_errno;
 
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Expose_Delete_Fits_Images:Started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Expose_Delete_Fits_Images:Started.");
 #endif
 	for(i=0;i<filename_count; i++)
 	{
 		if(fexist(filename_list[i]))
 		{
 #if LOGGING > 4
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Expose_Delete_Fits_Images:"
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Expose_Delete_Fits_Images:"
 					      "Removing file %s (index %d).",filename_list[i],i);
 #endif
 			retval = remove(filename_list[i]);
@@ -1373,13 +1374,13 @@ static int Exposure_Expose_Delete_Fits_Images(char **filename_list,int filename_
 		else
 		{
 #if LOGGING > 4
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Expose_Delete_Fits_Images:"
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Expose_Delete_Fits_Images:"
 					      "file %s (index %d) does not exist?",filename_list[i],i);
 #endif
 		}
 	}/* end for */
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Expose_Delete_Fits_Images:Finished.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Expose_Delete_Fits_Images:Finished.");
 #endif
 	return TRUE;
 }
@@ -1402,6 +1403,9 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2010/02/09 11:52:40  cjm
+** No change.
+**
 ** Revision 1.1  2009/10/15 10:16:23  cjm
 ** Initial revision
 **

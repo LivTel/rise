@@ -19,7 +19,7 @@
 */
 /* ccd_multrun.c
 ** Functions to perform multruns
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.4 2010-02-09 14:56:45 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.5 2010-03-26 14:39:49 cjm Exp $
 */
 /**
  * ccd_multrun.c includes a rewrite of the ccd_exposure.c code with andor function calls. It had to incorporate 
@@ -52,6 +52,7 @@
 #include <sys/time.h>
 #endif
 #include <time.h>
+#include "log_udp.h"
 #include "ccd_global.h"
 #include "ccd_exposure.h"
 #include "ccd_multrun.h"
@@ -81,7 +82,7 @@
 
 /* Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_multrun.c,v 1.4 2010-02-09 14:56:45 cjm Exp $";
+static char rcsid[] = "$Id: ccd_multrun.c,v 1.5 2010-03-26 14:39:49 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_multrun.
@@ -177,7 +178,7 @@ int CCD_Multrun_Expose(int open_shutter, long startTime, int exposure_time, long
 	int expose_exposures = (int)exposures; 
 
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
             "CCD_Multrun_Expose:Started(open_shutter=%d,start_time=%ld,exposure_length=%d,number of exposures=%d).",
 			      open_shutter,startTime,exposure_time,exposures);
 #endif
@@ -247,7 +248,7 @@ int CCD_Multrun_Expose(int open_shutter, long startTime, int exposure_time, long
 	error=expose(expose_exposure_time, CCD_Setup_Get_NCols(), CCD_Setup_Get_NRows(), 
 		      expose_exposures,&recalculate_exposure_length);
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multrun_Expose:Finished with return value %d.",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multrun_Expose:Finished with return value %d.",error);
 #endif
 	return (error);
 }
@@ -318,7 +319,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 	Multrun_Data.isMultFlat = 1;
 
 #if LOGGING > 1
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multflat_Expose:Started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:Started.");
 #endif
 	/* Get the start time for the multflat run in seconds since the epoch */
 	Multrun_Data.timeStart = time(NULL);
@@ -385,7 +386,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 	strcpy(fileHeaders.rotangle,	headers[51]);
 
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multflat_Expose:exptime: %f  flat_run_time: %ld sec",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:exptime: %f  flat_run_time: %ld sec",
 			      expose_exposure_time,Multrun_Data.maxTime);
 #endif
 
@@ -404,7 +405,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 			error=AbortAcquisition();
 			sprintf(Multrun_Error_String,"CCD_Multflat_Expose:Aborted.");
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multflat_Expose:Aborted. RC %d",
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:Aborted. RC %d",
 					      error);
 #endif
 			return FALSE; 
@@ -421,10 +422,10 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 		if(expose_exposure_time < (mrParams.minExposure/bin) || expose_exposure_time > mrParams.maxExposure) 
 		{
 #if LOGGING > 3
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				     "CCD_Multflat_Expose:Calculating %.3f sec required for target in range [%ld,%ld]",
 				       expose_exposure_time,mrParams.minExposure/bin,mrParams.maxExposure); 
-			CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,
 				       "CCD_Multflat_Expose:Waiting 15 seconds to try again");
 #endif
 			/* loop for 15 seconds, but test for abort or timeout every 1 sec */
@@ -439,7 +440,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 					error=AbortAcquisition();
 					sprintf(Multrun_Error_String,"CCD_Exposure_Expose:Aborted.");
 #if LOGGING > 1
-					CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 							      "CCD_Multflat_Expose:Aborted. RC %d",error);
 #endif
 					return FALSE;
@@ -457,7 +458,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 
 		/* Test all the return conditions */
 #if LOGGING > 1
-		CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multflat_Expose:Acquisition restarted...");
+		CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:Acquisition restarted...");
 #endif
 		error = expose(expose_exposure_time,CCD_Setup_Get_NCols(),CCD_Setup_Get_NRows(),
 			       remainingExposures,&recalculate_exposure_length);
@@ -466,7 +467,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 			expose_exposure_time = getNewExposureTime(Multrun_Data.median_value,
 								  Multrun_Data.Exposure_Length);
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				 "CCD_Multflat_Expose:Counts out of range (%.2f)... %.3f sec required for target",
 					      Multrun_Data.median_value,expose_exposure_time); 
 #endif
@@ -481,20 +482,20 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 			error=AbortAcquisition();
 			sprintf(Multrun_Error_String,"CCD_Exposure_Expose:Aborted.");
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 					      "CCD_Multflat_Expose:Aborted. RC %d",error);
 #endif
 			return FALSE; 
 		} 
 	} /* End of while loop ~line 209 */
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			   "CCD_Multflat_Expose: --- Finished %ld mult-flat in %d sec, last exp time: %.4f sec ---",
 			      Multrun_Data.lastMultrunExposures,(int)(time(NULL)-Multrun_Data.timeStart),
 			      Multrun_Data.Exposure_Length);
 #endif
 #if LOGGING > 1
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"CCD_Multflat_Expose:Finished.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:Finished.");
 #endif
 
 	return (TRUE);
@@ -538,7 +539,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	struct timespec mr_current_time;
 
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose started: %d ms for %d images.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose started: %d ms for %d images.",
 			      exposure,nimages);
 #endif
 	if(recalculate_exposure_length == NULL)
@@ -546,7 +547,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 		Multrun_Error_Number = 1;
 		sprintf(Multrun_Error_String,"expose:recalculate_exposure_length is NULL.");
 #if LOGGING > 1
-		CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:recalculate_exposure_length is NULL.");
+		CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"expose:recalculate_exposure_length is NULL.");
 #endif
 		return FALSE;
 	}
@@ -562,7 +563,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	if(longarray==NULL || median_array==NULL)
 	{
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "expose:ERROR: Memory allocation error in expose(%d,%p,%d,%p)",
 				      pixels,longarray,medianPixels,median_array);
 #endif
@@ -594,25 +595,25 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 
 	/* Get a list of the possible speeds */
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Possible H-Shift speeds  ");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"expose:Possible H-Shift speeds  ");
 #endif
 	j = 0;
 	while (GetHSSpeed(0,0,j,&tempSpeed) == DRV_SUCCESS && j<10)
 	{
 #if LOGGING > 3
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:%d:%.2f ",j,tempSpeed);
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:%d:%.2f ",j,tempSpeed);
 #endif
 		j++;
 	}
 	maxHShiftIndex = j;
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Possible V-Shift speeds  ");
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Possible V-Shift speeds  ");
 #endif
 	j = 0;
 	while (GetVSSpeed(j,&tempSpeed) == DRV_SUCCESS && j<10)
 	{
 #if LOGGING > 3
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:%d:%.2f ",j,tempSpeed);
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:%d:%.2f ",j,tempSpeed);
 #endif
 		j++;
 	}
@@ -622,7 +623,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	GetVSSpeed(0,&speeds[0]);
 	GetHSSpeed(0,0,0,&speeds[1]);
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "expose:Two fastest shift speeds are V: %.2f and H: %.2f",
 			      speeds[0],speeds[1]);
 #endif
@@ -637,7 +638,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	/* Get the driver set acquisition timimgs */
 	GetAcquisitionTimings(&KinExposure,&KinAccumulate,&KinKineticCT);
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "expose:GetAcquisitionTimings  EXP:%.3f ACC:%.3f KCT:%.3f",
 			      KinExposure,KinAccumulate,KinKineticCT);
 #endif
@@ -648,12 +649,12 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	Multrun_Data.Exposure_Length = KinExposure; 
 
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Image WxH:  %d %d  Binning %dx%d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Image WxH:  %d %d  Binning %dx%d",
 			      width,height,bin,bin);
-  	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+  	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "expose:Imaging for %.2f secs (adjusted to %f secs)",
 			      exposure,Multrun_Data.Exposure_Length);
-  	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Acquiring %ld images",nimages);
+  	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Acquiring %ld images",nimages);
 #endif
 	Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_PRE_READOUT;
 
@@ -667,12 +668,12 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 
         GetStatus(&status);
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Current Status: %d",status);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Current Status: %d",status);
 #endif
 	/* Grab the NTP drift stats */
 	error = getNtpDriftFile(mrParams.ntpDriftFile);
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "expose:NTP Date: %s  server: %s  uncertainty: %.0f ms, error %d",
 			      Multrun_Data.ntpTime,Multrun_Data.ntpServer,Multrun_Data.ntpDrift,error);
 #endif
@@ -685,7 +686,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	waittime.tv_nsec = 500000000; 
 	nanosleep(&waittime, NULL); /* Sleep for a bit */
 #if LOGGING > 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Acquisition started %s UT  RC: %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Acquisition started %s UT  RC: %d",
 			      exposure_start_time_string,error);
 #endif
 
@@ -716,12 +717,12 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 		if ( ( TimeSinceLastImage > EXPOSURE_READ_TIMEOUT + KinExposure) )
 		{
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Pre-Abort Status: %d",
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Pre-Abort Status: %d",
 					      status);
 #endif
 			error=AbortAcquisition();
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 					      "expose:WARNING: Acquisition timed out, AbortAcquisition RC: %d",
 					      error);
 #endif
@@ -739,7 +740,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 			Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 			error=AbortAcquisition();
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose:Aborted. RC %d",
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Aborted. RC %d",
 					      error);
 #endif
 			FreeInternalMemory();
@@ -753,7 +754,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 			buffer_images_remaining = last-first; 
 			images_remaining = nimages-series;
 #if LOGGING > 1
-			CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			    "expose:--- Image: %ld of %ld  Left: %ld  Buff: %ld TSLI: %.3f EXP: %.3f ---",
 					      series,nimages,images_remaining,buffer_images_remaining,
 					      TimeSinceLastImage,KinExposure);
@@ -764,7 +765,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 			{
 				AbortAcquisition();
 #if LOGGING > 1
-				CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+				CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 						      "expose: Array size not valid(%d).",pixels);
 #endif
 				return FALSE; 
@@ -794,7 +795,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				if (strcmp(fileHeaders.obstype,"SKYFLAT")==0) 
 				{   /* If we are doing a flat ...*/
 #if LOGGING > 3
-					CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 						      "expose:%ld pixel image median: %.2f (target %d)",
 						      medianPixels,Multrun_Data.median_value,mrParams.flatTarget*bin);
 #endif
@@ -804,7 +805,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 					   Multrun_Data.median_value>mrParams.maxFlatCountsRecalc*bin)
 					{
 #if LOGGING > 3
-						CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 								      "expose:Median:"
 								      " (%.2f) outside RECALC range %d < MEDIAN < %d",
 								      Multrun_Data.median_value,
@@ -813,7 +814,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 #endif
 						error=AbortAcquisition(); 
 #if LOGGING > 3
-						CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 								      "expose:"
 						      "Median %.2f outside SAVE range %d < MEDIAN < %d, NOT saving",
 								      Multrun_Data.median_value,
@@ -826,7 +827,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				else /* Else assume normal exposure */
 				{
 #if LOGGING > 3
-					CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 							      "expose:%ld pixel image median: %.2f",
 							      medianPixels,Multrun_Data.median_value);
 #endif
@@ -839,7 +840,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 					if(!getNextFilename(poutfile,1))
 					{
 #if LOGGING > 1
-						CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 							 "expose:getNextFilename failed:Error(%d):%s",
 							 Multrun_Error_Number,Multrun_Error_String);
 #endif
@@ -851,7 +852,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 					if(!getNextFilename(poutfile,0))
 					{
 #if LOGGING > 1
-						CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 							 "expose:getNextFilename failed:Error(%d):%s",
 							 Multrun_Error_Number,Multrun_Error_String);
 #endif
@@ -862,14 +863,14 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				/* generate the filename */
 				sprintf(full_filename,"%s/%s",IMAGEDIR,poutfile);
 #if LOGGING > 1
-				CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+				CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 						      "expose:Writing out %s  %s to disk",
 					 exposure_start_time_string,full_filename);
 #endif
 				if(!Multrun_Exposure_Save(full_filename,longarray,width,height))
 				{
 #if LOGGING > 1
-					CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				       "expose:Multrun_Exposure_Save failed to save %s of dimensions (%d,%d) : "
 				       "Error(%d): %s.",full_filename,width,height,
 							      Multrun_Error_Number,Multrun_Error_String);
@@ -884,7 +885,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				if (ExpiredStatus(Multrun_Data.timeStart,Multrun_Data.maxTime)==1) 
 				{
 #if LOGGING > 1
-					CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+					CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,
 						       "expose:Multrun Completed in requested time");
 #endif
 					return TRUE;
@@ -905,7 +906,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	free (median_array); 
 
 #if LOGGING > 1
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"expose finished.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"expose finished.");
 #endif
 	return TRUE;
 }
@@ -943,7 +944,7 @@ int getNtpDriftFile (char *file){
 	if(!(fp=fopen(file,"r")))
 	{
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNtpDriftFile : WARNING : cannot open %s",file);
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNtpDriftFile : WARNING : cannot open %s",file);
 #endif
 		return 0;
 	}
@@ -978,7 +979,7 @@ int getNtpDriftInternal(char *server, float *drift)
 	if(! (fpipe = (FILE*)popen(command,"r")) )
 	{
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "getNtpDriftInternal:Unable to open ntpstat for ntp time!"); 
 #endif
 		return (-1); 
@@ -1041,7 +1042,7 @@ float getNewExposureTime( double oldCounts, float oldExposure){
 	{
 		newtime = 1.50;
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "getNewExposureTime:Near saturation limit, trying 1.50 seconds");
 #endif
 	}
@@ -1049,7 +1050,7 @@ float getNewExposureTime( double oldCounts, float oldExposure){
 	else if (bin == 2 && oldCounts > 65500.0) {
 		newtime = 0.8;
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "getNewExposureTime:Near saturation limit, trying 0.8 seconds");
 #endif
 	}
@@ -1057,7 +1058,7 @@ float getNewExposureTime( double oldCounts, float oldExposure){
 	else if (bin == 1 && oldCounts < 800.0) {
 		newtime = 15.0;
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "getNewExposureTime:Close to bias level, trying 15.0 seconds");
 #endif
 	}
@@ -1065,7 +1066,7 @@ float getNewExposureTime( double oldCounts, float oldExposure){
 	else if (bin == 2 && oldCounts < 800.0) {
 		newtime = 10.0;
 #if LOGGING > 1
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "getNewExposureTime:Close to bias level, trying 10.0 seconds");
 #endif
 	}
@@ -1100,7 +1101,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	double mjd;
 
 #if LOGGING > 4
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Started.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Started.");
 #endif
 	naxes[0] = (long)ncols; naxes[1] = (long)nrows;
 
@@ -2227,9 +2228,9 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	if(!Fits_Filename_UnLock(filename))
 		return FALSE;
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Finished, CFITSIO status %d",status);
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save: File %s saved.",filename);
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"Exposure_Save:Completed.");
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Finished, CFITSIO status %d",status);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save: File %s saved.",filename);
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Exposure_Save:Completed.");
 #endif
 	return TRUE;
 }
@@ -2252,7 +2253,7 @@ float start_time_correction (float exposure){
 	float readout_time, ft_time;
 
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"start_time_correction: %d %d  H:%.2f V:%.2f",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"start_time_correction: %d %d  H:%.2f V:%.2f",
 			      image_rows,image_cols,Multrun_Data.HSspeed,Multrun_Data.VSspeed);
 #endif
 
@@ -2261,7 +2262,7 @@ float start_time_correction (float exposure){
 	ft_time = image_rows * Multrun_Data.VSspeed;
 
 #if LOGGING > 4
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			      "start_time_correction: readout time %.2f ms : FT time: %.2f ms",
 			      readout_time/1000,ft_time/1000);
 #endif
@@ -2331,23 +2332,23 @@ static int getNextFilename (char *NewFileName, int NewMultRun)
 	}
 
 #if FF_DEBUG == 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:date %s",ff.date);
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:directory %s",ff.directory);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:date %s",ff.date);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:directory %s",ff.directory);
 #endif
 	/* Filter the dates based on today's date */
     	FilterFilename (srclist, FilteredList, srclistLength, &FilteredListSize, ff.date);
 
 #if FF_DEBUG == 1
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:Unfiltered:");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:Unfiltered:");
 	for(i=0;i<srclistLength;i++)
 	{
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:%s \t\t%d",
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:%s \t\t%d",
 				      srclist[i].file,srclist[i].fnlength);
 	}
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:Filtered:");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:Filtered:");
 	for(i=0;i<FilteredListSize;i++) 
 	{
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:%s \t\t%d",
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:%s \t\t%d",
 				      FilteredList[i].file,FilteredList[i].fnlength);
 	}
 #endif
@@ -2355,9 +2356,9 @@ static int getNextFilename (char *NewFileName, int NewMultRun)
 	MaxRun= getLargestRunNumber(FilteredList, FilteredListSize, MaxMultRun);
 	ConstructNextFilename (&ff, MaxMultRun, MaxRun, NewMultRun, NewFileName); 
 #if FF_DEBUG == 1
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:Largest Multrun: %d",MaxMultRun);
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename: |__ Largest run: %d",MaxRun);
- 	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,"getNextFilename:Next_Filename: %s",NewFileName);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:Largest Multrun: %d",MaxMultRun);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename: |__ Largest run: %d",MaxRun);
+ 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"getNextFilename:Next_Filename: %s",NewFileName);
 #endif
 	free(srclist); 
 	free(FilteredList);
@@ -2531,7 +2532,7 @@ void load_dir(char *dir, struct DirList *f, int *count)
 	dirp=opendir(dir);
 	if(dirp==NULL)
 	{
-		CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_EXPOSURE,
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				      "load_dir:Cannot use assigned out dir %s, using /tmp",dir);
 		dirp=opendir("/tmp");
 	}
@@ -2985,6 +2986,11 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.4  2010/02/09 14:56:45  cjm
+** Added Fits_Filename_Lock, Fits_Filename_UnLock and associated helper routines.
+** Added lock and unlock calls into Multrun_Exposure_Save to create FITS file locks
+** when writing FITS images in a multrun.
+**
 ** Revision 1.3  2010/01/14 16:13:07  cjm
 ** Added PROGID FITS headers setting.
 **

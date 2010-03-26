@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // REBOOTImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/REBOOTImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/REBOOTImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
 
 import java.lang.*;
 import java.io.IOException;
@@ -27,19 +27,20 @@ import ngat.message.base.*;
 import ngat.message.ISS_INST.REBOOT;
 import ngat.util.ICSDRebootCommand;
 import ngat.util.ICSDShutdownCommand;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation for the REBOOT command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class REBOOTImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: REBOOTImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: REBOOTImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * Class constant used in calculating acknowledge times, when the acknowledge time connot be found in the
 	 * configuration file.
@@ -186,7 +187,7 @@ public class REBOOTImplementation extends INTERRUPTImplementation implements JMS
 			// if not enabled return OK
 			if(enable == false)
 			{
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_COMMANDS,"Command:"+
+				ccs.log(Logging.VERBOSITY_TERSE,"Command:"+
 					   rebootCommand.getClass().getName()+":Level:"+rebootCommand.getLevel()+
 					   " is not enabled.");
 				rebootDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_NO_ERROR);
@@ -288,6 +289,9 @@ public class REBOOTImplementation extends INTERRUPTImplementation implements JMS
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.23  2006/05/16 14:26:00  cjm
 // gnuify: Added GNU General Public License.
 //

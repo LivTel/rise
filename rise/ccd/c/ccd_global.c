@@ -19,12 +19,12 @@
 */
 /* ccd_global.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_global.c,v 1.1 2009-10-15 10:16:23 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_global.c,v 1.2 2010-03-26 14:39:49 cjm Exp $
 */
 /**
  * ccd_global.c contains routines that tie together all the modules that make up libccd.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -74,6 +74,7 @@
 #ifdef CCD_GLOBAL_READOUT_MLOCK
 #include <sys/mman.h>
 #endif /* CCD_GLOBAL_READOUT_MLOCK */
+#include "log_udp.h"
 #include "ccd_global.h"
 #include "ccd_pci.h"
 #include "ccd_text.h"
@@ -168,7 +169,7 @@ eSTAR_Config_Properties_t rProperties;
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_global.c,v 1.1 2009-10-15 10:16:23 cjm Exp $";
+static char rcsid[] = "$Id: ccd_global.c,v 1.2 2010-03-26 14:39:49 cjm Exp $";
 /**
  * Variable holding error code of last operation performed by ccd_dsp.
  */
@@ -615,12 +616,12 @@ int CCD_Global_Increase_Priority(void)
 
 #if CCD_GLOBAL_READOUT_PRIORITY == 0
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_PRIORITY is 0 (normal priority).");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_PRIORITY is 0 (normal priority).");
 #endif /* LOGGING */
 #elif CCD_GLOBAL_READOUT_PRIORITY == 1
 #ifdef _POSIX_PRIORITY_SCHEDULING
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_PRIORITY is 1 (POSIX.4 sched).");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_PRIORITY is 1 (POSIX.4 sched).");
 #endif /* LOGGING */
 /* get current priority and save */
 	Global_Data.Saved_Scheduling_Algorithm = sched_getscheduler(0);
@@ -642,7 +643,7 @@ int CCD_Global_Increase_Priority(void)
 		return FALSE;
 	}
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_GLOBAL,"Current scheduling:scheduler=%d,priority=%d.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"Current scheduling:scheduler=%d,priority=%d.",
 		Global_Data.Saved_Scheduling_Algorithm,Global_Data.Saved_Scheduling_Parameters.sched_priority);
 #endif /* LOGGING */
 /* increase priority to maximum */
@@ -658,7 +659,7 @@ int CCD_Global_Increase_Priority(void)
 	}
 	scheduling_parameters.sched_priority = retval-GLOBAL_PRIORITY_OFFSET;
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_GLOBAL,"Setting scheduling to:scheduler=SCHED_FIFO,priority=%d.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"Setting scheduling to:scheduler=SCHED_FIFO,priority=%d.",
 		scheduling_parameters.sched_priority);
 #endif /* LOGGING */
 	retval = sched_setscheduler(0,SCHED_FIFO,&scheduling_parameters);
@@ -676,12 +677,12 @@ int CCD_Global_Increase_Priority(void)
 #endif /* _POSIX_PRIORITY_SCHEDULING defined */
 #elif CCD_GLOBAL_READOUT_PRIORITY == 2
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_PRIORITY is 2 (SVr4/BSD priority).");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_PRIORITY is 2 (SVr4/BSD priority).");
 #endif /* LOGGING */
 /* get current priority into old_Priority of our process (0) */
 	Global_Data.Old_Priority = getpriority(PRIO_PROCESS,0);
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_GLOBAL,"Current priority=%d.",Global_Data.Old_Priority);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"Current priority=%d.",Global_Data.Old_Priority);
 #endif /* LOGGING */
 /* set to highest priority */
 	retval = setpriority(PRIO_PROCESS,0,-20);
@@ -694,7 +695,7 @@ int CCD_Global_Increase_Priority(void)
 		return FALSE;
 	}
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_GLOBAL,"Set priority=%d.",getpriority(PRIO_PROCESS,0));
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"Set priority=%d.",getpriority(PRIO_PROCESS,0));
 #endif /* LOGGING */
 #endif /* CCD_GLOBAL_READOUT_PRIORITY */
 	return TRUE;
@@ -718,7 +719,7 @@ int CCD_Global_Decrease_Priority(void)
 #if CCD_GLOBAL_READOUT_PRIORITY == 1
 #ifdef _POSIX_PRIORITY_SCHEDULING
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_GLOBAL,"Resetting scheduling to:scheduler=%d,priority=%d.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"Resetting scheduling to:scheduler=%d,priority=%d.",
 		Global_Data.Saved_Scheduling_Algorithm,Global_Data.Saved_Scheduling_Parameters.sched_priority);
 #endif /* LOGGING */
 	retval = sched_setscheduler(0,Global_Data.Saved_Scheduling_Algorithm,
@@ -749,7 +750,7 @@ int CCD_Global_Decrease_Priority(void)
 		return FALSE;
 	}
 #if LOGGING > 3
-	CCD_Global_Log_Format(CCD_GLOBAL_LOG_BIT_GLOBAL,"Reset priority=%d.",getpriority(PRIO_PROCESS,0));
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERY_VERBOSE,"Reset priority=%d.",getpriority(PRIO_PROCESS,0));
 #endif /* LOGGING */
 #endif /* CCD_GLOBAL_READOUT_PRIORITY */
 	return TRUE;
@@ -776,7 +777,7 @@ int CCD_Global_Memory_Lock(unsigned short *image_data,int image_data_size)
 #ifdef CCD_GLOBAL_READOUT_MLOCK
 #ifdef _POSIX_MEMLOCK_RANGE
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_MLOCK is defined: locking readout memory.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_MLOCK is defined: locking readout memory.");
 #endif /* LOGGING */
 	retval = mlock((unsigned short *)GLOBAL_ROUND_DOWN_TO_PAGE(image_data),
 		GLOBAL_ROUND_UP_TO_PAGE(image_data_size));
@@ -792,7 +793,7 @@ int CCD_Global_Memory_Lock(unsigned short *image_data,int image_data_size)
 
 	}
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_MLOCK:readout memory locked.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_MLOCK:readout memory locked.");
 #endif /* LOGGING */
 #else
 #error "ccd_global.c:compiled with CCD_GLOBAL_READOUT_MLOCK but POSIX.4 MEMLOCK_RANGE Support not present."
@@ -820,7 +821,7 @@ int CCD_Global_Memory_UnLock(unsigned short *image_data,int image_data_size)
 #ifdef CCD_GLOBAL_READOUT_MLOCK
 #ifdef _POSIX_MEMLOCK_RANGE
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_MLOCK is defined:unlocking readout memory.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_MLOCK is defined:unlocking readout memory.");
 #endif /* LOGGING */
 	retval = munlock((unsigned short *)GLOBAL_ROUND_DOWN_TO_PAGE(image_data),
 		GLOBAL_ROUND_UP_TO_PAGE(image_data_size));
@@ -835,7 +836,7 @@ int CCD_Global_Memory_UnLock(unsigned short *image_data,int image_data_size)
 		return FALSE;
 	}
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_EXPOSURE_READOUT_MLOCK:readout memory is unlocked.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_EXPOSURE_READOUT_MLOCK:readout memory is unlocked.");
 #endif /* LOGGING */
 #else
 #error "ccd_global.c:compiled with CCD_GLOBAL_READOUT_MLOCK but POSIX.4 MEMLOCK_RANGE Support not present."
@@ -860,7 +861,7 @@ int CCD_Global_Memory_Lock_All(void)
 #ifdef CCD_GLOBAL_READOUT_MLOCK
 #ifdef _POSIX_MEMLOCK
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_MLOCK is defined: locking all memory.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_MLOCK is defined: locking all memory.");
 #endif /* LOGGING */
 	retval = mlockall(MCL_CURRENT|MCL_FUTURE);
 	if(retval == -1)
@@ -873,7 +874,7 @@ int CCD_Global_Memory_Lock_All(void)
 
 	}
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_MLOCK:all memory locked.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_MLOCK:all memory locked.");
 #endif /* LOGGING */
 #else
 #error "ccd_global.c:compiled with CCD_GLOBAL_READOUT_MLOCK but POSIX.4 MEMLOCK Support not present."
@@ -898,7 +899,7 @@ int CCD_Global_Memory_UnLock_All(void)
 #ifdef CCD_GLOBAL_READOUT_MLOCK
 #ifdef _POSIX_MEMLOCK
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_READOUT_MLOCK is defined:unlocking all memory.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_READOUT_MLOCK is defined:unlocking all memory.");
 #endif /* LOGGING */
 	retval = munlockall();
 	if(retval == -1)
@@ -910,7 +911,7 @@ int CCD_Global_Memory_UnLock_All(void)
 		return FALSE;
 	}
 #if LOGGING > 3
-	CCD_Global_Log(CCD_GLOBAL_LOG_BIT_GLOBAL,"CCD_GLOBAL_EXPOSURE_READOUT_MLOCK:all memory is unlocked.");
+	CCD_Global_Log(LOG_VERBOSITY_VERY_VERBOSE,"CCD_GLOBAL_EXPOSURE_READOUT_MLOCK:all memory is unlocked.");
 #endif /* LOGGING */
 #else
 #error "ccd_global.c:compiled with CCD_GLOBAL_READOUT_MLOCK but POSIX.4 MEMLOCK Support not present."
@@ -921,6 +922,9 @@ int CCD_Global_Memory_UnLock_All(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/15 10:16:23  cjm
+** Initial revision
+**
 ** Revision 0.11  2006/05/16 14:14:04  cjm
 ** gnuify: Added GNU General Public License.
 **

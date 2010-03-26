@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TWILIGHT_CALIBRATEImplementation.java,v 1.2 2010-01-14 16:12:49 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TWILIGHT_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
 import java.io.*;
 import java.lang.*;
 import java.util.*;
@@ -36,6 +36,7 @@ import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_ACK;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_DP_ACK;
 import ngat.message.ISS_INST.TWILIGHT_CALIBRATE_DONE;
 import ngat.util.*;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation of a TWILIGHT_CALIBRATE command sent to a server using the
@@ -44,14 +45,14 @@ import ngat.util.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to the Ccs just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.2 2010-01-14 16:12:49 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -830,7 +831,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			// add calibration instance to list
 				calibrationList.add(calibration);
 			// log
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getClass().getName()+
 					":Loaded calibration "+index+
 					"\n\tbin:"+calibration.getBin()+
@@ -972,7 +973,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			// add offset instance to list
 				offsetList.add(offset);
 			// log
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getClass().getName()+
 					":Loaded offset "+index+
 					"\n\tRA Offset:"+offset.getRAOffset()+
@@ -1013,7 +1014,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			upperFilter = calibration.getUpperFilter();
 			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,lowerFilter,upperFilter);
 			calibration.setLastTime(lastTime);
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+":Calibration:"+
 				"\n\tbin:"+calibration.getBin()+
 				":use window amplifier:"+calibration.useWindowAmplifier()+
@@ -1065,7 +1066,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		double filterSensitivity;
 		boolean useWindowAmplifier;
 
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+		ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 			"Command:"+twilightCalibrateCommand.getClass().getName()+
 			":doCalibrate:"+
 			"\n\tbin:"+calibration.getBin()+
@@ -1088,7 +1089,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// if we did the calibration more recently than frequency, log and return
 		if(now-lastTime < frequency)
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:"+
 				"\n\tbin:"+calibration.getBin()+
@@ -1111,7 +1112,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// check exposure time
 		if(exposureLength < minExposureLength)
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:"+
 				"\n\tbin:"+calibration.getBin()+
@@ -1126,7 +1127,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		}
 		if(exposureLength > maxExposureLength)
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:"+
 				"\n\tbin:"+calibration.getBin()+
@@ -1142,7 +1143,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		if((now+exposureLength+frameOverhead) > 
 			(implementationStartTime+twilightCalibrateCommand.getTimeToComplete()))
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:Ran out of time to complete:"+
 				"\n\t((now:"+now+
@@ -1186,7 +1187,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			}
 			lastTime = twilightCalibrateState.getLastTime(bin,useWindowAmplifier,lowerFilter,upperFilter);
 			calibration.setLastTime(lastTime);
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:Calibration successfully completed:"+
 				"\n\tbin:"+calibration.getBin()+
@@ -1196,7 +1197,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		}// end if done calibration
 		else
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":doCalibrate:Calibration NOT completed:"+
 				"\n\tbin:"+calibration.getBin()+
@@ -1281,7 +1282,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			}
 			else
 			{
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
 					":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
 			}
 		}
@@ -1309,8 +1310,8 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		}
 		else
 		{
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_ALL,this.getClass().getName()+
-			    ":doConfig:Filter wheels not enabled:Focus offset NOT set.");
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
+				":doConfig:Filter wheels not enabled:Focus offset NOT set.");
 		}
 	// Increment unique config ID.
 	// This is queried when saving FITS headers to get the CONFIGID value.
@@ -1359,7 +1360,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		focusOffset = 0.0f;
 	// get default focus offset
 		focusOffset += status.getPropertyDouble("ccs.focus.offset");
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,this.getClass().getName()+
+		ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
 			":setFocusOffset:Master offset is "+focusOffset+".");
 	// lower filter wheel
 		filterIdName = status.getFilterIdName(lowerFilterType);
@@ -1368,7 +1369,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		filterIdName = status.getFilterIdName(upperFilterType);
 		focusOffset += status.getFilterIdOpticalThickness(filterIdName);
 	// log focus offset
-		ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+		ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 			"Command:"+twilightCalibrateCommand.getClass().getName()+
 			":Attempting focus offset "+focusOffset+
 			"\n\tlower filter:"+lowerFilterType+":upper filter:"+upperFilterType+".");
@@ -1418,7 +1419,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		// get offset
 			offset = (TWILIGHT_CALIBRATEOffset)(offsetList.get(offsetListIndex));
 		// log telescope offset
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getClass().getName()+
 				":Attempting telescope position offset index "+offsetListIndex+
 				"\n\tRA:"+offset.getRAOffset()+
@@ -1543,7 +1544,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				return false;
 			status.setExposureFilename(temporaryFITSFilename);
 		// log exposure attempt
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getId()+
 				":doFrame:Attempting exposure:"+
 				"\n\tlength "+exposureLength+".");
@@ -1581,7 +1582,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 				return false;
 		// log reduction
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getId()+
 				":doFrame:Exposure reduction:"+
 				"\n\tlength "+exposureLength+
@@ -1599,7 +1600,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			else
 				frameState = FRAME_STATE_OK;
 		// log frame state
-			ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+			ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 				"Command:"+twilightCalibrateCommand.getId()+
 				":doFrame:Exposure frame state:"+
 				"\n\tlength "+exposureLength+
@@ -1642,7 +1643,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					return false;
 				}
 			// log rename
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getId()+
 					":doFrame:Exposure raw frame rename:"+
 					"\n\trenamed "+temporaryFile+" to "+newFile+".");
@@ -1693,7 +1694,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				// reset twilight calibrate done's pipelined processed filename
 					twilightCalibrateDone.setFilename(filename);
 				// log rename
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+					ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 						"Command:"+twilightCalibrateCommand.getId()+
 						":doFrame:Exposure DpRt frame rename:"+
 						"\n\trenamed "+temporaryFile+" to "+newFile+".");
@@ -1712,7 +1713,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			if((exposureLength > maxExposureLength)&&
 			   ((lastExposureLength != maxExposureLength)||(frameState == FRAME_STATE_OK)))
 			{
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getId()+
 					":doFrame:Calculated exposure length:"+exposureLength+
 					"\n\tout of range, but going to try "+maxExposureLength+
@@ -1723,7 +1724,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 			if((exposureLength < minExposureLength)&&
 			   ((lastExposureLength != minExposureLength)||(frameState == FRAME_STATE_OK)))
 			{
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getId()+
 					":doFrame:Calculated exposure length:"+exposureLength+
 					"\n\tout of range, but going to try "+minExposureLength+
@@ -1747,7 +1748,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				doneFrame = true;
 				calibrationFrameCount++;
 			// log
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getId()+
 					":doFrame:Frame completed.");
 			}
@@ -1758,7 +1759,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				doneFrame = true;
 				doneOffset = true;
 			// log
-				ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 					"Command:"+twilightCalibrateCommand.getId()+
 					":doFrame:Ran out of time to complete:"+
 					"\n\t((now:"+now+
@@ -1775,7 +1776,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					doneFrame = true;
 					doneOffset = true;
 					// log
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+					ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 						"Command:"+twilightCalibrateCommand.getId()+
 						":doFrame:Exposure length too long:"+
 						"\n\t(exposureLength:"+exposureLength+") > "+
@@ -1784,7 +1785,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				else // retry this calibration - it has got lighter
 				{
 					// log
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+					ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 						"Command:"+twilightCalibrateCommand.getId()+
 						":doFrame:Calulated Exposure length too long:"+
 						"\n\t(exposureLength:"+exposureLength+") > "+
@@ -1800,7 +1801,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 					doneFrame = true;
 					doneOffset = true;
 					// log
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+					ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 						"Command:"+twilightCalibrateCommand.getId()+
 						":doFrame:Exposure length too short:"+
 						"\n\t(exposureLength:"+exposureLength+") < "+
@@ -1809,7 +1810,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				else // retry this calibration - it has got darker
 				{
 					// log
-					ccs.log(CcsConstants.CCS_LOG_LEVEL_TWILIGHT_CALIBRATE,
+					ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 						"Command:"+twilightCalibrateCommand.getId()+
 						":doFrame:Calulated Exposure length too short:"+
 						"\n\t(exposureLength:"+exposureLength+") < "+
@@ -2340,6 +2341,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/01/14 16:12:49  cjm
+// Added PROGID FITS header setting.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //
