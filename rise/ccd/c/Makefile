@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/c/Makefile,v 1.1 2009-10-15 10:24:02 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/c/Makefile,v 1.2 2010-03-26 14:40:05 cjm Exp $
 
 include			../../../Makefile.common
 include			../../Makefile.common
@@ -113,7 +113,7 @@ CFLAGS = -g $(CCHECKFLAG) -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR) $(ESTARCON
 	$(FITSCFLAGS) $(MJDCFLAGS) $(MUTEXCFLAGS) $(TIMINGDOWNLOADIDLECFLAGS) \
 	$(UTILEXPOSURECHECKFLAGS) $(BYTESWAPCFLAGS) \
 	$(FILTERWHEELINPUTHOMECFLAGS) $(FILTERWHEELFAKECFLAGS) $(PRIORITYCFLAGS) $(MLOCKCFLAGS) $(LOGGINGCFLAGS) \
-	$(ANDORCFLAGS)
+	$(LOG_UDP_CFLAGS) $(ANDORCFLAGS)
 
 LINTFLAGS = -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR)
 DOCFLAGS = -static
@@ -181,6 +181,9 @@ backup: tidy
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2009/10/15 10:24:02  cjm
+# Initial revision
+#
 # Revision 1.19  2003/03/04 17:10:27  cjm
 # Added alternate MJDCFLAGS and MJDLIB flags for NGATASTRO MJD library.
 #
