@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // MakeRISEConfigFile.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/test/MakeRISEConfigFile.java,v 1.1 2009-10-15 10:19:32 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/test/MakeRISEConfigFile.java,v 1.2 2010-08-11 15:10:07 cjm Exp $
 
 import java.lang.*;
 import java.lang.reflect.*;
@@ -34,7 +34,7 @@ import ngat.phase2.*;
  * written as a special case so that the ngat.phase2.CCDConfig object could be filled in to test the impact on
  * performance.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class MakeRISEConfigFile
 {
@@ -42,6 +42,10 @@ public class MakeRISEConfigFile
 	 * The filename to save commands to.
 	 */
 	private String filename = null;
+	/**
+	 * The CCD detector binning to use. Defaults to 1.
+	 */
+	private int bin = 1;
 	/**
 	 * The stream to output objects to.
 	 */
@@ -89,6 +93,7 @@ public class MakeRISEConfigFile
 	 * This is the run routine. It creates a CONFIG command and writes it to the outputStream. This object
 	 * has a RISEConfig phase2 object with it, this is created and it's fields initialised.
 	 * @see #outputStream
+	 * @see #bin
 	 */
 	private void run()
 	{
@@ -109,8 +114,8 @@ public class MakeRISEConfigFile
 		detector.clearAllWindows();
 		detector.setWindowFlags(0);
 		riseConfig.setDetector(0,detector);
-		detector.setXBin(1);
-		detector.setYBin(1);
+		detector.setXBin(bin);
+		detector.setYBin(bin);
 	// InstrumentConfig fields.
 		configCommand.setConfig(riseConfig);
 		try
@@ -152,12 +157,23 @@ public class MakeRISEConfigFile
 	/**
 	 * This routine parses arguments passed into MakeRISEConfigFile.
 	 * @see #filename
+	 * @see #bin
 	 */
 	private void parseArgs(String[] args)
 	{
 		for(int i = 0; i < args.length;i++)
 		{
-			if(args[i].equals("-f")||args[i].equals("-file"))
+			if(args[i].equals("-b")||args[i].equals("-binning"))
+			{
+				if((i+1)< args.length)
+				{
+					bin = Integer.parseInt(args[i+1]);
+					i++;
+				}
+				else
+					errorStream.println("-filename requires a filename");
+			}
+			else if(args[i].equals("-f")||args[i].equals("-file"))
 			{
 				if((i+1)< args.length)
 				{
@@ -172,6 +188,7 @@ public class MakeRISEConfigFile
 				System.out.println(this.getClass().getName()+" Help:");
 				System.out.println("Options are:");
 				System.out.println("\t-f[ile] <filename> - filename to save to.");
+				System.out.println("\t-b[inning] <n> - CCD binning factor.");
 				System.exit(0);
 			}
 		}
@@ -202,4 +219,7 @@ public class MakeRISEConfigFile
 }
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:19:32  cjm
+// Initial revision
+//
 //
