@@ -19,14 +19,14 @@
 */
 /* ngat_rise_ccd_CCDLibrary.c
 ** implementation of Java Class ngat.ccd.CCDLibrary native interfaces
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ngat_rise_ccd_CCDLibrary.c,v 1.1 2009-10-15 10:16:23 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ngat_rise_ccd_CCDLibrary.c,v 1.2 2010-08-17 17:16:05 cjm Exp $
 */
 /**
  * ngat_rise_ccd_CCDLibrary.c is the 'glue' between librise_ccd, the C library version of the SDSU CCD Controller
  * software, and CCDLibrary.java, a Java Class to drive the controller. CCDLibrary specifically
  * contains all the native C routines corresponding to native methods in Java.
  * @author SDSU, Chris Mottram LJMU
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -66,7 +66,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ngat_rise_ccd_CCDLibrary.c,v 1.1 2009-10-15 10:16:23 cjm Exp $";
+static char rcsid[] = "$Id: ngat_rise_ccd_CCDLibrary.c,v 1.2 2010-08-17 17:16:05 cjm Exp $";
 
 /**
  * Copy of the java virtual machine pointer, used for logging back up to the Java layer from C.
@@ -195,9 +195,12 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose
 	struct timespec start_time;
 	char **headers_list =NULL;
 
+	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:1.\n");
 	retval = CCDLibrary_Java_String_List_To_C_List(env,obj,headers,
 						&jni_header_list, &jni_header_count,
 						&headers_list,&header_count);
+        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:2.\n");
+
 	if(retval == FALSE) return; /* Throw exception */ 
 
 	if(startTime > -1)
@@ -210,14 +213,17 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose
 		start_time.tv_sec = 0;
 		start_time.tv_nsec = 0;
 	}
+        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:3.\n");
 
 	/* do exposure */
 	/* retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list); */
 	retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list);
-	
+	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:4.\n");
+
 	CCDLibrary_Java_String_List_Free(env,obj,jni_header_list,jni_header_count,
 						headers_list, header_count);
-	
+	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:5.\n");
+
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
 	{
@@ -1794,7 +1800,7 @@ static int CCDLibrary_Java_String_List_To_C_List(JNIEnv *env,jobject obj,jobject
 		(*jni_jstring_list)[index] = java_string;
 		/* Get the filename from a java string to a c null terminated string */
 		(*c_list)[index] = (char*)((*env)->GetStringUTFChars(env,java_string,0));
-		/* fprintf(stdout,"::: c_list[%d] %s :::\n",index,(*c_list)[index]); fflush(stdout); */
+		fprintf(stdout,"::: c_list[%d] %s :::\n",index,(*c_list)[index]); fflush(stdout); 
 		if((*c_list)[index] == NULL)
 		{
 			/* free data elements already allocated. */
@@ -1856,6 +1862,9 @@ static int CCDLibrary_Java_String_List_Free(JNIEnv *env,jobject obj,
 }
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/15 10:16:23  cjm
+** Initial revision
+**
 ** Revision 1.1  2009/10/15 10:06:52  cjm
 ** Initial revision
 **
