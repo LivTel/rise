@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // MULTRUNImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MULTRUNImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/MULTRUNImplementation.java,v 1.4 2010-08-17 17:21:24 cjm Exp $
 
 import java.lang.*;
 import java.io.File;
@@ -37,14 +37,14 @@ import ngat.message.ISS_INST.MULTRUN_DONE;
  * This class provides the implementation for the MULTRUN command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: MULTRUNImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
+	public final static String RCSID = new String("$Id: MULTRUNImplementation.java,v 1.4 2010-08-17 17:21:24 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -238,13 +238,28 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 		
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("TAGID"));
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("USERID"));
-			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROGID"));
-			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROPID"));
-			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("GROUPID"));
-			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("OBSID"));
+                        if(ccsFitsHeader.getKeywordValue("PROGID") == null)
+			    selectedHeaders.addElement("UNKNOWN");
+                        else
+                            selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROGID"));
+                        if(ccsFitsHeader.getKeywordValue("PROPID") == null)
+                            selectedHeaders.addElement("UNKNOWN");
+                        else
+                            selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PROPID"));
+                        if(ccsFitsHeader.getKeywordValue("GROUPID") == null)
+                            selectedHeaders.addElement("UNKNOWN");
+                        else
+                            selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("GROUPID"));
+                        if(ccsFitsHeader.getKeywordValue("OBSID") == null)
+                            selectedHeaders.addElement("UNKNOWN");
+                        else
+                            selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("OBSID"));
 			
 			// New headers added at request of RJS (2008-11)
-			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("EXPTOTAL").toString());
+                        if(ccsFitsHeader.getKeywordValue("EXPTOTAL") == null)
+                            selectedHeaders.addElement("UNKNOWN");
+                        else
+                            selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("EXPTOTAL").toString());
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("PRESCAN").toString());
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("POSTSCAN").toString());
 			selectedHeaders.addElement(ccsFitsHeader.getKeywordValue("ROTCENTX").toString());
@@ -483,6 +498,9 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2010/03/26 14:38:29  cjm
+// Changed from bitwise to absolute logging levels.
+//
 // Revision 1.2  2010/01/14 16:12:39  cjm
 // Added PROGID FITS header setting.
 //
