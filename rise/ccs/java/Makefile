@@ -1,5 +1,5 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/rise/ccs/java/Makefile,v 1.1 2009-10-15 10:21:54 cjm Exp $ 
+# $Header: /space/home/eng/cjm/cvs/rise/ccs/java/Makefile,v 1.2 2011-03-11 16:45:21 cjm Exp $ 
 include ../../../Makefile.common
 include ../../Makefile.common
 include	../Makefile.common
@@ -35,6 +35,7 @@ CONFIG_SRCS	= ltccd1.ccs.properties ltccd1.ccs.net.properties \
 	ltccd3.ccs.properties ltccd3.ccs.net.properties ltccd3.fits.properties \
 	ltccd4.ccs.properties ltccd4.ccs.net.properties ltccd4.fits.properties \
 	rise.ccs.properties rise.ccs.net.properties rise.fits.properties \
+	micc1.ccs.properties micc1.ccs.net.properties micc1.fits.properties \
 	ftccd1.ccs.properties ftccd1.ccs.net.properties ftccd1.fits.properties \
 	ftccd2.ccs.properties ftccd2.ccs.net.properties ftccd2.fits.properties 
 CONFIG_OBJS	= $(CONFIG_SRCS:%.properties=$(BINDIR)/%.properties)
@@ -69,6 +70,9 @@ tidy:
 backup: tidy
 
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2009/10/15 10:21:54  cjm
+# Initial revision
+#
 # Revision 1.30  2009/10/06 13:53:23  eng
 # *** empty log message ***
 #
