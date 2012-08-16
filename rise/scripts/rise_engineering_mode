@@ -1,0 +1,36 @@
+#!/bin/csh
+# $Header: /space/home/eng/cjm/cvs/rise/scripts/rise_engineering_mode,v 1.1 2012-08-16 14:46:25 cjm Exp $
+# Version: $Revision: 1.1 $
+# By $Author: cjm $
+# Change the icc into engineering mode - kill all robotic control processes
+# Usage:
+#	rise_engineering_mode
+# To return to robotic control, reboot the icc.
+echo "Switching to engineering mode."
+echo "This will only succeed if you are root."
+#
+# Kill any running processes
+# Ensure autobooter is killed first
+#
+if ( -x /icc/bin/scripts/killhup.csh ) then
+    echo "Trying to kill AutoBooter."
+    /icc/bin/scripts/killhup.csh AutoBooter
+else
+    echo "killhup not found:FAILED to stop running processess."
+endif
+if ( -x /icc/bin/scripts/killhup.csh ) then
+    echo "Trying to kill Ccs."
+    /icc/bin/scripts/killhup.csh Ccs
+#    echo "Trying to kill DpRt."
+#    /icc/bin/scripts/killhup.csh DpRt
+    echo "Trying to kill icsd_inet."
+    /icc/bin/scripts/killhup.csh icsd_inet
+else
+    echo "killhup not found:ENGINEERING mode FAILED."
+endif
+#
+# $Log: not supported by cvs2svn $
+# Revision 1.1  2010/11/09 10:32:18  cjm
+# Initial revision
+#
+#
