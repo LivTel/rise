@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* ccd_multrun.h
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_multrun.h,v 1.2 2010-01-14 16:13:06 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_multrun.h,v 1.3 2012-08-22 13:08:21 cjm Exp $
 */
 #ifndef CCD_MULTRUN_H
 #define CCD_MULTRUN_H
@@ -82,7 +82,7 @@
 #define MAXLIST_SIZE 100000 /* Maximum number of directory entries */
 #define TRUE 1			
 #define FALSE 0
-#define IMAGEDIR "/home/dev/tmp"
+#define IMAGEDIR "/icc/tmp"
 #define EXPOSURE_READ_TIMEOUT                           30
 #define EXPOSURE_DEFAULT_READOUT_REMAINING_TIME       	(1500)
 #define EXPOSURE_DEFAULT_START_EXPOSURE_CLEAR_TIME	(10)
