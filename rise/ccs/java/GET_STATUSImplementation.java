@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // GET_STATUSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/GET_STATUSImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/GET_STATUSImplementation.java,v 1.2 2013-06-18 14:12:08 cjm Exp $
 
 import java.lang.*;
 import java.util.Hashtable;
@@ -34,14 +34,14 @@ import ngat.util.ExecuteCommand;
  * This class provides the implementation for the GET_STATUS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class GET_STATUSImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.2 2013-06-18 14:12:08 cjm Exp $");
 	/**
 	 * Internal constant used when converting temperatures in centigrade (from the CCD controller) to Kelvin 
 	 * returned in GET_STATUS.
@@ -395,79 +395,13 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 			}
 			catch(CCDLibraryNativeException e)
 			{
-				// Don't report the error, if it's just we are reading out at the moment
-				if(e.getDSPErrorNumber() != 64)
-				{
-					ccs.error(this.getClass().getName()+
-						  ":processCommand:Get Temperature failed.",e);
-				}
+				ccs.error(this.getClass().getName()+
+					  ":processCommand:Get Temperature failed.",e);
 			}// catch
 			// Dewar heater ADU counts - how much we are heating the dewar to control the temperature.
 		        // Utility Board ADU counts - how hot the temperature sensor is on the utility board.
-			try
-			{
-				adu = libccd.CCDTemperatureGetHeaterADU();
-				hashTable.put("Heater ADU",new Integer(adu));
-				adu = libccd.CCDTemperatureGetUtilityBoardADU();
-				hashTable.put("Utility Board Temperature ADU",new Integer(adu));
-			}
-			catch(CCDLibraryNativeException e)
-			{
-				// Don't report the error, if it's just we are reading out at the moment
-				if(e.getDSPErrorNumber() != 64)
-				{
-					ccs.error(this.getClass().getName()+
-						  ":processCommand:Get ADU(s) failed.",e);
-				}
-			}// end catch
+			hashTable.put("Heater ADU",new Integer(0));
 		}// end if get temperature status
-		// SDSU supply voltages
-		if(status.getPropertyBoolean("ccs.get_status.supply_voltages"))
-		{
-			try
-			{
-				adu = libccd.CCDSetupGetHighVoltageAnalogueADU();
-				hashTable.put("High Voltage Supply ADU",new Integer(adu));
-				adu = libccd.CCDSetupGetLowVoltageAnalogueADU();
-				hashTable.put("Low Voltage Supply ADU",new Integer(adu));
-				adu = libccd.CCDSetupGetMinusLowVoltageAnalogueADU();
-				hashTable.put("Minus Low Voltage Supply ADU",new Integer(adu));
-			}
-			catch(CCDLibraryNativeException e)
-			{
-				// Don't report the error, if it's just we are reading out at the moment
-				if(e.getDSPErrorNumber() != 64)
-				{
-					ccs.error(this.getClass().getName()+
-						  ":processCommand:Get supply voltage ADU failed.",e);
-				}
-			}// end catch
-		}// end if get supply voltage status
-		if(status.getPropertyBoolean("ccs.get_status.pressure"))
-		{
-			try
-			{
-				
-				adu = libccd.CCDSetupGetVacuumGaugeADU();
-				hashTable.put("Dewar Vacuum Gauge ADU",new Integer(adu));
-				dvalue = libccd.CCDSetupGetVacuumGaugeMBar();
-				hashTable.put("Dewar Vacuum Gauge",new Double(dvalue));
-			}
-			catch(CCDLibraryNativeException e)
-			{
-				// Don't report the error, if it's just we are reading out at the moment
-				// 64 is RDM exposure status check
-				// 37 id VON exposure status check
-				// 38 is VOF exposure status check
-				// see ccd_dsp.c for details.
-				if((e.getDSPErrorNumber() != 64)&&(e.getDSPErrorNumber() != 37)&&
-				   (e.getDSPErrorNumber() != 38))
-				{
-					ccs.error(this.getClass().getName()+
-						  ":processCommand:Get pressure failed.",e);
-				}
-			}// end catch
-		}// end if get pressure data
 	}
 
 	/**
@@ -559,6 +493,9 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.30  2006/05/16 14:25:53  cjm
 // gnuify: Added GNU General Public License.
 //
