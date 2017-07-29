@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // Ccs.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/Ccs.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/Ccs.java,v 1.3 2017-07-29 15:34:56 cjm Exp $
 
 import java.lang.*;
 import java.lang.reflect.Method;
@@ -39,14 +39,14 @@ import ngat.message.INST_DP.*;
 /**
  * This class is the start point for the CCD Control System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class Ccs
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: Ccs.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
+	public final static String RCSID = new String("$Id: Ccs.java,v 1.3 2017-07-29 15:34:56 cjm Exp $");
 	/**
 	 * Logger channel id.
 	 */
@@ -826,105 +826,45 @@ public class Ccs
 	 * @see CcsStatus#getPropertyInteger
 	 * @see CcsStatus#getPropertyBoolean
 	 * @see CcsStatus#getPropertyDouble
-	 * @see ngat.rise.ccd.CCDLibrary#CCDSetupLoadTypeFromString
-	 * @see ngat.rise.ccd.CCDLibrary#CCDDSPGainFromString
-	 * @see ngat.rise.ccd.CCDLibrary#CCDInitialise
-	 * @see ngat.rise.ccd.CCDLibrary#CCDTextSetPrintLevel
-	 * @see ngat.rise.ccd.CCDLibrary#CCDInterfaceOpen
-	 * @see ngat.rise.ccd.CCDLibrary#CCDSetupStartup
-	 * @see ngat.rise.ccd.CCDLibrary#CCDFilterWheelSetPositionCount
-	 * @see ngat.rise.ccd.CCDLibrary#CCDFilterWheelSetDeBounceMs
 	 */
 	public void startupController() throws CCDLibraryFormatException, CCDLibraryNativeException
 	{
-		int deviceNumber,textPrintLevel;
-		int pciLoadType,timingLoadType,timingApplicationNumber,utilityLoadType,utilityApplicationNumber,gain;
-		int startExposureClearTime,startExposureOffsetTime,readoutRemainingTime;
-		int filterWheelFilterCount,filterWheelDeBounceMs;
-		boolean gainSpeed,idle,filterWheelEnable;
 		double targetTemperature;
-		String pciFilename,timingFilename,utilityFilename;
 
 	// get the relevant configuration information from the CCS configuration file.
 	// CCDLibraryFormatException is caught and re-thrown by this method.
 	// Other exceptions (NumberFormatException) are not caught here, but by the calling method catch(Exception e)
 		try
 		{
-			deviceNumber = libccd.CCDInterfaceDeviceFromString(status.getProperty("ccs.libccd.device"));
-			textPrintLevel = libccd.CCDTextPrintLevelFromString(
-				status.getProperty("ccs.libccd.device.text.print_level"));
-			pciLoadType = libccd.CCDSetupLoadTypeFromString(status.
-				getProperty("ccs.config.pci_load_type"));
-			pciFilename = status.getProperty("ccs.config.pci_filename");
-			timingLoadType = libccd.CCDSetupLoadTypeFromString(status.
-				getProperty("ccs.config.timing_load_type"));
-			timingApplicationNumber = status.getPropertyInteger("ccs.config.timing_application_number");
-			timingFilename = status.getProperty("ccs.config.timing_filename");
-			utilityLoadType = libccd.CCDSetupLoadTypeFromString(status.
-				getProperty("ccs.config.utility_load_type"));
-			utilityApplicationNumber = status.getPropertyInteger("ccs.config.utility_application_number");
-			utilityFilename = status.getProperty("ccs.config.utility_filename");
 			targetTemperature = status.getPropertyDouble("ccs.config.target_temperature");
-			gain = libccd.CCDDSPGainFromString(status.getProperty("ccs.config.gain"));
-			gainSpeed = status.getPropertyBoolean("ccs.config.gain_speed");
-			idle = status.getPropertyBoolean("ccs.config.idle");
-			// note we assume the two filter wheels have the same number of positions here
-			filterWheelEnable = status.getPropertyBoolean("ccs.config.filter_wheel.enable");
-			filterWheelFilterCount = status.getPropertyInteger("filterwheel.0.count");
-			filterWheelDeBounceMs = status.getPropertyInteger("ccs.config.filter_wheel.de_bounce_ms");
-			startExposureClearTime = status.getPropertyInteger("ccs.config.start_exposure_clear_time");
-			startExposureOffsetTime = status.getPropertyInteger("ccs.config.start_exposure_offset_time");
-			readoutRemainingTime = status.getPropertyInteger("ccs.config.readout_remaining_time");
 		}
 		catch(CCDLibraryFormatException e)
 		{
 			error(this.getClass().getName()+":startupController:",e);
 			throw e;
 		}
-		libccd.CCDInitialise(deviceNumber);
-		libccd.CCDTextSetPrintLevel(textPrintLevel);
 		try
 		{
-			libccd.CCDInterfaceOpen();
-			libccd.CCDSetupStartup(pciLoadType,pciFilename,
-				timingLoadType,timingApplicationNumber,timingFilename,
-				utilityLoadType,utilityApplicationNumber,utilityFilename,
-				targetTemperature,gain,gainSpeed,idle);
-			libccd.CCDFilterWheelSetPositionCount(filterWheelFilterCount);
-			libccd.CCDFilterWheelSetDeBounceMs(filterWheelDeBounceMs);
-			if(filterWheelEnable)
-			{
-				libccd.CCDFilterWheelReset(0);
-				libccd.CCDFilterWheelReset(1);
-			}
-			else
-			{
-				log(Logging.VERBOSITY_VERY_TERSE,this.getClass().getName()+
-					":startupController:Filter wheels not enabled:Filter wheels NOT reset.");
-			}
+			libccd.CCDSetupStartup(targetTemperature);
 		}
 		catch (CCDLibraryNativeException e)
 		{
 			error(this.getClass().getName()+":startupController:",e);
 			throw e;
 		}
-		libccd.CCDExposureSetStartExposureClearTime(startExposureClearTime);
-		libccd.CCDExposureSetStartExposureOffsetTime(startExposureOffsetTime);
-		libccd.CCDExposureSetReadoutRemainingTime(readoutRemainingTime);
 	}
 
 	/**
-	 * Method to shut down the connection to the SDSU CCD Controller.
-	 * This calls the CCDLibrary CCDSetupShutdown method followed by the CCDInterfaceClose method.
+	 * Method to shut down the connection to the CCD Controller.
+	 * This calls the CCDLibrary CCDSetupShutdown method.
 	 * @exception CCDLibraryNativeException Thrown if the device failed to shut down.
 	 * @see #libccd
 	 * @see ngat.rise.ccd.CCDLibrary#CCDSetupShutdown
-	 * @see ngat.rise.ccd.CCDLibrary#CCDInterfaceClose
 	 */
 	public void shutdownController() throws CCDLibraryNativeException
 	{
 		libccd.CCDSetupShutdown();
-		libccd.CCDInterfaceClose();
+		//libccd.CCDInterfaceClose();
 	}
 
 	/**
@@ -983,8 +923,7 @@ public class Ccs
 
 	/**
 	 * Routine to be called at the end of execution of Ccs to close down communications.
-	 * Currently closes CCDLibrary, CcsTCPServer and TitServer.
-	 * @see ngat.rise.ccd.CCDLibrary#CCDInterfaceClose
+	 * Currently closes CcsTCPServer and TitServer.
 	 * @see CcsTCPServer#close
 	 * @see #server
 	 * @see TitServer#close
@@ -993,14 +932,14 @@ public class Ccs
 	 */
 	public void close()
 	{
-		try
-		{
-			libccd.CCDInterfaceClose();
-		}
-		catch(CCDLibraryNativeException e)
-		{
-			error(this.getClass().getName()+":close:",e);
-		}
+		//try
+		//{
+		//	libccd.CCDInterfaceClose();
+		//}
+		//catch(CCDLibraryNativeException e)
+		//{
+		//	error(this.getClass().getName()+":close:",e);
+		//}
 		server.close();
 		titServer.close();
 	}
@@ -1443,6 +1382,9 @@ public class Ccs
 }
 
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/03/26 14:38:29  cjm
+// Changed from bitwise to absolute logging levels.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //
