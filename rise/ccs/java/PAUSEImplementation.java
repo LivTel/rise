@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // PAUSEImplementation.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/PAUSEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/PAUSEImplementation.java,v 1.2 2017-07-29 15:33:46 cjm Exp $
 
 import java.lang.*;
 import java.io.*;
@@ -31,14 +31,14 @@ import ngat.message.ISS_INST.PAUSE_DONE;
  * This class provides the implementation for the PAUSE command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class PAUSEImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: PAUSEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: PAUSEImplementation.java,v 1.2 2017-07-29 15:33:46 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -116,18 +116,6 @@ public class PAUSEImplementation extends INTERRUPTImplementation implements JMSC
 			return pauseDone;
 		}
 	// Send pause exposure command to controller to close shutter.
-		try
-		{
-			libccd.CCDDSPCommandPEX();
-		}
-		catch(CCDLibraryNativeException e)
-		{
-			ccs.error(this.getClass().getName()+":Pause command failed:"+e);
-			pauseDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+1301);
-			pauseDone.setErrorString(this.getClass().getName()+":Pause command failed:"+e);
-			pauseDone.setSuccessful(false);
-			return pauseDone;
-		}
 	// get UTC time the pause was started
 		status.addPauseTime(System.currentTimeMillis());
 	// issue an ACK to the client on the current thread with timeToComplete 0 to 
@@ -161,6 +149,9 @@ public class PAUSEImplementation extends INTERRUPTImplementation implements JMSC
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.11  2006/05/16 14:26:00  cjm
 // gnuify: Added GNU General Public License.
 //
