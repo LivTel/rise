@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // BIASImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/BIASImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/BIASImplementation.java,v 1.3 2017-07-29 15:34:22 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -30,14 +30,14 @@ import ngat.message.ISS_INST.BIAS_DONE;
  * This class provides the implementation for the BIAS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class BIASImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: BIASImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
+	public final static String RCSID = new String("$Id: BIASImplementation.java,v 1.3 2017-07-29 15:34:22 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -88,7 +88,7 @@ public class BIASImplementation extends CALIBRATEImplementation implements JMSCo
 	 * @see FITSImplementation#getFitsHeadersFromISS
 	 * @see FITSImplementation#saveFitsHeaders
 	 * @see FITSImplementation#unLockFile
-	 * @see ngat.ccd.CCDLibrary#CCDExposureBias
+	 * @see ngat.rise.ccd.CCDLibrary#CCDExposureBias
 	 * @see CALIBRATEImplementation#reduceCalibrate
 	 */
 	public COMMAND_DONE processCommand(COMMAND command)
@@ -167,6 +167,9 @@ public class BIASImplementation extends CALIBRATEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/02/10 11:03:07  cjm
+// Added FITS lock file support.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //
