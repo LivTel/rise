@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // STOPImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/STOPImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/STOPImplementation.java,v 1.2 2017-07-29 15:32:21 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -30,14 +30,14 @@ import ngat.message.ISS_INST.STOP_DONE;
  * This class provides the implementation for the STOP command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class STOPImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: STOPImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: STOPImplementation.java,v 1.2 2017-07-29 15:32:21 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -115,7 +115,6 @@ public class STOPImplementation extends INTERRUPTImplementation implements JMSCo
 			thread = (CcsTCPServerConnectionThread)(status.getCurrentThread());
 			while((thread != null)&&(thread.isAlive()))
 			{
-				libccd.CCDDSPAbort();
 				try
 				{
 					Thread.sleep(1000);
@@ -161,6 +160,9 @@ public class STOPImplementation extends INTERRUPTImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.11  2006/05/16 14:26:07  cjm
 // gnuify: Added GNU General Public License.
 //

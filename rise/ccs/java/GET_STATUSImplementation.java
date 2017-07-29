@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // GET_STATUSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/GET_STATUSImplementation.java,v 1.2 2013-06-18 14:12:08 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/GET_STATUSImplementation.java,v 1.3 2017-07-29 15:33:11 cjm Exp $
 
 import java.lang.*;
 import java.util.Hashtable;
@@ -34,14 +34,14 @@ import ngat.util.ExecuteCommand;
  * This class provides the implementation for the GET_STATUS command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class GET_STATUSImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.2 2013-06-18 14:12:08 cjm Exp $");
+	public final static String RCSID = new String("$Id: GET_STATUSImplementation.java,v 1.3 2017-07-29 15:33:11 cjm Exp $");
 	/**
 	 * Internal constant used when converting temperatures in centigrade (from the CCD controller) to Kelvin 
 	 * returned in GET_STATUS.
@@ -118,14 +118,12 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * <li><b>Exposure Count, Exposure Number</b> How many exposures the current command has taken and how many
 	 * 	it will do in total (from the status object).
 	 * </ul>
-	 * The currently selected filter status is added to the hashTable (using getFilterWheelStatus).
 	 * If the command requests a <b>INTERMEDIATE</b> level status, getIntermediateStatus is called.
 	 * If the command requests a <b>FULL</b> level status, getFullStatus is called.
 	 * An object of class GET_STATUS_DONE is returned, with the information retrieved.
 	 * @see #status
 	 * @see #hashTable
 	 * @see #getCurrentMode
-	 * @see #getFilterWheelStatus
 	 * @see #getIntermediateStatus
 	 * @see #getFullStatus
 	 * @see CcsStatus#getCurrentCommand
@@ -136,7 +134,6 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see CCDLibrary#CCDSetupGetNRows
 	 * @see CCDLibrary#CCDSetupGetNSBin
 	 * @see CCDLibrary#CCDSetupGetNPBin
-	 * @see CCDLibrary#CCDSetupGetDeInterlaceType
 	 * @see CCDLibrary#CCDSetupGetWindowFlags
 	 * @see CCDLibrary#CCDSetupGetSetupComplete
 	 * @see CcsStatus#getExposureCount
@@ -173,13 +170,10 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		hashTable.put("NRows",new Integer(libccd.CCDSetupGetNRows()));
 		hashTable.put("NSBin",new Integer(libccd.CCDSetupGetNSBin()));
 		hashTable.put("NPBin",new Integer(libccd.CCDSetupGetNPBin()));
-		hashTable.put("DeInterlace Type",new Integer(libccd.CCDSetupGetDeInterlaceType()));
 		hashTable.put("Window Flags",new Integer(libccd.CCDSetupGetWindowFlags()));
 		hashTable.put("Setup Status",new Boolean(libccd.CCDSetupGetSetupComplete()));
 		hashTable.put("Exposure Length",new Integer(libccd.CCDExposureGetExposureLength()));
 		hashTable.put("Exposure Start Time",new Long(libccd.CCDExposureGetExposureStartTime()));
-	// filter wheel settings
-		getFilterWheelStatus();
 		hashTable.put("Exposure Count",new Integer(status.getExposureCount()));
 		hashTable.put("Exposure Number",new Integer(status.getExposureNumber()));
 	// intermediate level information - basic plus controller calls.
@@ -210,100 +204,35 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		int currentMode;
 
 		currentMode = GET_STATUS_DONE.MODE_IDLE;
-		switch(libccd.CCDExposureGetExposureStatus())
+		switch(libccd.CCDMultrunGetExposureStatus())
 		{
-		case CCDLibrary.CCD_EXPOSURE_STATUS_NONE:
-			if(libccd.CCDSetupGetSetupInProgress())
-				currentMode = GET_STATUS_DONE.MODE_CONFIGURING;
-			if(libccd.CCDFilterWheelGetStatus() != CCDLibrary.CCD_FILTER_WHEEL_STATUS_NONE)
-				currentMode = GET_STATUS_DONE.MODE_CONFIGURING;
-			break;
-		case CCDLibrary.CCD_EXPOSURE_STATUS_CLEAR:
-			currentMode =  GET_STATUS_DONE.MODE_CLEARING;
-			break;
-		case CCDLibrary.CCD_EXPOSURE_STATUS_WAIT_START:
-			currentMode =  GET_STATUS_DONE.MODE_WAITING_TO_START;
-			break;
-		case CCDLibrary.CCD_EXPOSURE_STATUS_EXPOSE:
-			currentMode = GET_STATUS_DONE.MODE_EXPOSING;
-			break;
-		case CCDLibrary.CCD_EXPOSURE_STATUS_PRE_READOUT:
-			currentMode = GET_STATUS_DONE.MODE_PRE_READOUT;
-			break;
-		case CCDLibrary.CCD_EXPOSURE_STATUS_READOUT:
-			currentMode = GET_STATUS_DONE.MODE_READING_OUT;
-			break;
-		case CCDLibrary.CCD_EXPOSURE_STATUS_POST_READOUT:
-			currentMode = GET_STATUS_DONE.MODE_POST_READOUT;
-			break;
-		default:
-			currentMode = GET_STATUS_DONE.MODE_ERROR;
-			break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_NONE:
+				if(libccd.CCDSetupGetSetupInProgress())
+					currentMode = GET_STATUS_DONE.MODE_CONFIGURING;
+				break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_CLEAR:
+				currentMode =  GET_STATUS_DONE.MODE_CLEARING;
+				break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_WAIT_START:
+				currentMode =  GET_STATUS_DONE.MODE_WAITING_TO_START;
+				break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_EXPOSE:
+				currentMode = GET_STATUS_DONE.MODE_EXPOSING;
+				break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_PRE_READOUT:
+				currentMode = GET_STATUS_DONE.MODE_PRE_READOUT;
+				break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_READOUT:
+				currentMode = GET_STATUS_DONE.MODE_READING_OUT;
+				break;
+			case CCDLibrary.CCD_EXPOSURE_STATUS_POST_READOUT:
+				currentMode = GET_STATUS_DONE.MODE_POST_READOUT;
+				break;
+			default:
+				currentMode = GET_STATUS_DONE.MODE_ERROR;
+				break;
 		}
 		return currentMode;
-	}
-
-	/**
-	 * Internal method to get some filter wheel status. The status is put into the hashTable.
-	 * The following data is put into the hashTable:
-	 * <ul>
-	 * <li><b>Filter Wheel Status</b> The status of the filter wheel mechanism, as returned by 
-	 * 	CCDFilterWheelGetStatus.
-	 * </ul>
-	 * For each wheel specified by the <i>filterwheel.count</i> property,
-	 * the following data is put into the hashTable:
-	 * <ul>
-	 * <li><b>Filter Wheel:&lt;wheel number&gt;</b>The name of the filter in this wheel currently in use.
-	 * <li><b>Filter Wheel Id:&lt;wheel number&gt;</b>The ID of the filter in this wheel currently in use.
-	 * </ul>
-	 * @see #libccd
-	 * @see #status
-	 * @see #hashTable
-	 * @see CCDLibrary#CCDFilterWheelGetStatus
-	 * @see CCDLibrary#CCDFilterWheelGetPosition
-	 * @see CcsStatus#getFilterTypeName
-	 */
-	private void getFilterWheelStatus()
-	{
-		int filterWheelCount,filterWheelPosition;
-		String s = null;
-		String s1 = null;
-
-		filterWheelCount = status.getPropertyInteger("filterwheel.count");
-		for(int wheelNumber = 0;wheelNumber< filterWheelCount;wheelNumber++)
-		{
-			filterWheelPosition = -1;
-			try
-			{
-				filterWheelPosition = libccd.CCDFilterWheelGetPosition(wheelNumber);
-				if(filterWheelPosition == -1) // indeterminate position
-				{
-					s = "None";
-					s1 = "Unknown";
-				}
-				else
-				{
-					s = status.getFilterTypeName(wheelNumber,filterWheelPosition);
-					s1 = status.getFilterIdName(s);
-				}
-			}
-			catch(CCDLibraryNativeException e)
-			{
-				ccs.error(this.getClass().getName()+":processCommand:get Filter Wheel Position:"+
-					wheelNumber+".",e);
-				s = null;
-			}
-			catch(IllegalArgumentException e)
-			{
-				ccs.error(this.getClass().getName()+":processCommand:get Filter Wheel Position:"+
-					wheelNumber+":"+filterWheelPosition+".",e);
-				s = null;
-				s1 = null;
-			}
-			hashTable.put("Filter Wheel:"+wheelNumber,s);
-			hashTable.put("Filter Wheel Id:"+wheelNumber,s1);
-		}
-		hashTable.put("Filter Wheel Status",new Integer(libccd.CCDFilterWheelGetStatus()));
 	}
 
 	/**
@@ -342,15 +271,8 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see #status
 	 * @see #hashTable
 	 * @see #CENTIGRADE_TO_KELVIN
-	 * @see CCDLibrary#CCDDSPCommandReadExposureTime
-	 * @see CCDLibrary#CCDSetupGetHighVoltageAnalogueADU
-	 * @see CCDLibrary#CCDSetupGetLowVoltageAnalogueADU
-	 * @see CCDLibrary#CCDSetupGetMinusLowVoltageAnalogueADU
+	 * @see CCDLibrary#CCDMultrunGetElapsedExposureTime
 	 * @see CCDLibrary#CCDTemperatureGet
-	 * @see CCDLibrary#CCDTemperatureGetHeaterADU
-	 * @see CCDLibrary#CCDTemperatureGetUtilityBoardADU
-	 * @see CCDLibrary#CCDSetupGetVacuumGaugeADU
-	 * @see CCDLibrary#CCDSetupGetVacuumGaugeMBar
 	 * @see CcsStatus#getPropertyBoolean
 	 */
 	private void getIntermediateStatus()
@@ -359,25 +281,7 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		int elapsedExposureTime,adu;
 		double dvalue;
 
-		// These setting are queried directly from the controller.
-		// libccd routines that do DSP code may cause problems here as the instrument
-		// may be in the process of reading out or similar.
-		// Now that we have compiled mutex support in libccd around controller commands this should work.
-		// elapsed exposure time - this seems to work when an exposure is in progress.
-		try
-		{
-			elapsedExposureTime = libccd.CCDDSPCommandReadExposureTime();
-		}
-		catch(CCDLibraryNativeException e)
-		{
-			// Don't report the error, if it's just we are reading out at the moment
-			if(e.getDSPErrorNumber() != 17)
-			{
-				ccs.error(this.getClass().getName()+
-					  ":processCommand:Get Elapsed Exposure Time failed.",e);
-			}
-			elapsedExposureTime = 0;
-		}
+		elapsedExposureTime = libccd.CCDMultrunGetElapsedExposureTime();
 		// Always add the exposure time, if we are reading out it has been set to 0
 		hashTable.put("Elapsed Exposure Time",new Integer(elapsedExposureTime));
 		if(status.getPropertyBoolean("ccs.get_status.temperature"))
@@ -493,6 +397,9 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2013/06/18 14:12:08  cjm
+// Removed heater ADUs and SDSU supply voltages.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //
