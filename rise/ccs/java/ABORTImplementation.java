@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // ABORTImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/ABORTImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/ABORTImplementation.java,v 1.2 2017-07-29 15:30:03 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -29,14 +29,14 @@ import ngat.message.ISS_INST.ABORT_DONE;
  * This class provides the implementation for the ABORT command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class ABORTImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: ABORTImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: ABORTImplementation.java,v 1.2 2017-07-29 15:30:03 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -88,7 +88,6 @@ public class ABORTImplementation extends INTERRUPTImplementation implements JMSC
 	 * @see CCDLibrary#CCDSetupGetSetupInProgress
 	 * @see CCDLibrary#CCDExposureGetExposureStatus
 	 * @see CCDLibrary#CCDExposureAbort
-	 * @see CCDLibrary#CCDFilterWheelAbort
 	 */
 	public COMMAND_DONE processCommand(COMMAND command)
 	{
@@ -105,47 +104,19 @@ public class ABORTImplementation extends INTERRUPTImplementation implements JMSC
 	//		thread.setAbortProcessCommand();
 	// if we are in the middle of a libccd exposure command, abort it
 	// Or preferably abort in any case! I TODD
-		//if(libccd.CCDExposureGetExposureStatus() != libccd.CCD_EXPOSURE_STATUS_NONE)
-		if(true)
-		{
-			try
-			{
-				ccs.error(this.getClass().getName()+":Abort sent");
-				libccd.CCDExposureAbort();
-			}
-			catch (CCDLibraryNativeException e)
-			{
-				ccs.error(this.getClass().getName()+":Aborting exposure failed:"+e);
-				abortDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+2400);
-				abortDone.setErrorString(e.toString());
-				abortDone.setSuccessful(false);
-				return abortDone;
-			}
-		}
-	/*
-	// If we are setting up the camera, abort the setup
-		if(libccd.CCDSetupGetSetupInProgress())
-		{
-			libccd.CCDSetupAbort();
-		}
-	// if we are moving the filter wheel, stop it
 		try
 		{
-		// note we don't check ccs.config.filter_wheel.enable here,
-		// if this is false the status must be CCD_FILTER_WHEEL_STATUS_NONE.
-			if(libccd.CCDFilterWheelGetStatus() != libccd.CCD_FILTER_WHEEL_STATUS_NONE)
-				libccd.CCDFilterWheelAbort();
+			ccs.error(this.getClass().getName()+":Abort sent");
+			libccd.CCDExposureAbort();
 		}
-		catch(CCDLibraryNativeException e)
+		catch (CCDLibraryNativeException e)
 		{
-			ccs.error(this.getClass().getName()+":Aborting filter wheel failed:"+e);
-			abortDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+2403);
+			ccs.error(this.getClass().getName()+":Aborting exposure failed:"+e);
+			abortDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+2400);
 			abortDone.setErrorString(e.toString());
 			abortDone.setSuccessful(false);
 			return abortDone;
-		} */
-	// abort the dprt
-	//	ccs.sendDpRtCommand(dprtAbort,serverConnectionThread);
+		}
 	// return done object.
 		abortDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_NO_ERROR);
 		abortDone.setErrorString("");
@@ -156,6 +127,9 @@ public class ABORTImplementation extends INTERRUPTImplementation implements JMSC
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.12  2006/05/16 14:25:35  cjm
 // gnuify: Added GNU General Public License.
 //
