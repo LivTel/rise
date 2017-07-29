@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // RESUMEImplementation.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/RESUMEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/RESUMEImplementation.java,v 1.2 2017-07-29 15:30:35 cjm Exp $
 
 import java.lang.*;
 import java.io.*;
@@ -31,14 +31,14 @@ import ngat.message.ISS_INST.RESUME_DONE;
  * This class provides the implementation for the RESUME command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class RESUMEImplementation extends INTERRUPTImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: RESUMEImplementation.java,v 1.1 2009-10-15 10:21:18 cjm Exp $");
+	public final static String RCSID = new String("$Id: RESUMEImplementation.java,v 1.2 2017-07-29 15:30:35 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -103,18 +103,6 @@ public class RESUMEImplementation extends INTERRUPTImplementation implements JMS
 
 		status = ccs.getStatus();
 	// Send resume exposure command to controller to open shutter.
-		try
-		{
-			libccd.CCDDSPCommandREX();
-		}
-		catch(CCDLibraryNativeException e)
-		{
-			ccs.error(this.getClass().getName()+"Resume command failed:"+e);
-			resumeDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+1500);
-			resumeDone.setErrorString("Resume command failed:"+e);
-			resumeDone.setSuccessful(false);
-			return resumeDone;
-		}
 	// get UTC time of resume
 		status.addResumeTime(System.currentTimeMillis());
 	// issue an ACK to the client on the current thread with timeToComplete back to what it was before
@@ -148,6 +136,9 @@ public class RESUMEImplementation extends INTERRUPTImplementation implements JMS
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:21:18  cjm
+// Initial revision
+//
 // Revision 0.9  2006/05/16 14:26:01  cjm
 // gnuify: Added GNU General Public License.
 //
