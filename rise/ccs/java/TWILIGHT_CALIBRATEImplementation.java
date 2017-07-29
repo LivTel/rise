@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // TWILIGHT_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TWILIGHT_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/TWILIGHT_CALIBRATEImplementation.java,v 1.4 2017-07-29 15:31:47 cjm Exp $
 import java.io.*;
 import java.lang.*;
 import java.util.*;
@@ -45,14 +45,14 @@ import ngat.util.logging.*;
  * The exposure length is dynamically adjusted as the sky gets darker or brighter. TWILIGHT_CALIBRATE commands
  * should be sent to the Ccs just after sunset and just before sunrise.
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
+	public final static String RCSID = new String("$Id: TWILIGHT_CALIBRATEImplementation.java,v 1.4 2017-07-29 15:31:47 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential twilight calibrations to
 	 * perform from a Java property file.
@@ -1227,22 +1227,13 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 				   String lowerFilter,String upperFilter)
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.CCD_SETUP_WINDOW_COUNT];
-		int numberColumns,numberRows,amplifier,deInterlaceSetting,filterWheelCount;
-		int filterWheelPosition[] = null;
-		boolean filterWheelEnable;
+		int numberColumns,numberRows,amplifier,deInterlaceSetting;
 
 	// load other required config for dimension configuration from CCS properties file.
 		try
 		{
 			numberColumns = status.getNumberColumns(bin);
 			numberRows = status.getNumberRows(bin);
-			amplifier = getAmplifier(useWindowAmplifier);
-			deInterlaceSetting = getDeInterlaceSetting(useWindowAmplifier);
-			filterWheelEnable = status.getPropertyBoolean("ccs.config.filter_wheel.enable");
-			filterWheelCount = status.getPropertyInteger("filterwheel.count");
-			filterWheelPosition = new int[filterWheelCount];
-			filterWheelPosition[0] = status.getFilterWheelPosition(0,lowerFilter);
-			filterWheelPosition[1] = status.getFilterWheelPosition(1,upperFilter);
 		}
 	// CCDLibraryFormatException,IllegalArgumentException,NumberFormatException.
 		catch(Exception e)
@@ -1269,22 +1260,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// send configuration to the SDSU controller
 		try
 		{
-			libccd.CCDSetupDimensions(numberColumns,numberRows,bin,bin,
-				amplifier,deInterlaceSetting,0,windowList);
+			libccd.CCDSetupDimensions(numberColumns,numberRows,bin,bin,0,windowList);
 			if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 				return false;
-			if(filterWheelEnable)
-			{
-				for(int i = 0;i < filterWheelCount; i++)
-				{
-					libccd.CCDFilterWheelMove(i,filterWheelPosition[i]);
-				}
-			}
-			else
-			{
-				ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
-					":doConfig:Filter wheels not enabled:Filter wheels NOT moved.");
-			}
 		}
 		catch(Exception e)
 		{
@@ -1300,18 +1278,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		if(testAbort(twilightCalibrateCommand,twilightCalibrateDone) == true)
 			return false;
 	// Issue ISS OFFSET_FOCUS commmand based on the optical thickness of the filter(s)
-		if(filterWheelEnable)
+		if(setFocusOffset(twilightCalibrateCommand,twilightCalibrateDone) == false)
 		{
-			if(setFocusOffset(twilightCalibrateCommand,twilightCalibrateDone,
-					  lowerFilter,upperFilter) == false)
-			{
-				return false;
-			}
-		}
-		else
-		{
-			ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
-				":doConfig:Filter wheels not enabled:Focus offset NOT set.");
+			return false;
 		}
 	// Increment unique config ID.
 	// This is queried when saving FITS headers to get the CONFIGID value.
@@ -1332,7 +1301,7 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	// Store name of configuration used in status object.
 	// This is queried when saving FITS headers to get the CONFNAME value.
 		status.setConfigName("TWILIGHT_CALIBRATION:"+twilightCalibrateCommand.getId()+
-					":"+bin+":"+useWindowAmplifier+":"+lowerFilter+":"+upperFilter);
+					":"+bin+":"+useWindowAmplifier);
 		return true;
 	}
 
@@ -1341,14 +1310,11 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 	 * the ISS. The OFFSET_FOCUS sent is the total of the selected filter's optical thickness.
 	 * @param twilightCalibrateCommand The instance of TWILIGHT_CALIBRATE we are currently running.
 	 * @param twilightCalibrateDone The instance of TWILIGHT_CALIBRATE_DONE to fill in with errors we receive.
-	 * @param lowerFilterType The type of filter to use in the lower wheel.
-	 * @param upperFilterType The type of filter to use in the upper wheel.
-	 * 	OFFSET_FOCUS fails.
 	 * @return The method returns true if the telescope attained the focus offset, otherwise false is
 	 * 	returned an telFocusDone is filled in with an error message.
 	 */
 	protected boolean setFocusOffset(TWILIGHT_CALIBRATE twilightCalibrateCommand,
-		TWILIGHT_CALIBRATE_DONE twilightCalibrateDone,String lowerFilterType,String upperFilterType)
+					 TWILIGHT_CALIBRATE_DONE twilightCalibrateDone)
 	{
 		OFFSET_FOCUS focusOffsetCommand = null;
 		INST_TO_ISS_DONE instToISSDone = null;
@@ -1362,17 +1328,10 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 		focusOffset += status.getPropertyDouble("ccs.focus.offset");
 		ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
 			":setFocusOffset:Master offset is "+focusOffset+".");
-	// lower filter wheel
-		filterIdName = status.getFilterIdName(lowerFilterType);
-		focusOffset += status.getFilterIdOpticalThickness(filterIdName);
-	// upper filter wheel
-		filterIdName = status.getFilterIdName(upperFilterType);
-		focusOffset += status.getFilterIdOpticalThickness(filterIdName);
 	// log focus offset
 		ccs.log(Logging.VERBOSITY_INTERMEDIATE,
 			"Command:"+twilightCalibrateCommand.getClass().getName()+
-			":Attempting focus offset "+focusOffset+
-			"\n\tlower filter:"+lowerFilterType+":upper filter:"+upperFilterType+".");
+			":Attempting focus offset "+focusOffset+".");
 	// set the commands focus offset
 		focusOffsetCommand.setFocusOffset(focusOffset);
 		//instToISSDone = ccs.sendISSCommand(focusOffsetCommand,serverConnectionThread);
@@ -2341,6 +2300,9 @@ public class TWILIGHT_CALIBRATEImplementation extends CALIBRATEImplementation im
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2010/03/26 14:38:29  cjm
+// Changed from bitwise to absolute logging levels.
+//
 // Revision 1.2  2010/01/14 16:12:49  cjm
 // Added PROGID FITS header setting.
 //
