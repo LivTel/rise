@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // DARKImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DARKImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DARKImplementation.java,v 1.3 2017-07-29 15:28:40 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -31,14 +31,14 @@ import ngat.message.ISS_INST.DARK_DONE;
  * This class provides the implementation for the DARK command sent to a server using the
  * Java Message System.
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class DARKImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: DARKImplementation.java,v 1.2 2010-02-10 11:03:07 cjm Exp $");
+	public final static String RCSID = new String("$Id: DARKImplementation.java,v 1.3 2017-07-29 15:28:40 cjm Exp $");
 
 	/**
 	 * Constructor.
@@ -80,7 +80,6 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 	/**
 	 * This method implements the DARK command. It generates some FITS headers from the CCD setup and
 	 * the ISS and saves this to disc. It performs a dark exposure and saves the data from this to disc.
-	 * It sends the generated FITS data to the Real Time Data Pipeline to get some data from it.
 	 * The resultant data or the relevant error code is put into the an object of class DARK_DONE and
 	 * returned. During execution of these operations the abort flag is tested to see if we need to
 	 * stop the implementation of this command.
@@ -164,8 +163,8 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 		if(testAbort(command,darkDone) == true)
 			return darkDone;
 	// Call pipeline to reduce data.
-		if(reduceCalibrate(command,darkDone,filename) == false)
-			return darkDone; 
+	//	if(reduceCalibrate(command,darkDone,filename) == false)
+	//		return darkDone; 
 	// set return values to indicate success.
 		darkDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_NO_ERROR);
 		darkDone.setErrorString("");
@@ -177,6 +176,9 @@ public class DARKImplementation extends CALIBRATEImplementation implements JMSCo
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/02/10 11:03:07  cjm
+// Added FITS lock file support.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //
