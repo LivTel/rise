@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.4 2017-07-29 15:36:30 cjm Exp $
 
 import java.lang.*;
 import java.util.Date;
@@ -37,14 +37,14 @@ import ngat.util.logging.*;
  * use the SDSU CCD Library as this is needed to generate FITS files.
  * @see CCDLibraryImplementation
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class FITSImplementation extends CCDLibraryImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.4 2017-07-29 15:36:30 cjm Exp $");
 	/**
 	 * A reference to the CcsStatus class instance that holds status information for the Ccs.
 	 */
@@ -290,7 +290,6 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 	 * @param exposureCount The number of exposures in the current MULTRUN, to put into the EXPTOTAL keyword.
 	 * @return The routine returns a boolean to indicate whether the operation was completed
 	 *  	successfully.
-	 * @see #getCCDRDOUTValue
 	 * @see #ccsFitsHeader
 	 * @see #ccsFitsHeaderDefaults
 	 * @see #CENTIGRADE_TO_KELVIN
@@ -305,55 +304,14 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 		CCDLibrarySetupWindow window = null;
 		FitsHeaderCardImage cardImage = null;
 		Date date = null;
-		String filterWheel1String = null;
-		String filterWheel2String = null;
-		String filterWheel1IdString = null;
-		String filterWheel2IdString = null;
 		Vector defaultFitsHeaderList = null;
 		int filterWheelPosition;
 		double doubleValue = 0.0;
 		int windowFlags;
 		int windowNumber,xbin,ybin;
-		boolean filterWheelEnable;
-		int preScan,postScan;
+		int preScan=0,postScan=0;
 
 		ccs.log(Logging.VERBOSITY_VERBOSE,this.getClass().getName()+":setFitsHeaders:Started.");
-		try
-		{
-			filterWheelEnable = status.getPropertyBoolean("ccs.config.filter_wheel.enable");
-			if(filterWheelEnable)
-			{
-			// lower filter wheel, type name
-				filterWheelPosition = libccd.CCDFilterWheelGetPosition(0);
-				filterWheel1String = status.getFilterTypeName(0,filterWheelPosition);
-			// lower filter wheel, filter id
-				filterWheel1IdString = status.getFilterIdName(filterWheel1String);
-			// upper filter wheel, type name
-				filterWheelPosition = libccd.CCDFilterWheelGetPosition(1);
-				filterWheel2String = status.getFilterTypeName(1,filterWheelPosition);
-			// upper filter wheel, filter id
-				filterWheel2IdString = status.getFilterIdName(filterWheel2String);
-			}
-			else
-			{
-				filterWheel1String = new String("UNKNOWN");
-				filterWheel1IdString = new String("UNKNOWN");
-				filterWheel2String = new String("UNKNOWN");
-				filterWheel2IdString = new String("UNKNOWN");
-			}
-		}
-		// ngat.rise.ccd.CCDNativeException thrown by libccd.CCDFilterWheelGetPosition
-		// IllegalArgumentException thrown by CcsStatus.getFilterWheelName
-		catch(Exception e)
-		{
-			String s = new String("Command "+command.getClass().getName()+
-				":Setting Fits Headers failed:");
-			ccs.error(s,e);
-			done.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+309);
-			done.setErrorString(s+e);
-			done.setSuccessful(false);
-			return false;
-		}
 		try
 		{
 		// load all the FITS header defaults and put them into the ccsFitsHeader object
@@ -420,16 +378,16 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 			cardImage.setValue(new Double(((double)exposureTime)/1000.0));
 		// FILTER1
 			cardImage = ccsFitsHeader.get("FILTER1");
-			cardImage.setValue(filterWheel1String);
+			cardImage.setValue("UNKNOWN");
 		// FILTERI1
 			cardImage = ccsFitsHeader.get("FILTERI1");
-			cardImage.setValue(filterWheel1IdString);
+			cardImage.setValue("UNKNOWN");
 		// FILTER2
 			cardImage = ccsFitsHeader.get("FILTER2");
-			cardImage.setValue(filterWheel2String);
+			cardImage.setValue("UNKNOWN");
 		// FILTERI2
 			cardImage = ccsFitsHeader.get("FILTERI2");
-			cardImage.setValue(filterWheel2IdString);
+			cardImage.setValue("UNKNOWN");
 		// CONFIGID
 			cardImage = ccsFitsHeader.get("CONFIGID");
 			cardImage.setValue(new Integer(status.getConfigId()));
@@ -440,15 +398,15 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 		// this will eventually cause this command to fail, but we don't want it to fail
 		// with a 'division by zero' error here.
 		// PRESCAN
-			cardImage = ccsFitsHeader.get("PRESCAN");
-			preScan = ccsFitsHeaderDefaults.getValueInteger("PRESCAN."+status.getNumberColumns(xbin)+"."+
-									getCCDRDOUTValue()+"."+xbin);
-			cardImage.setValue(new Integer(preScan));
+			//cardImage = ccsFitsHeader.get("PRESCAN");
+			//preScan = ccsFitsHeaderDefaults.getValueInteger("PRESCAN."+status.getNumberColumns(xbin)+"."+
+			//					getCCDRDOUTValue()+"."+xbin);
+		//cardImage.setValue(new Integer(preScan));
 		// POSTSCAN
-			cardImage = ccsFitsHeader.get("POSTSCAN");
-			postScan = ccsFitsHeaderDefaults.getValueInteger("POSTSCAN."+status.getNumberColumns(xbin)+"."+
-									 getCCDRDOUTValue()+"."+xbin);
-			cardImage.setValue(new Integer(postScan));
+		//cardImage = ccsFitsHeader.get("POSTSCAN");
+		//postScan = ccsFitsHeaderDefaults.getValueInteger("POSTSCAN."+status.getNumberColumns(xbin)+"."+
+			//						 getCCDRDOUTValue()+"."+xbin);
+	//cardImage.setValue(new Integer(postScan));
 		// CCDXIMSI
 			cardImage = ccsFitsHeader.get("CCDXIMSI");
 			cardImage.setValue(new Integer(ccsFitsHeaderDefaults.getValueInteger("CCDXIMSI")/xbin));
@@ -459,9 +417,6 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 			cardImage = ccsFitsHeader.get("CCDSCALE");
 			// note this next line assumes xbin == ybin e.g. CCDSCALE is constant in both axes
 			cardImage.setValue(new Double(ccsFitsHeaderDefaults.getValueDouble("CCDSCALE")*xbin));
-		// CCDRDOUT
-			cardImage = ccsFitsHeader.get("CCDRDOUT");
-			cardImage.setValue(getCCDRDOUTValue());
 		// CCDXBIN
 			cardImage = ccsFitsHeader.get("CCDXBIN");
 			cardImage.setValue(new Integer(xbin));
@@ -545,7 +500,6 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 		}// end try
 		// ngat.fits.FitsHeaderException thrown by ccsFitsHeaderDefaults.getValue
 		// ngat.util.FileUtilitiesNativeException thrown by CcsStatus.getConfigId
-		// ngat.rise.ccd.CCDNativeException thrown by libccd.CCDFilterWheelGetPosition
 		// IllegalArgumentException thrown by CcsStatus.getFilterWheelName/getCCDRDOUTValue
 		// NumberFormatException thrown by CcsStatus.getFilterWheelName/CcsStatus.getConfigId
 		// Exception thrown by CcsStatus.getConfigId
@@ -978,184 +932,13 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 		}
 		return true;
 	}
-
-	/**
-	 * Method to get an integer representing a SDSU output Amplifier,that can be passed into the CCDSetupDimensions
-	 * method of ngat.rise.ccd.CCDLibrary. The amplifier to use depends on whether the exposure will be windowed
-	 * or not, as windowed exposures  sometimes have to use a different amplifier (they can't use the DUAL readout
-	 * amplifier setting). If windowed is true, the amplifier to use is got from the "ccs.config.window.amplifier"
-	 * configuration property. If windowed is false, the amplifier to use is got from the "ccs.config.amplifier"
-	 * configuration property.
-	 * This implementation should agree with the eqivalent getDeInterlaceSetting method.
-	 * @param windowed A boolean, should be true if we want to use the amplifier for windowing, false
-	 *         if we want to use the default amplifier.
-	 * @return An integer, representing a valid value to pass into CCDSetupDimensions to set the specified
-	 *         amplifier.
-	 * @exception NullPointerException Thrown if the property name, or it's value, are null.
-	 * @exception CCDLibraryFormatException Thrown if the property's value, which is passed into
-	 *            CCDDSPAmplifierFromString, does not contain a valid amplifier.
-	 * @see #getAmplifier(java.lang.String)
-	 */
-	public int getAmplifier(boolean windowed) throws NullPointerException,CCDLibraryFormatException
-	{
-		int amplifier;
-
-		if(windowed)
-			amplifier = getAmplifier("ccs.config.window.amplifier");
-		else
-			amplifier = getAmplifier("ccs.config.amplifier");
-		return amplifier;
-	}
-
-	/**
-	 * Method to get an integer represeting a SDSU output Amplifier, that can be passed into the CCDSetupDimensions
-	 * method of ngat.rise.ccd.CCDLibrary. The amplifier to use is retrieved from the specified property.
-	 * @param propertyName A string, of the property keyword, the value of which is used to specify the
-	 *        amplifier.
-	 * @return An integer, representing a valid value to pass into CCDSetupDimensions to set the specified
-	 *         amplifier.
-	 * @exception NullPointerException Thrown if the property name, or it's value, are null.
-	 * @exception CCDLibraryFormatException Thrown if the property's value, which is passed into
-	 *            CCDDSPAmplifierFromString, does not contain a valid amplifier.
-	 * @see #status
-	 * @see #libccd
-	 * @see CcsStatus#getProperty
-	 * @see ngat.rise.ccd.CCDLibrary#CCDDSPAmplifierFromString
-	 */
-	public int getAmplifier(String propertyName) throws NullPointerException,CCDLibraryFormatException
-	{
-		String propertyValue = null;
-
-		if(propertyName == null)
-		{
-			throw new NullPointerException(this.getClass().getName()+
-						       ":getAmplifier:Property Name was null.");
-		}
-		propertyValue = status.getProperty(propertyName);
-		if(propertyValue == null)
-		{
-			throw new NullPointerException(this.getClass().getName()+
-						       ":getAmplifier:Property Value of keyword "+propertyName+
-						       " was null.");
-		}
-		return libccd.CCDDSPAmplifierFromString(propertyValue);
-	}
-
-	/**
-	 * Method to get an integer representing a SDSU output De-Interlace setting,
-	 * that can be passed into the CCDSetupDimensions method of ngat.rise.ccd.CCDLibrary. 
-	 * The setting to use depends on whether the exposure will be windowed
-	 * or not, as windowed exposures  sometimes have to use a different amplifier (they can't use the DUAL readout
-	 * amplifier setting). If windowed is true, the amplifier to use is got from the "ccs.config.window.amplifier"
-	 * configuration property. If windowed is false, the amplifier to use is got from the "ccs.config.amplifier"
-	 * configuration property. The chosen property name is passed to getDeInterlaceSetting to get the
-	 * equivalent de-interlace setting.
-	 * This implementation should agree with the eqivalent getAmplifier method.
-	 * @param windowed A boolean, should be true if we want to use the de-interlace setting for windowing, false
-	 *         if we want to use the default de-interlace setting.
-	 * @return An integer, representing a valid value to pass into CCDSetupDimensions to set the specified
-	 *         de-interlace setting.
-	 * @exception NullPointerException Thrown if getDeInterlaceSetting fails.
-	 * @exception CCDLibraryFormatException Thrown if getDeInterlaceSetting fails.
-	 * @see #getDeInterlaceSetting(java.lang.String)
-	 */
-	public int getDeInterlaceSetting(boolean windowed) throws NullPointerException,CCDLibraryFormatException
-	{
-		int deInterlaceSetting;
-
-		if(windowed)
-			deInterlaceSetting = getDeInterlaceSetting("ccs.config.window.amplifier");
-		else
-			deInterlaceSetting = getDeInterlaceSetting("ccs.config.amplifier");
-		return deInterlaceSetting;
-	}
-
-	/**
-	 * Method to get an integer represeting a SDSU de-interlace setting,
-	 * that can be passed into the CCDSetupDimensions method of ngat.rise.ccd.CCDLibrary. 
-	 * The amplifier to use is retrieved from the specified property, and the de-interlace setting determined 
-	 * from this.
-	 * @param amplifierPropertyName A string, of the property keyword, the value of which is used to specify the
-	 *        amplifier.
-	 * @return An integer, representing a valid value to pass into CCDSetupDimensions to set the specified
-	 *         de-interlace setting.
-	 * @exception NullPointerException Thrown if the property name, or it's value, are null.
-	 * @exception IllegalArgumentException Thrown if the amplifier was not recognised by this method.
-	 * @exception CCDLibraryFormatException Thrown if the derived de-interlace string, which is passed into
-	 *            CCDDSPDeinterlaceFromString, does not contain a valid de-interlace setting.
-	 * @see #getAmplifier
-	 * @see ngat.rise.ccd.CCDLibrary#CCDDSPDeinterlaceFromString
-	 */
-	public int getDeInterlaceSetting(String amplifierPropertyName) throws NullPointerException,
-	                                 IllegalArgumentException,CCDLibraryFormatException
-	{
-		String deInterlaceString = null;
-		int amplifier,deInterlaceSetting;
-
-		amplifier = getAmplifier(amplifierPropertyName);
-		// convert Amplifier to De-Interlace Setting string
-		switch(amplifier)
-		{
-			case CCDLibrary.CCD_DSP_AMPLIFIER_LEFT:
-				deInterlaceString = "CCD_DSP_DEINTERLACE_SINGLE";
-				break;
-			case CCDLibrary.CCD_DSP_AMPLIFIER_RIGHT:
-				deInterlaceString = "CCD_DSP_DEINTERLACE_FLIP";
-				break;
-			case CCDLibrary.CCD_DSP_AMPLIFIER_BOTH:
-				deInterlaceString = "CCD_DSP_DEINTERLACE_SPLIT_SERIAL";
-				break;
-			default:
-				throw new IllegalArgumentException(this.getClass().getName()+
-						       ":getDeInterlaceSetting:Amplifier String of keyword "+
-						       amplifierPropertyName+" was illegal value "+amplifier+".");
-		}
-		// convert de-interlace string into value to pass to libccd.
-		deInterlaceSetting = libccd.CCDDSPDeinterlaceFromString(deInterlaceString);
-		return deInterlaceSetting;
-	}
-
-	/**
-	 * This method retrieves the current Amplifier configuration used to configure the CCD controller.
-	 * This determines which readout(s) the CCD uses. The numeric setting is then converted into a 
-	 * valid string as specified by the LT FITS standard.
-	 * @return A String is returned, either 'LEFT', 'RIGHT', or 'DUAL'. If the amplifier cannot be
-	 * 	determined an exception is thrown.
-	 * @exception IllegalArgumentException Thrown if the amplifier string cannot be determined.
-	 * @see ngat.rise.ccd.CCDLibrary#CCDSetupGetAmplifier
-	 * @see ngat.rise.ccd.CCDLibrary#CCD_DSP_AMPLIFIER_LEFT
-	 * @see ngat.rise.ccd.CCDLibrary#CCD_DSP_AMPLIFIER_RIGHT
-	 * @see ngat.rise.ccd.CCDLibrary#CCD_DSP_AMPLIFIER_BOTH
-	 * @see #libccd
-	 */
-	private String getCCDRDOUTValue() throws IllegalArgumentException
-	{
-		String amplifierString = null;
-		int amplifier;
-
-		//get amplifier from libccd cached setting.
-		amplifier = libccd.CCDSetupGetAmplifier();
-		switch(amplifier)
-		{
-			case CCDLibrary.CCD_DSP_AMPLIFIER_LEFT:
-				amplifierString = "LEFT";
-				break;
-			case CCDLibrary.CCD_DSP_AMPLIFIER_RIGHT:
-				amplifierString = "RIGHT";
-				break;
-			case CCDLibrary.CCD_DSP_AMPLIFIER_BOTH:
-				amplifierString = "DUAL";
-				break;
-			default:
-				throw new IllegalArgumentException("getCCDRDOUTValue:amplifier:"+amplifier+
-									" not known.");
-		}
-		return amplifierString;
-	}
 }
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2010/03/26 14:38:29  cjm
+// Changed from bitwise to absolute logging levels.
+//
 // Revision 1.2  2010/02/10 11:03:07  cjm
 // Added FITS lock file support to saveFitsHeaders, and unLockFile(s) methods.
 //

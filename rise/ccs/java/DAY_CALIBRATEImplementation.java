@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // DAY_CALIBRATEImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DAY_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/DAY_CALIBRATEImplementation.java,v 1.4 2017-07-29 15:35:59 cjm Exp $
 import java.io.*;
 import java.lang.*;
 import java.util.*;
@@ -38,14 +38,14 @@ import ngat.util.logging.*;
  * Java Message System. It performs a series of BIAS and DARK frames from a configurable list,
  * taking into account frames done in previous invocations of this command (it saves it's state).
  * @author Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.3 2010-03-26 14:38:29 cjm Exp $");
+	public final static String RCSID = new String("$Id: DAY_CALIBRATEImplementation.java,v 1.4 2017-07-29 15:35:59 cjm Exp $");
 	/**
 	 * Initial part of a key string, used to create a list of potential day calibrations to
 	 * perform from a Java property file.
@@ -61,11 +61,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	 * perform from a Java property file.
 	 */
 	protected final static String LIST_KEY_BIN_STRING = ".config.bin";
-	/**
-	 * Final part of a key string, used to create a list of potential day calibrations to
-	 * perform from a Java property file.
-	 */
-	protected final static String LIST_KEY_AMPLIFIER_STRING = ".config.window_amplifier";
 	/**
 	 * Final part of a key string, used to create a list of potential day calibrations to
 	 * perform from a Java property file.
@@ -243,16 +238,16 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			}
 		}// end for on calibration list
 	// send an ack before make master processing, so the client doesn't time out.
-		makeBiasAckTime = status.getPropertyInteger("ccs.day_calibrate.acknowledge_time.make_bias");
-		if(sendBasicAck(dayCalibrateCommand,dayCalibrateDone,makeBiasAckTime) == false)
-			return dayCalibrateDone;
+	//	makeBiasAckTime = status.getPropertyInteger("ccs.day_calibrate.acknowledge_time.make_bias");
+	//	if(sendBasicAck(dayCalibrateCommand,dayCalibrateDone,makeBiasAckTime) == false)
+	//		return dayCalibrateDone;
 	// get directory FITS files are in.
-		directoryString = status.getProperty("ccs.file.fits.path");
-		if(directoryString.endsWith(System.getProperty("file.separator")) == false)
-			directoryString = directoryString.concat(System.getProperty("file.separator"));
+	//	directoryString = status.getProperty("ccs.file.fits.path");
+	//	if(directoryString.endsWith(System.getProperty("file.separator")) == false)
+	//		directoryString = directoryString.concat(System.getProperty("file.separator"));
 	// Call pipeline to create master bias.
-		if(makeMasterBias(dayCalibrateCommand,dayCalibrateDone,directoryString) == false)
-			return dayCalibrateDone;
+	//	if(makeMasterBias(dayCalibrateCommand,dayCalibrateDone,directoryString) == false)
+	//		return dayCalibrateDone;
 	// return done
 		dayCalibrateDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_NO_ERROR);
 		dayCalibrateDone.setErrorString("");
@@ -270,7 +265,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	 * @see #LIST_KEY_STRING
 	 * @see #LIST_KEY_TYPE_STRING
 	 * @see #LIST_KEY_BIN_STRING
-	 * @see #LIST_KEY_AMPLIFIER_STRING
 	 * @see #LIST_KEY_FREQUENCY_STRING
 	 * @see #LIST_KEY_COUNT_STRING
 	 * @see #LIST_KEY_EXPOSURE_TIME_STRING
@@ -281,7 +275,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		String typeString = null;
 		int index,bin,count,exposureTime;
 		long frequency;
-		boolean done,useWindowAmplifier;
+		boolean done;
 
 		index = 0;
 		done = false;
@@ -312,8 +306,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				try
 				{
 					bin = status.getPropertyInteger(LIST_KEY_STRING+index+LIST_KEY_BIN_STRING);
-					useWindowAmplifier  = status.getPropertyBoolean(LIST_KEY_STRING+index+
-											LIST_KEY_AMPLIFIER_STRING);
 					frequency = status.getPropertyLong(LIST_KEY_STRING+index+
 										LIST_KEY_FREQUENCY_STRING);
 					count = status.getPropertyInteger(LIST_KEY_STRING+index+LIST_KEY_COUNT_STRING);
@@ -343,7 +335,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				try
 				{
 					calibration.setBin(bin);
-					calibration.setUseWindowAmplifier(useWindowAmplifier);
 					calibration.setFrequency(frequency);
 					calibration.setCount(count);
 					calibration.setExposureTime(exposureTime);
@@ -352,8 +343,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				{
 					String errorString = new String(dayCalibrateCommand.getId()+
 						":loadCalibrationList:Failed to set calibration data at index "+index+
-						":bin:"+bin+":use window amplifier:"+useWindowAmplifier+
-						":frequency:"+frequency+":count:"+count+
+						":bin:"+bin+":frequency:"+frequency+":count:"+count+
 						":exposure time:"+exposureTime+".");
 					ccs.error(this.getClass().getName()+":"+errorString,e);
 					dayCalibrateDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+2205);
@@ -369,7 +359,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 					":Loaded calibration "+index+
 					"\n\ttype:"+calibration.getType()+
 					":bin:"+calibration.getBin()+
-					":use window amplifier:"+calibration.useWindowAmplifier()+
 					":count:"+calibration.getCount()+
 					":texposure time:"+calibration.getExposureTime()+
 					":frequency:"+calibration.getFrequency()+".");
@@ -443,23 +432,20 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		DAY_CALIBRATECalibration calibration = null;
 		int type,count,bin,exposureTime;
 		long lastTime;
-		boolean useWindowAmplifier;
 
 		for(int i = 0; i< calibrationList.size(); i++)
 		{
 			calibration = (DAY_CALIBRATECalibration)(calibrationList.get(i));
 			type = calibration.getType();
 			bin = calibration.getBin();
-			useWindowAmplifier = calibration.useWindowAmplifier();
 			exposureTime = calibration.getExposureTime();
 			count = calibration.getCount();
-			lastTime = dayCalibrateState.getLastTime(type,bin,useWindowAmplifier,exposureTime,count);
+			lastTime = dayCalibrateState.getLastTime(type,bin,exposureTime,count);
 			calibration.setLastTime(lastTime);
 			ccs.log(Logging.VERBOSITY_VERBOSE,
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
 				":count:"+calibration.getCount()+
 				":exposure time:"+calibration.getExposureTime()+
 				":frequency:"+calibration.getFrequency()+
@@ -503,7 +489,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Testing Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
 				":count:"+calibration.getCount()+
 				":exposure time:"+calibration.getExposureTime()+
 				":frequency:"+calibration.getFrequency()+
@@ -520,7 +505,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Testing Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
 				":count:"+calibration.getCount()+
 				":exposure time:"+calibration.getExposureTime()+
 				":frequency:"+calibration.getFrequency()+
@@ -547,7 +531,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 				"Command:"+dayCalibrateCommand.getClass().getName()+":Testing Calibration:"+
 				"\n\ttype:"+calibration.getType()+
 				":bin:"+calibration.getBin()+
-				":use window amplifier:"+calibration.useWindowAmplifier()+
 				":count:"+calibration.getCount()+
 				":exposure time:"+calibration.getExposureTime()+
 				":frequency:"+calibration.getFrequency()+
@@ -581,23 +564,20 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	{
 		int type,count,bin,exposureTime;
 		long lastTime;
-		boolean useWindowAmplifier;
 
 		ccs.log(Logging.VERBOSITY_VERBOSE,
 			"Command:"+dayCalibrateCommand.getClass().getName()+
 			":doCalibrate:type:"+calibration.getType()+":bin:"+calibration.getBin()+
-			":use window amplifier:"+calibration.useWindowAmplifier()+
 			":count:"+calibration.getCount()+":exposure time:"+calibration.getExposureTime()+
 			":frequency:"+calibration.getFrequency()+".");
 	// get copy of calibration data
 		type = calibration.getType();
 		bin = calibration.getBin();
-		useWindowAmplifier = calibration.useWindowAmplifier();
 		count = calibration.getCount();
 		exposureTime = calibration.getExposureTime();
 	// configure CCD camera
 	// don't send a basic ack, as setting the binning takes less than 1 second
-		if(doConfig(dayCalibrateCommand,dayCalibrateDone,bin,useWindowAmplifier) == false)
+		if(doConfig(dayCalibrateCommand,dayCalibrateDone,bin) == false)
 			return false;
 	// send an ack before the frame, so the client doesn't time out during the first exposure
 		if(sendBasicAck(dayCalibrateCommand,dayCalibrateDone,exposureTime+readoutOverhead) == false)
@@ -606,7 +586,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		if(doFrames(dayCalibrateCommand,dayCalibrateDone,type,exposureTime,count) == false)
 			return false;
 	// update state
-		dayCalibrateState.setLastTime(type,bin,useWindowAmplifier,exposureTime,count);
+		dayCalibrateState.setLastTime(type,bin,exposureTime,count);
 		try
 		{
 			dayCalibrateState.save(stateFilename);
@@ -621,7 +601,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			dayCalibrateDone.setSuccessful(false);
 			return false;
 		}
-		lastTime = dayCalibrateState.getLastTime(type,bin,useWindowAmplifier,exposureTime,count);
+		lastTime = dayCalibrateState.getLastTime(type,bin,exposureTime,count);
 		calibration.setLastTime(lastTime);
 		return true;
 	}
@@ -631,25 +611,20 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	 * @param dayCalibrateCommand The instance of DAY_CALIBRATE we are currently running.
 	 * @param dayCalibrateDone The instance of DAY_CALIBRATE_DONE to fill in with errors we receive.
 	 * @param bin The binning factor to use.
-	 * @param useWindowAmplifier Boolean specifying whether to use the default amplifier (false), or the
-	 *                           amplifier used for windowing readouts (true).
 	 * @return The method returns true if the calibration was done successfully, false if an error occured.
 	 * @see CcsStatus#getNumberColumns
 	 * @see CcsStatus#getNumberRows
 	 */
-	protected boolean doConfig(DAY_CALIBRATE dayCalibrateCommand,DAY_CALIBRATE_DONE dayCalibrateDone,int bin,
-				   boolean useWindowAmplifier)
+	protected boolean doConfig(DAY_CALIBRATE dayCalibrateCommand,DAY_CALIBRATE_DONE dayCalibrateDone,int bin)
 	{
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.CCD_SETUP_WINDOW_COUNT];
-		int numberColumns,numberRows,amplifier,deInterlaceSetting;
+		int numberColumns,numberRows;
 
 	// load other required config for dimension configuration from CCS properties file.
 		try
 		{
 			numberColumns = status.getNumberColumns(bin);
 			numberRows = status.getNumberRows(bin);
-			amplifier = getAmplifier(useWindowAmplifier);
-			deInterlaceSetting = getDeInterlaceSetting(useWindowAmplifier);
 		}
 	// CCDLibraryFormatException,IllegalArgumentException,NumberFormatException.
 		catch(Exception e)
@@ -674,8 +649,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	// send dimension configuration to the SDSU controller
 		try
 		{
-			libccd.CCDSetupDimensions(numberColumns,numberRows,bin,bin,
-				amplifier,deInterlaceSetting,0,windowList);
+			libccd.CCDSetupDimensions(numberColumns,numberRows,bin,bin,0,windowList);
 		}
 		catch(Exception e)
 		{
@@ -708,7 +682,7 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		}
 	// Store name of configuration used in status object.
 	// This is queried when saving FITS headers to get the CONFNAME value.
-		status.setConfigName("DAY_CALIBRATION:"+dayCalibrateCommand.getId()+":"+bin+":"+useWindowAmplifier);
+		status.setConfigName("DAY_CALIBRATION:"+dayCalibrateCommand.getId()+":"+bin);
 		return true;
 	}
 
@@ -727,7 +701,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 	 * 	method is called, otherwise CCDExposureExpose is used.
 	 * <li>The FITS file lock created in saveFitsHeaders is removed with unLockFile.
 	 * <li>testAbort is called to see if this command implementation has been aborted.
-	 * <li>reduceCalibrate is called to pass the frame to the Real Time Data Pipeline for processing.
 	 * </ul>
 	 * @param dayCalibrateCommand The instance of DAY_CALIBRATE we are currently running.
 	 * @param dayCalibrateDone The instance of DAY_CALIBRATE_DONE to fill in with errors we receive.
@@ -842,14 +815,14 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 			if(testAbort(dayCalibrateCommand,dayCalibrateDone) == true)
 				return false;
 		// Call pipeline to reduce data.
-			if(reduceCalibrate(dayCalibrateCommand,dayCalibrateDone,filename) == false)
-				return false; 
+		//	if(reduceCalibrate(dayCalibrateCommand,dayCalibrateDone,filename) == false)
+		//		return false; 
 		// send dp_ack, filename/mean counts/peak counts are all retrieved from dayCalibrateDone,
 		// which had these parameters filled in by reduceCalibrate
 		// time to complete is readout overhead + exposure Time for next frame
-			if(sendDayCalibrateDpAck(dayCalibrateCommand,dayCalibrateDone,
-				exposureTime+readoutOverhead) == false)
-				return false;
+		//	if(sendDayCalibrateDpAck(dayCalibrateCommand,dayCalibrateDone,
+		//		exposureTime+readoutOverhead) == false)
+		//		return false;
 		}// end for on count
 		return true;
 	}
@@ -1022,8 +995,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		 * @param type The type of calibration, one of DAY_CALIBRATECalibration.TYPE_BIAS
 		 * 	or DAY_CALIBRATECalibration.TYPE_DARK.
 		 * @param bin The binning factor used for this calibration.
-		 * @param useWindowAmplifier Whether we are using the default amplifier (false) or the amplifier
-		 *        used for windowing (true).
 		 * @param exposureTime The length of exposure for a DARK, always zero for a BIAS.
 		 * @param count The number of frames.
 		 * @return The number of milliseconds since the EPOCH, the last time a calibration with these
@@ -1034,14 +1005,14 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		 * @see #LIST_KEY_STRING
 		 * @see #LIST_KEY_LAST_TIME_STRING
 		 */
-		public long getLastTime(int type,int bin,boolean useWindowAmplifier,int exposureTime,int count)
+		public long getLastTime(int type,int bin,int exposureTime,int count)
 		{
 			long time;
 
 			try
 			{
 				time = properties.getLong(LIST_KEY_STRING+LIST_KEY_LAST_TIME_STRING+
-					       type+"."+bin+"."+useWindowAmplifier+"."+exposureTime+"."+count);
+					       type+"."+bin+"."+exposureTime+"."+count);
 			}
 			catch(NGATPropertyException e)/* assume failure due to key not existing */
 			{
@@ -1056,8 +1027,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		 * @param type The type of calibration, one of DAY_CALIBRATECalibration.TYPE_BIAS
 		 * 	or DAY_CALIBRATECalibration.TYPE_DARK.
 		 * @param bin The binning factor used for this calibration.
-		 * @param useWindowAmplifier Whether we are using the default amplifier (false) or the amplifier
-		 *        used for windowing (true).
 		 * @param exposureTime The length of exposure for a DARK, always zero for a BIAS.
 		 * @param count The number of frames.
 		 * @see DAY_CALIBRATEImplementation.DAY_CALIBRATECalibration#TYPE_BIAS
@@ -1065,13 +1034,13 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		 * @see #LIST_KEY_STRING
 		 * @see #LIST_KEY_LAST_TIME_STRING
 		 */
-		public void setLastTime(int type,int bin,boolean useWindowAmplifier,int exposureTime,int count)
+		public void setLastTime(int type,int bin,int exposureTime,int count)
 		{
 			long now;
 
 			now = System.currentTimeMillis();
 			properties.setProperty(LIST_KEY_STRING+LIST_KEY_LAST_TIME_STRING+type+"."+bin+"."+
-					       useWindowAmplifier+"."+exposureTime+"."+count,new String(""+now));
+					       exposureTime+"."+count,new String(""+now));
 		}
 	}
 
@@ -1101,12 +1070,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		 * What binning to configure the ccd to for this calibration.
 		 */
 		protected int bin;
-		/**
-		 * Which amplifier should we use to readout.
-		 * If false, we use the default amplifier.
-		 * If true, we use the window amplifier.
-		 */
-		protected boolean useWindowAmplifier;
 		/**
 		 * How many times to perform this calibration.
 		 */
@@ -1209,27 +1172,6 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 		public int getBin()
 		{
 			return bin;
-		}
-
-		/**
-		 * Method to set whether we are using the default amplifier or the one used for windowing.
-		 * @param b Set to true to use the windowing amplifier, false to use the default amplifier.
-		 * @see #useWindowAmplifier
-		 */
-		public void setUseWindowAmplifier(boolean b)
-		{
-			useWindowAmplifier = b;
-		}
-
-		/**
-		 * Method to get whether we are using the default amplifier or the one used for windowing.
-		 * @return Returns true if we are using the windowing amplifier, 
-		 *         false if we are using the default amplifier.
-		 * @see #useWindowAmplifier
-		 */
-		public boolean useWindowAmplifier()
-		{
-			return useWindowAmplifier;
 		}
 
 		/**
@@ -1343,6 +1285,9 @@ public class DAY_CALIBRATEImplementation extends CALIBRATEImplementation impleme
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.3  2010/03/26 14:38:29  cjm
+// Changed from bitwise to absolute logging levels.
+//
 // Revision 1.2  2010/02/10 11:03:07  cjm
 // Added FITS lock file support.
 //

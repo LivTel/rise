@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CONFIGImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CONFIGImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/CONFIGImplementation.java,v 1.3 2017-07-29 15:35:32 cjm Exp $
 
 import java.lang.*;
 import ngat.rise.ccd.*;
@@ -36,18 +36,14 @@ import ngat.util.logging.*;
  * Java Message System. It extends SETUPImplementation.
  * @see SETUPImplementation
  * @author Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class CONFIGImplementation extends SETUPImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.2 2010-03-26 14:38:29 cjm Exp $");
-	/**
-	 * The number of filter wheels.
-	 */
-	int filterWheelCount = 0;
+	public final static String RCSID = new String("$Id: CONFIGImplementation.java,v 1.3 2017-07-29 15:35:32 cjm Exp $");
 
 	/**
 	 * Constructor. 
@@ -112,15 +108,12 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 	 * </ul>
 	 * An object of class CONFIG_DONE is returned. If an error occurs a suitable error message is returned.
 	 * @see #setFocusOffset
-	 * @see #filterWheelCount
 	 * @see ngat.phase2.CCDConfig
 	 * @see CcsStatus#getNumberColumns
 	 * @see CcsStatus#getNumberRows
 	 * @see CcsStatus#getPropertyInteger
 	 * @see CcsStatus#incConfigId
-	 * @see ngat.rise.ccd.CCDLibrary#CCDDSPDeinterlaceFromString
 	 * @see ngat.rise.ccd.CCDLibrary#CCDSetupDimensions
-	 * @see ngat.rise.ccd.CCDLibrary#CCDFilterWheelMove
 	 */
 	public COMMAND_DONE processCommand(COMMAND command)
 	{
@@ -131,9 +124,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		CONFIG_DONE configDone = null;
 		CCDLibrarySetupWindow windowList[] = new CCDLibrarySetupWindow[CCDLibrary.CCD_SETUP_WINDOW_COUNT];
 		CcsStatus status = null;
-		int numberColumns,numberRows,amplifier,deInterlaceSetting;
-		int filterWheelPosition[] = null;
-		boolean filterWheelEnable;
+		int numberColumns,numberRows;
 
 	// test contents of command.
 		configCommand = (CONFIG)command;
@@ -172,16 +163,6 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		{
 			numberColumns = status.getNumberColumns(detector.getXBin());
 			numberRows = status.getNumberRows(detector.getYBin());
-	                amplifier = getAmplifier(detector.getWindowFlags() > 0);
-			deInterlaceSetting = getDeInterlaceSetting(detector.getWindowFlags() > 0);
-			filterWheelEnable = status.getPropertyBoolean("ccs.config.filter_wheel.enable");
-			filterWheelCount = status.getPropertyInteger("filterwheel.count");
-			filterWheelPosition = new int[filterWheelCount];
-			// No filter wheel on RISE
-			/* filterWheelPosition[0] = status.getFilterWheelPosition(0,
-					riseConfig.getLowerFilterWheel());
-			filterWheelPosition[1] = status.getFilterWheelPosition(1,
-				riseConfig.getUpperFilterWheel()); */
 		}
 	// CCDLibraryFormatException is caught and re-thrown by this method.
 	// Other exceptions (IllegalArgumentException,NumberFormatException) are not caught here, 
@@ -259,21 +240,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 		try
 		{
 			libccd.CCDSetupDimensions(numberColumns,numberRows,detector.getXBin(),detector.getYBin(),
-				amplifier,deInterlaceSetting,detector.getWindowFlags(),windowList);
-			if(testAbort(configCommand,configDone) == true)
-				return configDone;
-			if(filterWheelEnable)
-			{
-				for(int i = 0;i < filterWheelCount; i++)
-				{
-					libccd.CCDFilterWheelMove(i,filterWheelPosition[i]);
-				}
-			}
-			else
-			{
-				ccs.log(Logging.VERBOSITY_TERSE,this.getClass().getName()+
-					":processCommand:Filter wheels not enabled:Filter wheels NOT moved.");
-			}
+						  detector.getWindowFlags(),windowList);
 		}
 		catch(CCDLibraryNativeException e)
 		{
@@ -320,7 +287,7 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 	 * Routine to set the telescope focus offset. Sends a OFFSET_FOCUS command to
 	 * the ISS. The OFFSET_FOCUS sent is raed from the config.
 	 * @param id The Id is used as the OFFSET_FOCUS command's id.
-	 * @param ccdConfig The configuration to attain, including the type of filter we are using for each wheel.
+	 * @param riseConfig The configuration to attain, including the type of filter we are using for each wheel.
 	 * @param status A reference to the Ccs's status object, which contains the filter database.
 	 * @param configDone The instance of CONFIG_DONE. This is filled in with an error message if the
 	 * 	OFFSET_FOCUS fails.
@@ -361,6 +328,9 @@ public class CONFIGImplementation extends SETUPImplementation implements JMSComm
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.2  2010/03/26 14:38:29  cjm
+// Changed from bitwise to absolute logging levels.
+//
 // Revision 1.1  2009/10/15 10:21:18  cjm
 // Initial revision
 //
