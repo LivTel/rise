@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // FITSImplementation.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.4 2017-07-29 15:36:30 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ccs/java/FITSImplementation.java,v 1.5 2017-07-31 10:14:52 cjm Exp $
 
 import java.lang.*;
 import java.util.Date;
@@ -37,14 +37,14 @@ import ngat.util.logging.*;
  * use the SDSU CCD Library as this is needed to generate FITS files.
  * @see CCDLibraryImplementation
  * @author Chris Mottram
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class FITSImplementation extends CCDLibraryImplementation implements JMSCommandImplementation
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class.
 	 */
-	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.4 2017-07-29 15:36:30 cjm Exp $");
+	public final static String RCSID = new String("$Id: FITSImplementation.java,v 1.5 2017-07-31 10:14:52 cjm Exp $");
 	/**
 	 * A reference to the CcsStatus class instance that holds status information for the Ccs.
 	 */
@@ -376,18 +376,6 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 		// EXPTIME
 			cardImage = ccsFitsHeader.get("EXPTIME");
 			cardImage.setValue(new Double(((double)exposureTime)/1000.0));
-		// FILTER1
-			cardImage = ccsFitsHeader.get("FILTER1");
-			cardImage.setValue("UNKNOWN");
-		// FILTERI1
-			cardImage = ccsFitsHeader.get("FILTERI1");
-			cardImage.setValue("UNKNOWN");
-		// FILTER2
-			cardImage = ccsFitsHeader.get("FILTER2");
-			cardImage.setValue("UNKNOWN");
-		// FILTERI2
-			cardImage = ccsFitsHeader.get("FILTERI2");
-			cardImage.setValue("UNKNOWN");
 		// CONFIGID
 			cardImage = ccsFitsHeader.get("CONFIGID");
 			cardImage.setValue(new Integer(status.getConfigId()));
@@ -936,6 +924,9 @@ public class FITSImplementation extends CCDLibraryImplementation implements JMSC
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.4  2017/07/29 15:36:30  cjm
+// Removed lots of old RATCam code.
+//
 // Revision 1.3  2010/03/26 14:38:29  cjm
 // Changed from bitwise to absolute logging levels.
 //
