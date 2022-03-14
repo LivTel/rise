@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // CCDLibraryNativeException.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ngat/rise/ccd/CCDLibraryNativeException.java,v 1.1 2009-10-15 10:23:09 cjm Exp $
+// $Header: /space/home/eng/cjm/cvs/rise/ngat/rise/ccd/CCDLibraryNativeException.java,v 1.2 2022-03-14 16:10:35 cjm Exp $
 package ngat.rise.ccd;
 
 /**
@@ -26,14 +26,14 @@ package ngat.rise.ccd;
  * error. The individual parts of the error generated are stored in the exception as well as the complete message.
  * The JNI interface itself can also generate these exceptions.
  * @author Chris Mottram
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class CCDLibraryNativeException extends Exception
 {
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: CCDLibraryNativeException.java,v 1.1 2009-10-15 10:23:09 cjm Exp $");
+	public final static String RCSID = new String("$Id: CCDLibraryNativeException.java,v 1.2 2022-03-14 16:10:35 cjm Exp $");
 	/**
 	 * A type of error that can cause this exception to be created. This type is when the error type
 	 * is unknown.
@@ -71,25 +71,9 @@ public class CCDLibraryNativeException extends Exception
 	 */
 	private int errorType = CCD_NATIVE_EXCEPTION_TYPE_NONE;
 	/**
-	 * The current value of the error number in the DSP module.
-	 */
-	protected int DSPErrorNumber = 0;
-	/**
 	 * The current value of the error number in the Exposure module.
 	 */
 	protected int exposureErrorNumber = 0;
-	/**
-	 * The current value of the error number in the filter wheel module.
-	 */
-	protected int filterWheelErrorNumber = 0;
-	/**
-	 * The current value of the error number in the Interface module.
-	 */
-	protected int interfaceErrorNumber = 0;
-	/**
-	 * The current value of the error number in the PCI module.
-	 */
-	protected int PCIErrorNumber = 0;
 	/**
 	 * The current value of the error number in the Setup module.
 	 */
@@ -98,10 +82,6 @@ public class CCDLibraryNativeException extends Exception
 	 * The current value of the error number in the Temperature module.
 	 */
 	protected int temperatureErrorNumber = 0;
-	/**
-	 * The current value of the error number in the Text module.
-	 */
-	protected int textErrorNumber = 0;
 
 	/**
 	 * Constructor for the exception.
@@ -122,36 +102,21 @@ public class CCDLibraryNativeException extends Exception
 	 * @param libccd The instance of CCDLibrary that threw this exception.
 	 * @see #errorString
 	 * @see #errorType
-	 * @see #DSPErrorNumber
 	 * @see #exposureErrorNumber
-	 * @see #filterWheelErrorNumber
-	 * @see #interfaceErrorNumber
-	 * @see #PCIErrorNumber
 	 * @see #setupErrorNumber
 	 * @see #temperatureErrorNumber
-	 * @see #textErrorNumber
-	 * @see CCDLibrary#CCDDSPGetErrorNumber
 	 * @see CCDLibrary#CCDExposureGetErrorNumber
-	 * @see CCDLibrary#CCDFilterWheelGetErrorNumber
-	 * @see CCDLibrary#CCDInterfaceGetErrorNumber
-	 * @see CCDLibrary#CCDPCIGetErrorNumber
 	 * @see CCDLibrary#CCDSetupGetErrorNumber
 	 * @see CCDLibrary#CCDTemperatureGetErrorNumber
-	 * @see CCDLibrary#CCDTextGetErrorNumber
 	 */
 	public CCDLibraryNativeException(String errorString,CCDLibrary libccd)
 	{
 		super(errorString);
 		this.errorString = new String(errorString);
 		this.errorType = CCD_NATIVE_EXCEPTION_TYPE_NATIVE;
-		this.DSPErrorNumber = libccd.CCDDSPGetErrorNumber();
 		this.exposureErrorNumber = libccd.CCDExposureGetErrorNumber();
-		this.filterWheelErrorNumber = libccd.CCDFilterWheelGetErrorNumber();
-		this.interfaceErrorNumber = libccd.CCDInterfaceGetErrorNumber();
-		this.PCIErrorNumber = libccd.CCDPCIGetErrorNumber();
 		this.setupErrorNumber = libccd.CCDSetupGetErrorNumber();
 		this.temperatureErrorNumber = libccd.CCDTemperatureGetErrorNumber();
-		this.textErrorNumber = libccd.CCDTextGetErrorNumber();
 	}
 
 	/**
@@ -217,55 +182,11 @@ public class CCDLibraryNativeException extends Exception
 	 * Retrieve routine for the error number for the relevant C module.
 	 * @return Returns the error number supplied for this exception, 
 	 * 	if the number was supplied in a constructor.
-	 * @see #DSPErrorNumber
-	 */
-	public int getDSPErrorNumber()
-	{
-		return DSPErrorNumber;
-	}
-
-	/**
-	 * Retrieve routine for the error number for the relevant C module.
-	 * @return Returns the error number supplied for this exception, 
-	 * 	if the number was supplied in a constructor.
 	 * @see #exposureErrorNumber
 	 */
 	public int getExposureErrorNumber()
 	{
 		return exposureErrorNumber;
-	}
-
-	/**
-	 * Retrieve routine for the error number for the relevant C module.
-	 * @return Returns the error number supplied for this exception, 
-	 * 	if the number was supplied in a constructor.
-	 * @see #filterWheelErrorNumber
-	 */
-	public int getFilterWheelErrorNumber()
-	{
-		return filterWheelErrorNumber;
-	}
-
-	/**
-	 * Retrieve routine for the error number for the relevant C module.
-	 * @return Returns the error number supplied for this exception, 
-	 * 	if the number was supplied in a constructor.
-	 * @see #interfaceErrorNumber
-	 */
-	public int getInterfaceErrorNumber()
-	{
-		return interfaceErrorNumber;
-	}
-
-	/**
-	 * Retrieve routine for the error number for the relevant C module.
-	 * @return Returns the error number supplied for this exception, 
-	 * 	if the number was supplied in a constructor.
-	 * @see #PCIErrorNumber
-	 */
-	public int getPCIErrorNumber()
-	{
-		return PCIErrorNumber;
 	}
 
 	/**
@@ -288,17 +209,6 @@ public class CCDLibraryNativeException extends Exception
 	public int getTemperatureErrorNumber()
 	{
 		return temperatureErrorNumber;
-	}
-
-	/**
-	 * Retrieve routine for the error number for the relevant C module.
-	 * @return Returns the error number supplied for this exception, 
-	 * 	if the number was supplied in a constructor.
-	 * @see #textErrorNumber
-	 */
-	public int getTextErrorNumber()
-	{
-		return textErrorNumber;
 	}
 
 	/**
@@ -328,6 +238,9 @@ public class CCDLibraryNativeException extends Exception
 
 //
 // $Log: not supported by cvs2svn $
+// Revision 1.1  2009/10/15 10:23:09  cjm
+// Initial revision
+//
 // Revision 1.4  2006/05/16 17:41:34  cjm
 // gnuify: Added GNU General Public License.
 //
