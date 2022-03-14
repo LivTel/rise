@@ -1,5 +1,5 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/rise/ccs/test/Makefile,v 1.2 2009-10-21 08:58:41 cjm Exp $ 
+# $Header: /space/home/eng/cjm/cvs/rise/ccs/test/Makefile,v 1.3 2022-03-14 15:22:12 cjm Exp $ 
 
 include ../../../Makefile.common
 include ../../Makefile.common
@@ -10,7 +10,7 @@ DOCSDIR 	= $(RISE_CCS_DOC_HOME)/test_javadocs
 DOCFLAGS 	= -version -author -private
 SRCS = MakeISSCommandFile.java SendISSCommandFile.java SicfTCPClientConnectionThread.java \
 	SicfTCPServer.java SicfTCPServerConnectionThread.java MakeCCDConfigFile.java \
-	SendConfigCommand.java SendMultrunCommand.java MakeRISEConfigFile.java
+	SendConfigCommand.java SendRISEConfigCommand.java SendMultrunCommand.java MakeRISEConfigFile.java
 OBJS 		= $(SRCS:%.java=$(BINDIR)/%.class) 
 DOCS 		= $(SRCS:%.java=$(DOCSDIR)/%.html)
 SCRIPTS		= sendisscommands.csh calibrate_ccd_dark.csh calibrate_ccd_light.csh test_config.csh \
@@ -50,6 +50,9 @@ tidy:
 backup: tidy
 
 # $Log: not supported by cvs2svn $
+# Revision 1.2  2009/10/21 08:58:41  cjm
+# Changed to RISE_CCS_BIN_HOME/ RISE_CCS_DOC_HOME.
+#
 # Revision 1.1  2009/10/15 10:21:57  cjm
 # Initial revision
 #
