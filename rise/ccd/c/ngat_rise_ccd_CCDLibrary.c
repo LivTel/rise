@@ -4,7 +4,7 @@
     This file is part of Ccs.
 
     Ccs is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
+    it under the terms of the GNU General Public License as publihed by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
@@ -19,14 +19,14 @@
 */
 /* ngat_rise_ccd_CCDLibrary.c
 ** implementation of Java Class ngat.ccd.CCDLibrary native interfaces
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ngat_rise_ccd_CCDLibrary.c,v 1.2 2010-08-17 17:16:05 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ngat_rise_ccd_CCDLibrary.c,v 1.3 2022-03-14 15:23:03 cjm Exp $
 */
 /**
  * ngat_rise_ccd_CCDLibrary.c is the 'glue' between librise_ccd, the C library version of the SDSU CCD Controller
  * software, and CCDLibrary.java, a Java Class to drive the controller. CCDLibrary specifically
  * contains all the native C routines corresponding to native methods in Java.
  * @author SDSU, Chris Mottram LJMU
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -44,15 +44,10 @@
 #include <jni.h>
 #include <time.h>
 #include "ccd_global.h"
-#include "ccd_dsp.h"
 #include "ccd_exposure.h"
 #include "ccd_multrun.h"
-#include "ccd_filter_wheel.h"
-#include "ccd_interface.h"
-#include "ccd_pci.h"
 #include "ccd_setup.h"
 #include "ccd_temperature.h"
-#include "ccd_text.h"
 #include "ngat_rise_ccd_CCDLibrary.h"
 
 /* hash definitions */
@@ -66,7 +61,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ngat_rise_ccd_CCDLibrary.c,v 1.2 2010-08-17 17:16:05 cjm Exp $";
+static char rcsid[] = "$Id: ngat_rise_ccd_CCDLibrary.c,v 1.3 2022-03-14 15:23:03 cjm Exp $";
 
 /**
  * Copy of the java virtual machine pointer, used for logging back up to the Java layer from C.
@@ -99,176 +94,8 @@ static int CCDLibrary_Java_String_List_Free(JNIEnv *env,jobject obj,
 ** 		External routines
 ** ------------------------------------------------------------------------------ */
 /* ------------------------------------------------------------------------------
-** 		ccd_dsp.c
-** ------------------------------------------------------------------------------ */
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_DSP_Abort<br>
- * Signature: ()V<br>
- * Java Native Interface routine to abort a DSP command sent to the controller.
- * This is done by calling CCD_DSP_Set_Abort(TRUE).
- * @see  ccd_dsp.html#CCD_DSP_Set_Abort
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1DSP_1Abort(JNIEnv *env,jobject obj)
-{
-	CCD_DSP_Set_Abort(TRUE);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_DSP_Command_PEX<br>
- * Signature: ()V<br>
- * Java Native Interface routine to pause an exposure.
- * This is done by calling CCD_DSP_Command_PEX.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @see  ccd_dsp.html#CCD_DSP_Command_PEX
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1DSP_1Command_1PEX(JNIEnv *env,jobject obj)
-{
-	int retval;
-
-	retval = CCD_DSP_Command_PEX();
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_DSP_Command_PEX");
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_DSP_Command_Read_Exposure_Time<br>
- * Signature: ()I<br>
- * Java Native Interface routine to read the length of time an exposure is underway.
- * This is done by calling CCD_DSP_Command_RET.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * If an exposure is not underway (the shutter is closed) zero is returned.
- * @see  ccd_dsp.html#CCD_DSP_Command_RET
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1DSP_1Command_1Read_1Exposure_1Time(JNIEnv *env,jobject obj)
-{
-	int retval;
-
-	retval = CCD_DSP_Command_RET();
-	if((retval == 0)&&(CCD_DSP_Get_Error_Number()))
-		CCDLibrary_Throw_Exception(env,obj,"CCD_DSP_Command_Read_Exposure_Time");
-	return retval;
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_DSP_Get_Error_Number<br>
- * Signature: ()I<br>
- * Java Native Interface routine to get the error number for the ccd_dsp part of the library.
- * @return The current error number of ccd_dsp. A zero error number means an error has not occured.
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1DSP_1Get_1Error_1Number(JNIEnv *env, jobject obj)
-{
-	return CCD_DSP_Get_Error_Number();
-}
-
-/* ------------------------------------------------------------------------------
 ** 		ccd_exposure.c
 ** ------------------------------------------------------------------------------ */
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Multrun_Expose<br>
- * Signature: (ZJILjava/lang/String;)V<br>
- * Java Native Interface routine to do multrun exposures.
- * <a href="ccd_exposure.html#CCD_Exposure_Expose">CCD_Exposure_Expose</a> is called to perform the exposure.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @param env The JNI environment pointer.
- * @param obj The instance of CCDLibrary that called this routine.
- * @param open_shutter Whether to open the shutter or not.
- * @param startTime What time to start the exposure. If -1, we pass a 0 timespec structure to the C code,
- *        which means start anytime. Otherwise the time to start the exposure, in milliseconds since 1970, which
- *        is parsed into a timespec struct and passed to the C layer.
- * @param exposureTime The length of exposure to do, in milliseconds.
- * @param exposures The number of exposures to carry out
- * @see ccd_exposure.html#CCD_Multrun_Exposure
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose
-  (JNIEnv *env, jobject obj, jboolean open_shutter, jlong startTime, jint exposureTime, jlong exposures, jobject headers)
-{
-	int retval,jni_header_count,header_count;
-	jstring *jni_header_list = NULL;
-	struct timespec start_time;
-	char **headers_list =NULL;
-
-	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:1.\n");
-	retval = CCDLibrary_Java_String_List_To_C_List(env,obj,headers,
-						&jni_header_list, &jni_header_count,
-						&headers_list,&header_count);
-        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:2.\n");
-
-	if(retval == FALSE) return; /* Throw exception */ 
-
-	if(startTime > -1)
-	{
-		start_time.tv_sec = (time_t)(startTime/((jlong)1000L));
-		start_time.tv_nsec = (long)((startTime%((jlong)1000L))*1000000L);
-	}
-	else
-	{
-		start_time.tv_sec = 0;
-		start_time.tv_nsec = 0;
-	}
-        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:3.\n");
-
-	/* do exposure */
-	/* retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list); */
-	retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list);
-	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:4.\n");
-
-	CCDLibrary_Java_String_List_Free(env,obj,jni_header_list,jni_header_count,
-						headers_list, header_count);
-	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:5.\n");
-
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Multrun_Expose");
-	}
-}
-
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multflat_1Expose
-  (JNIEnv *env, jobject obj, jboolean open_shutter, jlong startTime, jint exposureTime, jlong exposures, jobject headers)
-{
-	int retval,jni_header_count,header_count;
-	jstring *jni_header_list = NULL;
-	struct timespec start_time;
-	char **headers_list =NULL;
-
-	retval = CCDLibrary_Java_String_List_To_C_List(env,obj,headers,
-						&jni_header_list, &jni_header_count,
-						&headers_list,&header_count);
-	if(retval == FALSE) return; /* Throw exception */ 
-
-	if(startTime > -1)
-	{
-		start_time.tv_sec = (time_t)(startTime/((jlong)1000L));
-		start_time.tv_nsec = (long)((startTime%((jlong)1000L))*1000000L);
-	}
-	else
-	{
-		start_time.tv_sec = 0;
-		start_time.tv_nsec = 0;
-	}
-
-	/* do exposure */
-	/*retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list); */
-	retval = CCD_Multflat_Expose(open_shutter,-1,exposureTime,exposures, headers_list); 
-	
-	CCDLibrary_Java_String_List_Free(env,obj,jni_header_list,jni_header_count,
-						headers_list, header_count);
-	
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Multrun_Expose");
-	}
-}
-
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Exposure_Expose<br>
@@ -515,149 +342,6 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Exposure_1Get_1Error_1
 }
 
 /* ------------------------------------------------------------------------------
-** 		ccd_filter_wheel.c
-** ------------------------------------------------------------------------------ */
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Set_Position_Count<br>
- * Signature: (I)V<br>
- * Java Native Interface routine to set the number of positions in each filter wheel.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Set_Position_Count
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Set_1Position_1Count(JNIEnv *env,jobject obj,
-	jint position_count)
-{
-	int retval;
-	
-/*	retval = CCD_Filter_Wheel_Set_Position_Count((int)position_count); */
-	retval = TRUE;
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Filter_Wheel_Set_Position_Count");
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Reset<br>
- * Signature: (I)V<br>
- * Java Native Interface routine to reset a filter wheel.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Reset
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Reset(JNIEnv *env,jobject obj,jint wheel_number)
-{
-	int retval;
-
-	retval = CCD_Filter_Wheel_Reset((int)wheel_number);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Filter_Wheel_Reset");
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Move<br>
- * Signature: (II)V<br>
- * Java Native Interface routine to move a filter wheel.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Move
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Move(JNIEnv *env,jobject obj,jint wheel_number,
-	jint position)
-{
-	int retval;
-
-	retval = CCD_Filter_Wheel_Move((int)wheel_number,(int)position);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Filter_Wheel_Move");
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Abort<br>
- * Signature: ()V<br>
- * Java Native Interface routine to abort a filter wheel move/reset operation.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Abort
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Abort(JNIEnv *env, jobject obj)
-{
-	int retval;
-
-	retval = CCD_Filter_Wheel_Abort();
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Filter_Wheel_Abort");
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Get_Error_Number<br>
- * Signature: ()I<br>
- * Java Native Interface routine to get the error number for this module.
- * @return The current value of the error number for this module. A zero error number means an error has not occured.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Get_Error_Number
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Get_1Error_1Number(JNIEnv *env,jobject obj)
-{
-	return CCD_Filter_Wheel_Get_Error_Number();
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Get_Status<br>
- * Signature: ()I<br>
- * Java Native Interface routine to get the current status of the filter wheel.
- * @return The current status of the filter wheel control, whether a filter wheel is moving, reseting or aborting.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Get_Status
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Get_1Status(JNIEnv *env,jobject obj)
-{
-	return CCD_Filter_Wheel_Get_Status();
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Get_Position<br>
- * Signature: (I)I<br>
- * Java Native Interface routine to get a filter wheel's current position.
- * @return This routine returns the position if the call succeeded,
- * 	or returns -1 and throws a Java exception if the call returned FALSE (an error occured).
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Get_Position
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Get_1Position(JNIEnv *env, jobject obj,
-	jint wheel_number)
-{
-	int retval,position;
-
-	retval = CCD_Filter_Wheel_Get_Position((int)wheel_number,&position);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Filter_Wheel_Get_Position");
-		return -1;
-	}
-	return (jint)position;
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Filter_Wheel_Set_De_Bounce_Milliseconds<br>
- * Signature: (I)V<br>
- * Java Native Interface routine to set the the number of milliseconds before we start checking 
- * detent inputs.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Set_De_Bounce_Milliseconds
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Set_1De_1Bounce_1Milliseconds(JNIEnv *env,
-	jobject obj,jint ms)
-{
-	int retval;
-
-	retval = CCD_Filter_Wheel_Set_De_Bounce_Milliseconds((int)ms);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Filter_Wheel_Set_De_Bounce_Milliseconds");
-}
-
-/* ------------------------------------------------------------------------------
 ** 		ccd_global.c
 ** ------------------------------------------------------------------------------ */
 /**
@@ -672,9 +356,9 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Filter_1Wheel_1Set_1De
  * @see ccd_global.html#CCD_Global_Set_Log_Handler_Function
  * @see #CCDLibrary_Log_Handler
  */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Global_1Initialise(JNIEnv *env, jobject obj, jint interface_device)
+JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Global_1Initialise(JNIEnv *env, jobject obj)
 {
-	CCD_Global_Initialise(interface_device);
+	CCD_Global_Initialise();
 /* print some compile time information to stdout */
 	fprintf(stdout,"ngat.ccd.CCDLibrary.CCD_Global_Initialise:%s.\n",rcsid);
 	CCD_Global_Set_Log_Handler_Function(CCDLibrary_Log_Handler);
@@ -717,76 +401,131 @@ JNIEXPORT jstring JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Global_1Error_1Stri
 }
 
 /* ------------------------------------------------------------------------------
-** 		ccd_interface.c
+** 		ccd_multrun.c
 ** ------------------------------------------------------------------------------ */
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Interface_Open<br>
- * Signature: ()V<br>
- * Java Native Interface implementation of <a href="ccd_interface.html#CCD_Interface_Open">CCD_Interface_Open</a>,
- * which opens the selected interface.
+ * Method:    CCD_Multrun_Expose<br>
+ * Signature: (ZJILjava/lang/String;)V<br>
+ * Java Native Interface routine to do multrun exposures.
+ * <a href="ccd_multrun.html#CCD_Multrun_Expose">CCD_Multrun_Expose</a> is called to perform the exposure.
  * If an error occurs a CCDLibraryNativeException is thrown.
- * @see ccd_global.html#CCD_Global_Initialise
- * @see ccd_interface.html#CCD_Interface_Open
+ * @param env The JNI environment pointer.
+ * @param obj The instance of CCDLibrary that called this routine.
+ * @param open_shutter Whether to open the shutter or not.
+ * @param startTime What time to start the exposure. If -1, we pass a 0 timespec structure to the C code,
+ *        which means start anytime. Otherwise the time to start the exposure, in milliseconds since 1970, which
+ *        is parsed into a timespec struct and passed to the C layer.
+ * @param exposureTime The length of exposure to do, in milliseconds.
+ * @param exposures The number of exposures to carry out
+ * @see ccd_exposure.html#CCD_Multrun_Exposure
  * @see #CCDLibrary_Throw_Exception
  */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Interface_1Open(JNIEnv *env, jobject obj)
+JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose(JNIEnv *env,jobject obj,
+     jboolean open_shutter, jlong startTime, jint exposureTime, jlong exposures, jobject headers)
 {
-	int retval;
+	int retval,jni_header_count,header_count;
+	jstring *jni_header_list = NULL;
+	struct timespec start_time;
+	char **headers_list =NULL;
 
-	retval = CCD_Interface_Open();
-	/* if an error occured throw an exception. */
-/*	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Interface_Open"); */
-}
+	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:1.\n");
+	retval = CCDLibrary_Java_String_List_To_C_List(env,obj,headers,
+						&jni_header_list, &jni_header_count,
+						&headers_list,&header_count);
+        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:2.\n");
 
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Interface_Close<br>
- * Signature: ()V<br>
- * Java Native Interface implementation of <a href="ccd_interface.html#CCD_Interface_Close">CCD_Interface_Close</a>,
- * which closes the selected interface.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @see ccd_interface.html#CCD_Interface_Close
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Interface_1Close(JNIEnv *env, jobject obj)
-{
-	int retval;
+	if(retval == FALSE) return; /* Throw exception */ 
 
-	retval = CCD_Interface_Close();
+	if(startTime > -1)
+	{
+		start_time.tv_sec = (time_t)(startTime/((jlong)1000L));
+		start_time.tv_nsec = (long)((startTime%((jlong)1000L))*1000000L);
+	}
+	else
+	{
+		start_time.tv_sec = 0;
+		start_time.tv_nsec = 0;
+	}
+        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:3.\n");
+
+	/* do exposure */
+	/* retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list); */
+	retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list);
+
+	CCDLibrary_Java_String_List_Free(env,obj,jni_header_list,jni_header_count,
+						headers_list, header_count);
+
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Interface_Close");
+	{
+		CCDLibrary_Throw_Exception(env,obj,"CCD_Multrun_Expose");
+	}
+}
+
+JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multflat_1Expose
+  (JNIEnv *env, jobject obj, jboolean open_shutter, jlong startTime, jint exposureTime, jlong exposures, jobject headers)
+{
+	int retval,jni_header_count,header_count;
+	jstring *jni_header_list = NULL;
+	struct timespec start_time;
+	char **headers_list =NULL;
+
+	retval = CCDLibrary_Java_String_List_To_C_List(env,obj,headers,
+						&jni_header_list, &jni_header_count,
+						&headers_list,&header_count);
+	if(retval == FALSE) return; /* Throw exception */ 
+
+	if(startTime > -1)
+	{
+		start_time.tv_sec = (time_t)(startTime/((jlong)1000L));
+		start_time.tv_nsec = (long)((startTime%((jlong)1000L))*1000000L);
+	}
+	else
+	{
+		start_time.tv_sec = 0;
+		start_time.tv_nsec = 0;
+	}
+
+	/* do exposure */
+	/*retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list); */
+	retval = CCD_Multflat_Expose(open_shutter,-1,exposureTime,exposures, headers_list); 
+	
+	CCDLibrary_Java_String_List_Free(env,obj,jni_header_list,jni_header_count,
+						headers_list, header_count);
+	
+	/* if an error occured throw an exception. */
+	if(retval == FALSE)
+	{
+		CCDLibrary_Throw_Exception(env,obj,"CCD_Multrun_Expose");
+	}
 }
 
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Interface_Get_Error_Number<br>
+ * Method:    CCD_Multrun_Get_Exposure_Status<br>
  * Signature: ()I<br>
- * Java Native Interface routine to get the error number for this module.
- * @return The current value of the error number for this module. A zero error number means an error has not occured.
- * @see ccd_interface.html#CCD_Interface_Get_Error_Number
+ * Java Native Interface routine to get the current status of an exposure.
+ * @return The current status of exposure, whether the ccd is not exposing,exposing or reading out.
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Status
  */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Interface_1Get_1Error_1Number(JNIEnv *env,jobject obj)
+JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Status(JNIEnv *env, jobject obj)
 {
-	return CCD_Interface_Get_Error_Number();
+	return CCD_Multrun_Get_Exposure_Status();
 }
 
-/* ------------------------------------------------------------------------------
-** 		ccd_pci.c
-** ------------------------------------------------------------------------------ */
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_PCI_Get_Error_Number<br>
+ * Method:    CCD_Multrun_Get_Elapsed_Exposure_Time<br>
  * Signature: ()I<br>
- * Java Native Interface routine to get the error number for this module.
- * @return The current value of the error number for this module. A zero error number means an error has not occured.
- * @see ccd_interface.html#CCD_PCI_Get_Error_Number
+ * Java Native Interface routine to get the elapsed exposure time.
+ * @return The elapsed exposure time, in milliseconds.
+ * @see ccd_multrun.html#CCD_Multrun_Get_Elapsed_Exposure_Time
  */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1PCI_1Get_1Error_1Number(JNIEnv *env,jobject obj)
+JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Elapsed_1Exposure_1Time(JNIEnv *env,
+												jobject obj)
 {
-	return CCD_PCI_Get_Error_Number();
+	return CCD_Multrun_Get_Elapsed_Exposure_Time();
 }
 
 /* ------------------------------------------------------------------------------
@@ -797,42 +536,17 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1PCI_1Get_1Error_1Numbe
  * Method:    CCD_Setup_Startup<br>
  * Signature: (ILjava/lang/String;IILjava/lang/String;IILjava/lang/String;DIZZ)V<br>
  * Java Native Interface implementation of <a href="ccd_setup.html#CCD_Setup_Startup">CCD_Setup_Startup</a>,
- * a routine to setup the SDSU CCD COntroller for exposures. This routine translates the pci_filename_string, 
- * timing_filename_string and utility_filename_string parameters from Java Strings to C Strings.
+ * a routine to setup the CCD Controller for exposures. 
  * If an error occurs a CCDLibraryNativeException is thrown.
  * @see ccd_setup.html#CCD_Setup_Startup
  * @see #CCDLibrary_Throw_Exception
  */
 JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Startup(JNIEnv *env,jobject obj,
-	jint pci_load_type, jstring pci_filename_string,
-	jint timing_load_type, jint timing_application_number, jstring timing_filename_string,
-	jint utility_load_type, jint utility_application_number, jstring utility_filename_string, 
-	jdouble target_temperature, jint gain, jboolean gain_speed, jboolean idle)
+	jdouble target_temperature)
 {
 	int retval;
-	const char *pci_filename = NULL;
-	const char *timing_filename = NULL;
-	const char *utility_filename = NULL;
 
-	/* Convert java strings to c null terminated strings.
-	** If the java String is null the c filename should be null as well */
-	if(pci_filename_string != NULL)
-		pci_filename = (*env)->GetStringUTFChars(env,pci_filename_string,0);
-	if(timing_filename_string != NULL)
-		timing_filename = (*env)->GetStringUTFChars(env,timing_filename_string,0);
-	if(utility_filename_string != NULL)
-		utility_filename = (*env)->GetStringUTFChars(env,utility_filename_string,0);
-	retval = CCD_Setup_Startup(pci_load_type,(char*)pci_filename,
-		timing_load_type,timing_application_number,(char*)timing_filename,
-		utility_load_type,utility_application_number,(char*)utility_filename,
-		target_temperature,gain,gain_speed,idle);
-	/* free any c strings allocated */
-	if(pci_filename_string != NULL)
-		(*env)->ReleaseStringUTFChars(env,pci_filename_string,pci_filename);
-	if(timing_filename_string != NULL)
-		(*env)->ReleaseStringUTFChars(env,timing_filename_string,timing_filename);
-	if(utility_filename_string != NULL)
-		(*env)->ReleaseStringUTFChars(env,utility_filename_string,utility_filename);
+	retval = CCD_Setup_Startup(target_temperature);
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
 		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Startup");
@@ -861,7 +575,7 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Shutdown(JNIEnv
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Setup_Dimensions<br>
- * Signature: (IIIIIII[Lngat/ccd/CCDLibrarySetupWindow;)V<br>
+ * Signature: (IIIII[Lngat/rise/ccd/CCDLibrarySetupWindow;)V<br>
  * Java Native Interface implementation of <a href="ccd_setup.html#CCD_Setup_Dimensions">CCD_Setup_Dimensions</a>,
  * a routine to setup the SDSU CCD Controller dimensions.
  * If an error occurs a CCDLibraryNativeException is thrown.
@@ -871,8 +585,7 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Shutdown(JNIEnv
  * @see #CCDLibrary_Throw_Exception
  */
 JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIEnv *env, jobject obj,
-	jint ncols, jint nrows, jint nsbin, jint npbin, jint amplifier, jint deinterlace_setting, 
-	jint window_flags, jobjectArray window_object_list)
+	jint ncols, jint nrows, jint nsbin, jint npbin, jint window_flags, jobjectArray window_object_list)
 {
 	struct CCD_Setup_Window_Struct window_list[CCD_SETUP_WINDOW_COUNT];
 	char error_string[256];
@@ -885,6 +598,11 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIE
 /* convert window_object_list to window_list */
 	/* check size of array */
 	window_count = (*env)->GetArrayLength(env,(jarray)window_object_list);
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetArrayLength caused exception.\n");
+		return;
+	}
 	if(window_count != CCD_SETUP_WINDOW_COUNT)
 	{
 		/* N.B. This error occured in the JNI interface, not the librise_ccd - no error string set */
@@ -894,18 +612,32 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIE
 		return;
 	}
 /* get the class of CCDLibrarySetupWindow */
-	cls = (*env)->FindClass(env,"ngat/ccd/CCDLibrarySetupWindow");
+	cls = (*env)->FindClass(env,"ngat/rise/ccd/CCDLibrarySetupWindow");
 	/* if the class is null, one of the following exceptions occured:
 	** ClassFormatError,ClassCircularityError,NoClassDefFoundError,OutOfMemoryError */
 	if(cls == NULL)
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: FindClass returned NULL.\n");
 		return;
+	}
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: FindClass caused exception.\n");
+		return;
+	}
 /* get relevant method ids to call */
 /* getXStart */
 	get_x_start_method_id = (*env)->GetMethodID(env,cls,"getXStart","()I");
 	if(get_x_start_method_id == NULL)
 	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetMethodID(getXStart) returned NULL.\n");
 		/* One of the following exceptions has been thrown:
 		** NoSuchMethodError, ExceptionInInitializerError, OutOfMemoryError */
+		return;
+	}
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetMethodID(getXStart) caused exception.\n");
 		return;
 	}
 /* getYStart */
@@ -916,12 +648,22 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIE
 		** NoSuchMethodError, ExceptionInInitializerError, OutOfMemoryError */
 		return;
 	}
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetMethodID(getYStart) caused exception.\n");
+		return;
+	}
 /* getXEnd */
 	get_x_end_method_id = (*env)->GetMethodID(env,cls,"getXEnd","()I");
 	if(get_x_end_method_id == 0)
 	{
 		/* One of the following exceptions has been thrown:
 		** NoSuchMethodError, ExceptionInInitializerError, OutOfMemoryError */
+		return;
+	}
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetMethodID(getXEnd) caused exception.\n");
 		return;
 	}
 /* getYEnd */
@@ -932,6 +674,11 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIE
 		** NoSuchMethodError, ExceptionInInitializerError, OutOfMemoryError */
 		return;
 	}
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetMethodID(getYEnd) caused exception.\n");
+		return;
+	}
 /* for each window, get each position from the window_object_list into the window_list */
 	for(i=0;i<CCD_SETUP_WINDOW_COUNT;i++)
 	{
@@ -939,37 +686,55 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions(JNIE
 		** throws ArrayIndexOutOfBoundsException: if index does not specify a valid index in the array. 
 		** However, this should never occur, we have checked the size of the array earlier. */
 		window_object = (*env)->GetObjectArrayElement(env,window_object_list,i);
-
-		/* call the get method and put it into the list of window structures. */
-		window_list[i].X_Start = (int)((*env)->CallIntMethod(env,window_object,get_x_start_method_id));
-		window_list[i].Y_Start = (int)((*env)->CallIntMethod(env,window_object,get_y_start_method_id));
-		window_list[i].X_End = (int)((*env)->CallIntMethod(env,window_object,get_x_end_method_id));
-		window_list[i].Y_End = (int)((*env)->CallIntMethod(env,window_object,get_y_end_method_id));
+		if(((*env)->ExceptionCheck(env)))
+		{
+			fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: GetObjectArrayElement(i=%d) caused exception.\n",i);
+			return;
+		}
+		if(window_object != NULL)
+		{
+			/* call the get method and put it into the list of window structures. */
+			window_list[i].X_Start = (int)((*env)->CallIntMethod(env,window_object,get_x_start_method_id));
+			if(((*env)->ExceptionCheck(env)))
+			{
+				fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: CallIntMethod(get_x_start_method_id) caused exception for index %d.\n",i);
+				return;
+			}
+			window_list[i].Y_Start = (int)((*env)->CallIntMethod(env,window_object,get_y_start_method_id));
+			if(((*env)->ExceptionCheck(env)))
+			{
+				fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: CallIntMethod(get_y_start_method_id) caused exception for index %d.\n",i);
+				return;
+			}
+			window_list[i].X_End = (int)((*env)->CallIntMethod(env,window_object,get_x_end_method_id));
+			if(((*env)->ExceptionCheck(env)))
+			{
+				fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: CallIntMethod(get_x_end_method_id) caused exception for index %d.\n",i);
+				return;
+			}
+			window_list[i].Y_End = (int)((*env)->CallIntMethod(env,window_object,get_y_end_method_id));
+			if(((*env)->ExceptionCheck(env)))
+			{
+				fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: CallIntMethod(get_y_end_method_id) caused exception for index %d.\n",i);
+				return;
+			}
+		}/* end if window_object != NULL */
+	}/* end for */
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: An exception has occured before calling CCD_Setup_Dimensions.\n");
+		return;
 	}
 /* call dimension setup routine */
-	retval = CCD_Setup_Dimensions(ncols,nrows,nsbin,npbin,amplifier,deinterlace_setting,window_flags,window_list);
+	retval = CCD_Setup_Dimensions(ncols,nrows,nsbin,npbin,window_flags,window_list);
 	/* if an error occured throw an exception. */
 	if(retval == FALSE)
 		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Dimensions");
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Hardware_Test<br>
- * Signature: (I)V<br>
- * Java Native Interface implementation of 
- * <a href="ccd_setup.html#CCD_Setup_Hardware_Test">CCD_Setup_Hardware_Test</a>,
- * which tests the hardware data links to the controller boards.
- * @see ccd_setup.html#CCD_Setup_Hardware_Test
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Hardware_1Test(JNIEnv *env,jobject obj,jint test_count)
-{
-	int retval;
-
-	retval = CCD_Setup_Hardware_Test(test_count);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Hardware_Test");
+	if(((*env)->ExceptionCheck(env)))
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Dimensions: An exception has occured before returning.\n");
+		return;
+	}
 }
 
 /**
@@ -1039,47 +804,6 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1NPBin(JNIE
 
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_Amplifier<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Setup_Get_Amplifier,
- * which gets the setup amplifier used to readout the image.
- * @see ccd_setup.html#CCD_Setup_Get_Amplifier
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Amplifier(JNIEnv *env, jobject obj)
-{
-	return (jint)CCD_Setup_Get_Amplifier();
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_DeInterlace_Type<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of 
- * <a href="ccd_setup.html#CCD_Setup_Get_DeInterlace_Type">CCD_Setup_Get_DeInterlace_Type</a>,
- * which gets the type of de-interlacing done to the image.
- * @see ccd_setup.html#CCD_Setup_Get_DeInterlace_Type
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1DeInterlace_1Type(JNIEnv *env,jobject obj)
-{
-	return (jint)CCD_Setup_Get_DeInterlace_Type();
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_Gain<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of 
- * <a href="ccd_setup.html#CCD_Setup_Get_Gain">CCD_Setup_Get_Gain</a>,
- * which gets the current camera gain setting.
- * @see ccd_setup.html#CCD_Setup_Get_Gain
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Gain(JNIEnv *env,jobject obj)
-{
-	return (jint)CCD_Setup_Get_Gain();
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Setup_Get_Window_Flags<br>
  * Signature: ()I<br>
  * Java Native Interface implementation of 
@@ -1095,7 +819,7 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Window_1Fl
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Setup_Get_Window<br>
- * Signature: (I)Lngat/ccd/CCDLibrarySetupWindow;<br>
+ * Signature: (I)Lngat/rise/ccd/CCDLibrarySetupWindow;<br>
  * Java Native Interface implementation of
  * <a href="ccd_setup.html#CCD_Setup_Get_Window">CCD_Setup_Get_Window</a>,
  * which gets the specified window parameters.
@@ -1116,7 +840,7 @@ JNIEXPORT jobject JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Window(
 		return NULL;
 	}
 /* get the class of CCDLibrarySetupWindow */
-	cls = (*env)->FindClass(env,"ngat/ccd/CCDLibrarySetupWindow");
+	cls = (*env)->FindClass(env,"ngat/rise/ccd/CCDLibrarySetupWindow");
 	/* if the class is null, one of the following exceptions occured:
 	** ClassFormatError,ClassCircularityError,NoClassDefFoundError,OutOfMemoryError */
 	if(cls == NULL)
@@ -1200,142 +924,6 @@ JNIEXPORT jboolean JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Setup_
 
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_High_Voltage_Analogue_ADU<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Setup_Get_High_Voltage_Analogue_ADU,
- * which gets the ADU count of the current high voltage supply on the SDSU boards.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @return The current ADU count is returned. If an error occurs an exception is thrown, and this routine
- * 	returns -1.
- * @see ccd_setup.html#CCD_Setup_Get_High_Voltage_Analogue_ADU
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1High_1Voltage_1Analogue_1ADU(JNIEnv *env, jobject obj)
-{
-	int retval,v_adu = -1;
-
-	retval = CCD_Setup_Get_High_Voltage_Analogue_ADU(&v_adu);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Get_High_Voltage_Analogue_ADU");
-		return ((jint)v_adu);
-	}
-	return ((jint)v_adu);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_Low_Voltage_Analogue_ADU<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Setup_Get_Low_Voltage_Analogue_ADU,
- * which gets the ADU count of the current low voltage supply on the SDSU boards.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @return The current ADU count is returned. If an error occurs an exception is thrown, and this routine
- * 	returns -1.
- * @see ccd_setup.html#CCD_Setup_Get_Low_Voltage_Analogue_ADU
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Low_1Voltage_1Analogue_1ADU(JNIEnv *env, jobject obj)
-{
-	int retval,v_adu = -1;
-
-	retval = CCD_Setup_Get_Low_Voltage_Analogue_ADU(&v_adu);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Get_Low_Voltage_Analogue_ADU");
-		return ((jint)v_adu);
-	}
-	return ((jint)v_adu);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU,
- * which gets the ADU count of the current negative low voltage supply on the SDSU boards.
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @return The current ADU count is returned. If an error occurs an exception is thrown, and this routine
- * 	returns -1.
- * @see ccd_setup.html#CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Minus_1Low_1Voltage_1Analogue_1ADU(JNIEnv *env, 
-												    jobject obj)
-{
-	int retval,v_adu = -1;
-
-	retval = CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(&v_adu);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU");
-		return ((jint)v_adu);
-	}
-	return ((jint)v_adu);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_Vacuum_Gauge_ADU<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Setup_Get_Vacuum_Gauge_ADU,
- * which gets the ADU count of the dewar vacuum gauge (if fitted).
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @param env The JNI environment pointer.
- * @param obj The instance of CCDLibrary that called this routine.
- * @return The current ADU count is returned. If an error occurs an exception is thrown, and this routine
- * 	returns -1.
- * @see ccd_setup.html#CCD_Setup_Get_Vacuum_Gauge_ADU
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Vacuum_1Gauge_1ADU(JNIEnv *env,jobject obj)
-{
-	int retval,adu = -1;
-
-	retval = CCD_Setup_Get_Vacuum_Gauge_ADU(&adu);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Get_Vacuum_Gauge_ADU");
-		return ((jint)adu);
-	}
-	return ((jint)adu);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Setup_Get_Vacuum_Gauge_MBar<br>
- * Signature: ()D<br>
- * Java Native Interface implementation of CCD_Setup_Get_Vacuum_Gauge_MBar,
- * which gets pressure in the dewar, using the vacuum gauge (if fitted).
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @param env The JNI environment pointer.
- * @param obj The instance of CCDLibrary that called this routine.
- * @return The current pressure in the dewar, in millibar. If an error occurs an exception is thrown.
- * @see ccd_setup.html#CCD_Setup_Get_Vacuum_Gauge_MBar
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jdouble JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Vacuum_1Gauge_1MBar(JNIEnv *env,jobject obj)
-{
-	int retval;
-	double mbar;
-
-	retval = CCD_Setup_Get_Vacuum_Gauge_MBar(&mbar);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Setup_Get_Vacuum_Gauge_MBar");
-		return ((jdouble)mbar);
-	}
-	return ((jdouble)mbar);
-}
-
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Setup_Get_Error_Number<br>
  * Signature: ()I<br>
  * Java Native Interface routine to get the error number for the ccd_setup part of the library.
@@ -1355,7 +943,7 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Setup_1Get_1Error_1Num
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Temperature_Get<br>
- * Signature: (Lngat/ccd/CCDLibraryDouble;)V<br>
+ * Signature: (Lngat/rise/ccd/CCDLibraryDouble;)V<br>
  * Java Native Interface implementation of <a href="ccd_temperature.html#CCD_Temperature_Get">CCD_Temperature_Get</a>,
  * which gets the current temperature of the CCD. The temperature is returned using the temperatureObj, which is of
  * class CCDLibraryDouble. The routine calls it's setValue method to set the temperature.
@@ -1415,58 +1003,6 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Temperature_1Set(JNIEn
 
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Temperature_Get_Utility_Board_ADU<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Temperature_Get_Utility_Board_ADU,
- * which gets the Analogue to Digital counts from the utility board mounted temperature sensor. 
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @return The current ADU count is returned. If an error occurs an exception is thrown, and this routine
- * 	returns -1.
- * @see ccd_temperature.html#CCD_Temperature_Get_Utility_Board_ADU
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Temperature_1Get_1Utility_1Board_1ADU(JNIEnv *env, jobject obj)
-{
-	int retval,adu = -1;
-
-	retval = CCD_Temperature_Get_Utility_Board_ADU(&adu);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Temperature_Get_Utility_Board_ADU");
-		return ((jint)adu);
-	}
-	return ((jint)adu);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Temperature_Get_Heater_ADU<br>
- * Signature: ()I<br>
- * Java Native Interface implementation of CCD_Temperature_Get_Heater_ADU,
- * which gets the current heater Analogue to Digital counts from the utility board. 
- * If an error occurs a CCDLibraryNativeException is thrown.
- * @return The current ADU count is returned. If an error occurs an exception is thrown, and this routine
- * 	returns -1.
- * @see ccd_temperature.html#CCD_Temperature_Get_Heater_ADU
- * @see #CCDLibrary_Throw_Exception
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Temperature_1Get_1Heater_1ADU(JNIEnv *env,jobject obj)
-{
-	int retval,adu = -1;
-
-	retval = CCD_Temperature_Get_Heater_ADU(&adu);
-	/* if an error occured throw an exception. */
-	if(retval == FALSE)
-	{
-		CCDLibrary_Throw_Exception(env,obj,"CCD_Temperature_Get_Heater_ADU");
-		return ((jint)adu);
-	}
-	return ((jint)adu);
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Temperature_Get_Error_Number<br>
  * Signature: ()I<br>
  * Java Native Interface routine to get the error number for the ccd_temperature part of the library.
@@ -1476,36 +1012,6 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Temperature_1Get_1Heat
 JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Temperature_1Get_1Error_1Number(JNIEnv *env, jobject obj)
 {
 	return CCD_Temperature_Get_Error_Number();
-}
-
-/* ------------------------------------------------------------------------------
-** 		ccd_text.c
-** ------------------------------------------------------------------------------ */
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Text_Get_Error_Number<br>
- * Signature: ()I<br>
- * Java Native Interface routine to get the error number for this module.
- * @return The current value of the error number for this module. A zero error number means an error has not occured.
- * @see ccd_interface.html#CCD_Text_Get_Error_Number
- */
-JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Text_1Get_1Error_1Number(JNIEnv *env,jobject obj)
-{
-	return CCD_Text_Get_Error_Number();
-}
-
-/**
- * Class:     ngat_rise_ccd_CCDLibrary<br>
- * Method:    CCD_Text_Set_Print_Level<br>
- * Signature: (I)V<br>
- * Java Native Interface implementation of 
- * <a href="ccd_text.html#CCD_Text_Set_Print_Level">CCD_Text_Set_Print_Level</a>,
- * which sets the amount of information displayed when the text interface device is enabled. 
- * @see ccd_text.html#CCD_Text_Set_Print_Level
- */
-JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Text_1Set_1Print_1Level(JNIEnv *env, jobject obj, jint level)
-{
-	CCD_Text_Set_Print_Level(level);
 }
 
 /* ------------------------------------------------------------------------------
@@ -1597,7 +1103,7 @@ static void CCDLibrary_Throw_Exception(JNIEnv *env,jobject obj,char *function_na
 }
 
 /**
- * This routine throws an exception of class ngat/ccd/CCDLibraryNativeException. This is used to report
+ * This routine throws an exception of class ngat/rise/ccd/CCDLibraryNativeException. This is used to report
  * all librise_ccd error messages back to the Java layer.
  * @param env The JNI environment pointer.
  * @param obj The instance of CCDLibrary that threw the error.
@@ -1612,11 +1118,11 @@ static void CCDLibrary_Throw_Exception_String(JNIEnv *env,jobject obj,char *func
 	jmethodID mid;
 	int retval;
 
-	exception_class = (*env)->FindClass(env,"ngat/ccd/CCDLibraryNativeException");
+	exception_class = (*env)->FindClass(env,"ngat/rise/ccd/CCDLibraryNativeException");
 	if(exception_class != NULL)
 	{
 	/* get CCDLibraryNativeException constructor */
-		mid = (*env)->GetMethodID(env,exception_class,"<init>","(Ljava/lang/String;Lngat/ccd/CCDLibrary;)V");
+		mid = (*env)->GetMethodID(env,exception_class,"<init>","(Ljava/lang/String;Lngat/rise/ccd/CCDLibrary;)V");
 		if(mid == 0)
 		{
 			/* One of the following exceptions has been thrown:
@@ -1862,6 +1368,9 @@ static int CCDLibrary_Java_String_List_Free(JNIEnv *env,jobject obj,
 }
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2010/08/17 17:16:05  cjm
+** extra debugging.
+**
 ** Revision 1.1  2009/10/15 10:16:23  cjm
 ** Initial revision
 **
