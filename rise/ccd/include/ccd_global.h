@@ -18,12 +18,11 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* ccd_global.h
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_global.h,v 1.2 2010-03-26 14:40:00 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_global.h,v 1.3 2022-03-14 15:58:51 cjm Exp $
 */
 
 #ifndef CCD_GLOBAL_H
 #define CCD_GLOBAL_H
-#include "ccd_interface.h"
 #include "estar_config.h"
 extern eSTAR_Config_Properties_t rProperties;
 
@@ -75,7 +74,7 @@ extern eSTAR_Config_Properties_t rProperties;
 
 /* external functions */
 
-extern void CCD_Global_Initialise(enum CCD_INTERFACE_DEVICE_ID interface_device);
+extern void CCD_Global_Initialise(void);
 extern void CCD_Global_Error(void);
 extern void CCD_Global_Error_String(char *error_string);
 
@@ -99,8 +98,10 @@ extern int CCD_Global_Memory_Lock(unsigned short *image_data,int image_data_size
 extern int CCD_Global_Memory_UnLock(unsigned short *image_data,int image_data_size);
 extern int CCD_Global_Memory_Lock_All(void);
 extern int CCD_Global_Memory_UnLock_All(void);
+extern char* CCD_Global_ErrorCode_To_String(unsigned int error_code);
 
-struct MultrunParameters {
+struct MultrunParameters 
+{
   unsigned int minFlatCounts;
   unsigned int minFlatCountsRecalc;
   unsigned int flatTarget;
