@@ -19,7 +19,7 @@
 */
 /* ccd_multrun.c
 ** Functions to perform multruns
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.5 2010-03-26 14:39:49 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_multrun.c,v 1.6 2022-03-14 15:23:03 cjm Exp $
 */
 /**
  * ccd_multrun.c includes a rewrite of the ccd_exposure.c code with andor function calls. It had to incorporate 
@@ -56,7 +56,6 @@
 #include "ccd_global.h"
 #include "ccd_exposure.h"
 #include "ccd_multrun.h"
-#include "ccd_dsp.h"
 #include "ccd_setup.h"
 #include "ccd_temperature.h"
 #ifdef CFITSIO
@@ -73,16 +72,13 @@
 #include "estar_config.h"
 
 #define EXPOSURE_READ_TIMEOUT                           30
-#define EXPOSURE_DEFAULT_READOUT_REMAINING_TIME       	(1500)
-#define EXPOSURE_DEFAULT_START_EXPOSURE_CLEAR_TIME	(10)
-#define EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME	(2)
 /* Header values if not filled */
 #define DUMHEADERSTRING "UNKNOWN" 
 #define DUMHEADERFLOAT -999.9 
 
 /* Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_multrun.c,v 1.5 2010-03-26 14:39:49 cjm Exp $";
+static char rcsid[] = "$Id: ccd_multrun.c,v 1.6 2022-03-14 15:23:03 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_multrun.
@@ -96,32 +92,27 @@ static char Multrun_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
  * Data holding the current status of ccd_multrun. This is statically initialised to the following:
  * <dl>
  * <dt>Exposure_Status</dt> <dd>CCD_EXPOSURE_STATUS_NONE</dd>
- * <dt>Start_Exposure_Clear_Time</dt> <dd>EXPOSURE_DEFAULT_START_EXPOSURE_CLEAR_TIME</dd>
- * <dt>Start_Exposure_Offset_Time</dt> <dd>EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME</dd>
- * <dt>Readout_Remaining_Time</dt> <dd>EXPOSURE_DEFAULT_READOUT_REMAINING_TIME</dd>
+ * <dt>Last_Multrun_Exposures</dt> <dd>0</dd>
  * <dt>Exposure_Length</dt> <dd>0</dd>
+ * <dt>Requested_Exposure_Length</dt> <dd>0.0</dd>
+ * <dt>Temperature</dt> <dd>0.0</dd>
  * <dt>Exposure_Start_Time</dt> <dd>{0L,0L}</dd>
  * </dl>
  * @see #Multrun_Struct
  * @see #CCD_EXPOSURE_STATUS
- * @see #EXPOSURE_DEFAULT_START_EXPOSURE_CLEAR_TIME
- * @see #EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME
- * @see #EXPOSURE_DEFAULT_READOUT_REMAINING_TIME
  */
 static struct Multrun_Struct Multrun_Data = 
 {
 	CCD_EXPOSURE_STATUS_NONE,
-	EXPOSURE_DEFAULT_START_EXPOSURE_CLEAR_TIME,
-	EXPOSURE_DEFAULT_START_EXPOSURE_OFFSET_TIME,
-	EXPOSURE_DEFAULT_READOUT_REMAINING_TIME,
 	0,
 	0.0,
 	0.0,
+	0.0,
+	{0L,0L},
+	{0L,0L},
+	{0L,0L},
+	{0L,0L},
 	0,
-	{0L,0L},
-	{0L,0L},
-	{0L,0L},
-	{0L,0L},
 	0.0,
 	0.0,
 	0.0,
@@ -145,7 +136,9 @@ struct FitsFilename ff;
 struct Header fileHeaders;
 
 /* internal functions */
-static unsigned int expose(float exposure, int width, int height,long nimages,int *recalculate_exposure_length); 
+static void Multrun_Start_Time_Correction (float exposure);
+static void Multrun_Correct_Start_Time(struct timespec *t);
+static unsigned int Expose(float exposure, int width, int height,long nimages,int *recalculate_exposure_length); 
 static void Exposure_TimeSpec_To_Date_String(struct timespec time,char *time_string);
 static void Exposure_TimeSpec_To_Date_Obs_String(struct timespec time,char *time_string);
 static void Exposure_TimeSpec_To_UtStart_String(struct timespec time,char *time_string);
@@ -182,7 +175,7 @@ int CCD_Multrun_Expose(int open_shutter, long startTime, int exposure_time, long
             "CCD_Multrun_Expose:Started(open_shutter=%d,start_time=%ld,exposure_length=%d,number of exposures=%d).",
 			      open_shutter,startTime,exposure_time,exposures);
 #endif
-	Multrun_Data.isMultFlat = 0;
+	Multrun_Data.Is_Mult_Flat = 0;
 
 	GetParameterFileValues();	
 	/* Dump out the headers into the structure. These come in ordered RA,DEC,LATITUDE,LONGITUD,OBSTYPE,AIRMASS
@@ -245,7 +238,7 @@ int CCD_Multrun_Expose(int open_shutter, long startTime, int exposure_time, long
 	strcpy(fileHeaders.filter1,	headers[50]);
 	strcpy(fileHeaders.rotangle,	headers[51]);
 
-	error=expose(expose_exposure_time, CCD_Setup_Get_NCols(), CCD_Setup_Get_NRows(), 
+	error=Expose(expose_exposure_time, CCD_Setup_Get_NCols(), CCD_Setup_Get_NRows(), 
 		      expose_exposures,&recalculate_exposure_length);
 #if LOGGING > 1
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multrun_Expose:Finished with return value %d.",error);
@@ -315,17 +308,17 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 	int bin = CCD_Setup_Get_NSBin();
 	int expired = 0;    /* Expired flag, true = 1 */
 	int recalculate_exposure_length;
-	Multrun_Data.maxTime = exposures/1000; /* Noted above */
-	Multrun_Data.isMultFlat = 1;
+	Multrun_Data.Max_Time = exposures/1000; /* Noted above */
+	Multrun_Data.Is_Mult_Flat = 1;
 
 #if LOGGING > 1
 	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:Started.");
 #endif
 	/* Get the start time for the multflat run in seconds since the epoch */
-	Multrun_Data.timeStart = time(NULL);
+	Multrun_Data.Time_Start = time(NULL);
 
 	/* Clear Abort Status */
-	CCD_DSP_Set_Abort(FALSE);
+	CCD_Exposure_Set_Abort(FALSE);
 
 	GetParameterFileValues();	
 	/* Dump out the headers into the structure. These come in ordered RA,DEC,LATITUDE,LONGITUD,OBSTYPE 
@@ -387,18 +380,18 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 
 #if LOGGING > 1
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:exptime: %f  flat_run_time: %ld sec",
-			      expose_exposure_time,Multrun_Data.maxTime);
+			      expose_exposure_time,Multrun_Data.Max_Time);
 #endif
 
 	/* Take a test exposure */	
-	expose(expose_exposure_time, CCD_Setup_Get_NCols(), CCD_Setup_Get_NRows(), 1,&recalculate_exposure_length);
-	expose_exposure_time = getNewExposureTime(Multrun_Data.median_value,expose_exposure_time);
+	Expose(expose_exposure_time, CCD_Setup_Get_NCols(), CCD_Setup_Get_NRows(), 1,&recalculate_exposure_length);
+	expose_exposure_time = getNewExposureTime(Multrun_Data.Median_Value,expose_exposure_time);
 
 	/* Loop taking adaptive exposures until they have all been taken */
 	while (	expired  == 0 )
 	{
 		/* Check abort status */
-		if(CCD_DSP_Get_Abort())
+		if(CCD_Exposure_Get_Abort())
 		{
 			Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 			Multrun_Error_Number = 24;
@@ -412,7 +405,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 		}   
 
 		/* Check that we haven't overran our time. */
-		if (ExpiredStatus(Multrun_Data.timeStart,Multrun_Data.maxTime)==1) 
+		if (ExpiredStatus(Multrun_Data.Time_Start,Multrun_Data.Max_Time)==1) 
 		{
 			expired = 1;
 			continue;
@@ -433,7 +426,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 			{
 				sleep (1);
 				/* Check abort status */
-				if(CCD_DSP_Get_Abort())
+				if(CCD_Exposure_Get_Abort())
 				{
 					Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 					Multrun_Error_Number = 25;
@@ -446,7 +439,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 					return FALSE;
 				}   
 				/* Check that we haven't overran our time. */
-				if (ExpiredStatus(Multrun_Data.timeStart,Multrun_Data.maxTime)==1) 
+				if (ExpiredStatus(Multrun_Data.Time_Start,Multrun_Data.Max_Time)==1) 
 				{
 					expired = 1;
 					continue;
@@ -460,22 +453,22 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 #if LOGGING > 1
 		CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"CCD_Multflat_Expose:Acquisition restarted...");
 #endif
-		error = expose(expose_exposure_time,CCD_Setup_Get_NCols(),CCD_Setup_Get_NRows(),
+		error = Expose(expose_exposure_time,CCD_Setup_Get_NCols(),CCD_Setup_Get_NRows(),
 			       remainingExposures,&recalculate_exposure_length);
 	        if(recalculate_exposure_length) 
 		{
-			expose_exposure_time = getNewExposureTime(Multrun_Data.median_value,
+			expose_exposure_time = getNewExposureTime(Multrun_Data.Median_Value,
 								  Multrun_Data.Exposure_Length);
 #if LOGGING > 1
 			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 				 "CCD_Multflat_Expose:Counts out of range (%.2f)... %.3f sec required for target",
-					      Multrun_Data.median_value,expose_exposure_time); 
+					      Multrun_Data.Median_Value,expose_exposure_time); 
 #endif
 		}
-		remainingExposures = remainingExposures - Multrun_Data.lastMultrunExposures;
+		remainingExposures = remainingExposures - Multrun_Data.Last_Multrun_Exposures;
 
 		/* Check abort status */
-		if(CCD_DSP_Get_Abort())
+		if(CCD_Exposure_Get_Abort())
 		{
 			Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 			Multrun_Error_Number = 26;
@@ -491,7 +484,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 #if LOGGING > 1
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			   "CCD_Multflat_Expose: --- Finished %ld mult-flat in %d sec, last exp time: %.4f sec ---",
-			      Multrun_Data.lastMultrunExposures,(int)(time(NULL)-Multrun_Data.timeStart),
+			      Multrun_Data.Last_Multrun_Exposures,(int)(time(NULL)-Multrun_Data.Time_Start),
 			      Multrun_Data.Exposure_Length);
 #endif
 #if LOGGING > 1
@@ -503,7 +496,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 
 /**
  * Internal expose routine. Used for both MULTRUN and MULTFLAT exposures.
- * @param exposure The exposure length.
+ * @param exposure The exposure length in decimal seconds.
  * @param width Width of image to read out.
  * @param height Height of image to read out.
  * @param nimages Number of images to take.
@@ -511,7 +504,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
  *        the exposure length, and FALSE if we do not.
  * @return Returns TRUE on success and FALSE on failure.
  */
-unsigned int expose(float exposure, int width, int height,long nimages,int *recalculate_exposure_length)
+static unsigned int Expose(float exposure, int width, int height,long nimages,int *recalculate_exposure_length)
 {	
 	char *pcft,current_filetime[64];
 	char outfile[64],*poutfile=outfile;	
@@ -529,7 +522,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	long first,last;
 	long images_remaining = nimages-series;
 	long buffer_images_remaining = 0,buffer_images_retrieved=0;
-	float KinExposure,KinAccumulate,KinKineticCT;
+	float kin_exposure,kin_accumulate,kin_kinetic_ct;
 	float TimeSinceLastImage=0;
 	char exposure_start_time_string[64];
 	float speeds[3],tempSpeed; /* Array to store the shift speeds */
@@ -542,6 +535,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose started: %d ms for %d images.",
 			      exposure,nimages);
 #endif
+	Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 	if(recalculate_exposure_length == NULL)
 	{
 		Multrun_Error_Number = 1;
@@ -553,7 +547,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	}
 	(*recalculate_exposure_length) = FALSE;
 	/* Reset the number of images taken this cycle */
-	Multrun_Data.lastMultrunExposures = 0; 
+	Multrun_Data.Last_Multrun_Exposures = 0; 
 	
 	/* Allocate the memory for the arrays */ 
 	longarray=(unsigned long*)malloc(pixels*sizeof(unsigned long));	
@@ -564,11 +558,11 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	{
 #if LOGGING > 1
 		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-				      "expose:ERROR: Memory allocation error in expose(%d,%p,%d,%p)",
+				      "expose:ERROR: Memory allocation error in Expose(%d,%p,%d,%p)",
 				      pixels,longarray,medianPixels,median_array);
 #endif
 		Multrun_Error_Number = 2;
-		sprintf(Multrun_Error_String,"expose:ERROR: Memory allocation error in expose(%ld,%p,%ld,%p)",
+		sprintf(Multrun_Error_String,"expose:ERROR: Memory allocation error in Expose(%ld,%p,%ld,%p)",
 			pixels,(void*)longarray,medianPixels,(void*)median_array);
 		return FALSE; 
 	}
@@ -580,7 +574,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	pcomment=chomp(comment);
 
 	/* Reset the abort flag */
-	CCD_DSP_Set_Abort(FALSE);
+	CCD_Exposure_Set_Abort(FALSE);
 	Multrun_Error_Number = 0; /* LT extern variable? */ 
 
 	/* Set up exposure */
@@ -590,30 +584,30 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	SetExposureTime(exposure);
 
 	/* Store the REQUESTED exposure time in the header */
-	Multrun_Data.requestedExposureTime = exposure;
+	Multrun_Data.Requested_Exposure_Length = exposure;
 	SetNumberAccumulations(1); /* Don't add images together */
 
 	/* Get a list of the possible speeds */
 #if LOGGING > 3
-	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"expose:Possible H-Shift speeds  ");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Expose:Possible H-Shift speeds  ");
 #endif
 	j = 0;
 	while (GetHSSpeed(0,0,j,&tempSpeed) == DRV_SUCCESS && j<10)
 	{
 #if LOGGING > 3
-		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:%d:%.2f ",j,tempSpeed);
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:%d:%.2f ",j,tempSpeed);
 #endif
 		j++;
 	}
 	maxHShiftIndex = j;
 #if LOGGING > 3
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Possible V-Shift speeds  ");
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Possible V-Shift speeds  ");
 #endif
 	j = 0;
 	while (GetVSSpeed(j,&tempSpeed) == DRV_SUCCESS && j<10)
 	{
 #if LOGGING > 3
-		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:%d:%.2f ",j,tempSpeed);
+		CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:%d:%.2f ",j,tempSpeed);
 #endif
 		j++;
 	}
@@ -624,7 +618,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	GetHSSpeed(0,0,0,&speeds[1]);
 #if LOGGING > 3
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			      "expose:Two fastest shift speeds are V: %.2f and H: %.2f",
+			      "Expose:Two fastest shift speeds are V: %.2f and H: %.2f",
 			      speeds[0],speeds[1]);
 #endif
 	/* Set the shift speeds to the fastest */
@@ -636,46 +630,46 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 
 
 	/* Get the driver set acquisition timimgs */
-	GetAcquisitionTimings(&KinExposure,&KinAccumulate,&KinKineticCT);
+	GetAcquisitionTimings(&kin_exposure,&kin_accumulate,&kin_kinetic_ct);
 #if LOGGING > 3
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			      "expose:GetAcquisitionTimings  EXP:%.3f ACC:%.3f KCT:%.3f",
-			      KinExposure,KinAccumulate,KinKineticCT);
+			      "Expose:GetAcquisitionTimings  EXP:%.3f ACC:%.3f KCT:%.3f",
+			      kin_exposure,kin_accumulate,kin_kinetic_ct);
 #endif
 	/* Work out the correction made to the image epoch time */	
-	Multrun_Data.TimeCorrection = start_time_correction(KinExposure);
+	Multrun_Start_Time_Correction(kin_exposure);
 
 	/* Export value to local structure for other functions */
-	Multrun_Data.Exposure_Length = KinExposure; 
-
+	Multrun_Data.Exposure_Length = kin_exposure; 
+	Multrun_Data.Elapsed_Exposure_Time = 0;
 #if LOGGING > 3
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Image WxH:  %d %d  Binning %dx%d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Image WxH:  %d %d  Binning %dx%d",
 			      width,height,bin,bin);
   	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			      "expose:Imaging for %.2f secs (adjusted to %f secs)",
+			      "Expose:Imaging for %.2f secs (adjusted to %f secs)",
 			      exposure,Multrun_Data.Exposure_Length);
-  	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Acquiring %ld images",nimages);
+  	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Acquiring %ld images",nimages);
 #endif
 	Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_PRE_READOUT;
 
 	/* Get the current high-res time for start of acquistion */
-	clock_gettime(CLOCK_REALTIME,&(Multrun_Data.LastImageTime));
-	Exposure_TimeSpec_To_UtStart_String(Multrun_Data.LastImageTime,exposure_start_time_string);
+	clock_gettime(CLOCK_REALTIME,&(Multrun_Data.Last_Image_Time));
+	Exposure_TimeSpec_To_UtStart_String(Multrun_Data.Last_Image_Time,exposure_start_time_string);
 
 	/* Temp for header; will be approx correct if writeout is close to acquisition */
 	/* Temperature cannot be probed during an Andor acquisition */
-	CCD_Temperature_Get(&(Multrun_Data.temperature));
+	CCD_Temperature_Get(&(Multrun_Data.Temperature));
 
         GetStatus(&status);
 #if LOGGING > 1
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Current Status: %d",status);
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Current Status: %d",status);
 #endif
 	/* Grab the NTP drift stats */
 	error = getNtpDriftFile(mrParams.ntpDriftFile);
 #if LOGGING > 3
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			      "expose:NTP Date: %s  server: %s  uncertainty: %.0f ms, error %d",
-			      Multrun_Data.ntpTime,Multrun_Data.ntpServer,Multrun_Data.ntpDrift,error);
+			      "Expose:NTP Date: %s  server: %s  uncertainty: %.0f ms, error %d",
+			      Multrun_Data.NTP_Time,Multrun_Data.NTP_Server,Multrun_Data.NTP_Drift,error);
 #endif
 
 	/* Start the acquisition */
@@ -686,7 +680,7 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 	waittime.tv_nsec = 500000000; 
 	nanosleep(&waittime, NULL); /* Sleep for a bit */
 #if LOGGING > 1
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Acquisition started %s UT  RC: %d",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Acquisition started %s UT  RC: %d",
 			      exposure_start_time_string,error);
 #endif
 
@@ -703,7 +697,9 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 		nanosleep(&waittime, NULL); /* Sleep for a bit to prevent system hogging */
 		clock_gettime(CLOCK_REALTIME,&mr_current_time);
 		TimeSinceLastImage = (mr_current_time.tv_sec + mr_current_time.tv_nsec/1e9) 
-			- (Multrun_Data.LastImageTime.tv_sec + Multrun_Data.LastImageTime.tv_nsec/1e9);
+			- (Multrun_Data.Last_Image_Time.tv_sec + Multrun_Data.Last_Image_Time.tv_nsec/1e9);
+		/* set elapsed exposure time is milliseconds */
+		Multrun_Data.Elapsed_Exposure_Time = (int)(TimeSinceLastImage*(float)CCD_GLOBAL_ONE_SECOND_MS);
 
 		/* Check tht we should be taking images. If not, abort */
 		if (images_remaining == 0 )
@@ -713,39 +709,42 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 
 
 		/* Check for a driver time-out. This happens if the last image was taken too long ago */ 
-		/* if ( status==DRV_ACQUIRING && ( TimeSinceLastImage > EXPOSURE_READ_TIMEOUT + KinExposure) ){ */
-		if ( ( TimeSinceLastImage > EXPOSURE_READ_TIMEOUT + KinExposure) )
+		/* if ( status==DRV_ACQUIRING && ( TimeSinceLastImage > EXPOSURE_READ_TIMEOUT + kin_exposure) ){ */
+		if ( ( TimeSinceLastImage > EXPOSURE_READ_TIMEOUT + kin_exposure) )
 		{
 #if LOGGING > 1
-			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Pre-Abort Status: %d",
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Pre-Abort Status: %d",
 					      status);
 #endif
 			error=AbortAcquisition();
 #if LOGGING > 1
 			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-					      "expose:WARNING: Acquisition timed out, AbortAcquisition RC: %d",
+					      "Expose:WARNING: Acquisition timed out, AbortAcquisition RC: %d",
 					      error);
 #endif
+			Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+			Multrun_Data.Elapsed_Exposure_Time = 0;
 			Multrun_Error_Number = 3;
-			sprintf(Multrun_Error_String,"expose:ERROR: Acquisition timed out, "
+			sprintf(Multrun_Error_String,"Expose:ERROR: Acquisition timed out, "
 				"%.2f > %d + %.2f, error = %d",
-				TimeSinceLastImage,EXPOSURE_READ_TIMEOUT,KinExposure,error);
+				TimeSinceLastImage,EXPOSURE_READ_TIMEOUT,kin_exposure,error);
 			return FALSE;
 		}
 
 		GetTotalNumberImagesAcquired(&series); 
 
-		if(CCD_DSP_Get_Abort())
+		if(CCD_Exposure_Get_Abort())
 		{
 			Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+			Multrun_Data.Elapsed_Exposure_Time = 0;
 			error=AbortAcquisition();
 #if LOGGING > 1
-			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"expose:Aborted. RC %d",
+			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose:Aborted. RC %d",
 					      error);
 #endif
 			FreeInternalMemory();
 			Multrun_Error_Number = 27;
-			sprintf(Multrun_Error_String,"expose:Aborted: return code %d.",error);
+			sprintf(Multrun_Error_String,"Expose:Aborted: return code %d.",error);
 			return FALSE;
 		}
 
@@ -755,18 +754,20 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 			images_remaining = nimages-series;
 #if LOGGING > 1
 			CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			    "expose:--- Image: %ld of %ld  Left: %ld  Buff: %ld TSLI: %.3f EXP: %.3f ---",
+			    "Expose:--- Image: %ld of %ld  Left: %ld  Buff: %ld TSLI: %.3f EXP: %.3f ---",
 					      series,nimages,images_remaining,buffer_images_remaining,
-					      TimeSinceLastImage,KinExposure);
+					      TimeSinceLastImage,kin_exposure);
 #endif
 			/* Get the image data and write to file	  */
 			error=GetOldestImage((long*)longarray, pixels);
 			if(error==20067)
 			{
+				Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+				Multrun_Data.Elapsed_Exposure_Time = 0;
 				AbortAcquisition();
 #if LOGGING > 1
 				CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-						      "expose: Array size not valid(%d).",pixels);
+						      "Expose: Array size not valid(%d).",pixels);
 #endif
 				return FALSE; 
 			} 
@@ -777,47 +778,49 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				if(series==1)
 				{
 					clock_gettime(CLOCK_REALTIME,&(Multrun_Data.Multrun_Start_Time));
-					correct_start_time(&(Multrun_Data.Multrun_Start_Time));   
+					Multrun_Correct_Start_Time(&(Multrun_Data.Multrun_Start_Time));   
 				}
 
-				clock_gettime(CLOCK_REALTIME,&(Multrun_Data.LastImageTime));
+				clock_gettime(CLOCK_REALTIME,&(Multrun_Data.Last_Image_Time));
 				clock_gettime(CLOCK_REALTIME,&(Multrun_Data.Exposure_Epoch_Time));
 				clock_gettime(CLOCK_REALTIME,&(Multrun_Data.Exposure_Start_Time));
-				correct_start_time(&(Multrun_Data.Exposure_Start_Time));
-				Exposure_TimeSpec_To_Date_Obs_String(Multrun_Data.Exposure_Start_Time,exposure_start_time_string);
+				Multrun_Correct_Start_Time(&(Multrun_Data.Exposure_Start_Time));
+				Exposure_TimeSpec_To_Date_Obs_String(Multrun_Data.Exposure_Start_Time,
+								     exposure_start_time_string);
 
 				/* Grab the median value from central pixels.  */
-				Multrun_Data.median_value=-1.0;
+				Multrun_Data.Median_Value=-1.0;
 
 				getSquareRegion((long*)longarray,median_array,floor(mrParams.posBoxX/bin),floor(mrParams.posBoxY/bin),mrParams.halfBoxSize);
-				Multrun_Data.median_value=median(median_array,medianPixels);
+				Multrun_Data.Median_Value=median(median_array,medianPixels);
 
 				if (strcmp(fileHeaders.obstype,"SKYFLAT")==0) 
 				{   /* If we are doing a flat ...*/
 #if LOGGING > 3
 					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-						      "expose:%ld pixel image median: %.2f (target %d)",
-						      medianPixels,Multrun_Data.median_value,mrParams.flatTarget*bin);
+						      "Expose:%ld pixel image median: %.2f (target %d)",
+						      medianPixels,Multrun_Data.Median_Value,mrParams.flatTarget*bin);
 #endif
 					/* Check that the exposure median is within limits. If not, set
 					** recalculate flag and return. */   
-					if(Multrun_Data.median_value< mrParams.minFlatCountsRecalc*bin || 
-					   Multrun_Data.median_value>mrParams.maxFlatCountsRecalc*bin)
+					if(Multrun_Data.Median_Value< mrParams.minFlatCountsRecalc*bin || 
+					   Multrun_Data.Median_Value>mrParams.maxFlatCountsRecalc*bin)
 					{
+						Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 #if LOGGING > 3
 						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-								      "expose:Median:"
+								      "Expose:Median:"
 								      " (%.2f) outside RECALC range %d < MEDIAN < %d",
-								      Multrun_Data.median_value,
+								      Multrun_Data.Median_Value,
 								      mrParams.minFlatCountsRecalc*bin,
 								      mrParams.maxFlatCountsRecalc*bin); 
 #endif
 						error=AbortAcquisition(); 
 #if LOGGING > 3
 						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-								      "expose:"
+								      "Expose:"
 						      "Median %.2f outside SAVE range %d < MEDIAN < %d, NOT saving",
-								      Multrun_Data.median_value,
+								      Multrun_Data.Median_Value,
 							    mrParams.minFlatCounts*bin,mrParams.maxFlatCounts*bin); 
 #endif
 						(*recalculate_exposure_length) = TRUE;
@@ -828,8 +831,8 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				{
 #if LOGGING > 3
 					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-							      "expose:%ld pixel image median: %.2f",
-							      medianPixels,Multrun_Data.median_value);
+							      "Expose:%ld pixel image median: %.2f",
+							      medianPixels,Multrun_Data.Median_Value);
 #endif
 				}
 				buffer_images_retrieved++;
@@ -839,9 +842,10 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				{
 					if(!getNextFilename(poutfile,1))
 					{
+						Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
 #if LOGGING > 1
 						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-							 "expose:getNextFilename failed:Error(%d):%s",
+							 "Expose:getNextFilename failed:Error(%d):%s",
 							 Multrun_Error_Number,Multrun_Error_String);
 #endif
 						return FALSE;
@@ -851,9 +855,11 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				{
 					if(!getNextFilename(poutfile,0))
 					{
+						Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+						Multrun_Data.Elapsed_Exposure_Time = 0;
 #if LOGGING > 1
 						CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-							 "expose:getNextFilename failed:Error(%d):%s",
+							 "Expose:getNextFilename failed:Error(%d):%s",
 							 Multrun_Error_Number,Multrun_Error_String);
 #endif
 						return FALSE;
@@ -864,14 +870,16 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				sprintf(full_filename,"%s/%s",IMAGEDIR,poutfile);
 #if LOGGING > 1
 				CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-						      "expose:Writing out %s  %s to disk",
+						      "Expose:Writing out %s  %s to disk",
 					 exposure_start_time_string,full_filename);
 #endif
 				if(!Multrun_Exposure_Save(full_filename,longarray,width,height))
 				{
+					Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+					Multrun_Data.Elapsed_Exposure_Time = 0;
 #if LOGGING > 1
 					CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-				       "expose:Multrun_Exposure_Save failed to save %s of dimensions (%d,%d) : "
+				       "Expose:Multrun_Exposure_Save failed to save %s of dimensions (%d,%d) : "
 				       "Error(%d): %s.",full_filename,width,height,
 							      Multrun_Error_Number,Multrun_Error_String);
 #endif
@@ -879,14 +887,16 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 				}
 
 				/* Let other funcs know how many were caught */
-				Multrun_Data.lastMultrunExposures = series; 
+				Multrun_Data.Last_Multrun_Exposures = series; 
 
 				/* Check that we haven't overran our time. */
-				if (ExpiredStatus(Multrun_Data.timeStart,Multrun_Data.maxTime)==1) 
+				if (ExpiredStatus(Multrun_Data.Time_Start,Multrun_Data.Max_Time)==1) 
 				{
+					Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+					Multrun_Data.Elapsed_Exposure_Time = 0;
 #if LOGGING > 1
 					CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,
-						       "expose:Multrun Completed in requested time");
+						       "Expose:Multrun Completed in requested time");
 #endif
 					return TRUE;
 				}
@@ -901,40 +911,49 @@ unsigned int expose(float exposure, int width, int height,long nimages,int *reca
 		GetStatus(&status);      
 	} 
 
+	Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
+	Multrun_Data.Elapsed_Exposure_Time = 0;
 	nanosleep(&waittime,NULL); /* Wait a bit at end */	
 	free (longarray); 
 	free (median_array); 
 
 #if LOGGING > 1
-	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"expose finished.");
+	CCD_Global_Log(LOG_VERBOSITY_INTERMEDIATE,"Expose finished.");
 #endif
 	return TRUE;
 }
 
 
-int ExpiredStatus ( time_t start, long length )
+/**
+ * Checks that the current time against the start time. If it is greater than length seconds we return true,
+ * otherwise we return false. Also, return expired if taking a flat at the last exposure time +100% will
+ * cause overrun.
+ * @param start The start time, in seconds since the epoch.
+ * @param length The length of time (in seconds) to continue doing flats before we stop.
+ */
+int ExpiredStatus(time_t start, long length )
 {
-	/* Checks that the current time against the start time. If it is greater than `length' seconds we return true, 
-	   otherwise we return false. Also, return expired if taking a flat at the last exposure time +100% will
-	   cause overrun. */
 
 	time_t now = time(NULL);
-	if (Multrun_Data.isMultFlat == 0) return 0;    /* Not applicable if not multflat */
+	if (Multrun_Data.Is_Mult_Flat == 0) return 0;    /* Not applicable if not multflat */
 	if ( (now-start) > (length-2*Multrun_Data.Exposure_Length) ) return 1;
 	else return 0; 
 
 }
 
 
-int getNtpDriftFile (char *file){
-	/* Gets the value of the NTP error from a system file call.
-	   Preformatted file method. This uses a file with the format
-	   DATE - NTPSERVER - ERROR  
-	   which is generated from a Perl file running through cron. This prevents
-	   this code stopping should the system ntpstat command stall, or 
-	   recompiling should the format change (we just change the perl file). 
-	   NOTE:  The output is written to the Multrun_Data structure */
-	/* Exposure_data variables:  ntpTime, ntpServer and ntpDrift */      
+/**
+ * Gets the value of the NTP error from a system file call.
+ * Preformatted file method. This uses a file with the format:
+ * <pre>DATE - NTPSERVER - ERROR</pre>
+ * which is generated from a Perl file running through cron. This prevents
+ * this code stopping should the system ntpstat command stall, or 
+ * recompiling should the format change (we just change the perl file). 
+ * NOTE:  The output is written to the Multrun_Data structure variables:  
+ * NTP_Time, NTP_Server and NTP_Drift 
+ */      
+int getNtpDriftFile (char *file)
+{
     
 	FILE *fp = NULL;
 	char line[256];
@@ -953,11 +972,11 @@ int getNtpDriftFile (char *file){
 	/* Within that line, grab each string before the delimiter, 
 	   i.e. the string 'date', ntp server and ntp error */
 	pline=strtok(line,delim);
-	if(pline!=NULL)strncpy(Multrun_Data.ntpTime,pline,256);
+	if(pline!=NULL)strncpy(Multrun_Data.NTP_Time,pline,256);
 	pline=strtok(NULL,delim);
-	if(pline!=NULL)strncpy(Multrun_Data.ntpServer,pline,256);
+	if(pline!=NULL)strncpy(Multrun_Data.NTP_Server,pline,256);
 	pline=strtok(NULL,delim);
-	if(pline!=NULL)Multrun_Data.ntpDrift=atof(pline);
+	if(pline!=NULL)Multrun_Data.NTP_Drift=atof(pline);
 	return 0;
 }
 
@@ -1233,7 +1252,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update CCDATEMP keyword  */
-	retval = fits_update_key_fixdbl(fp,"CCDATEMP",Multrun_Data.temperature,3,"CCD Temperature at START of multrun",&status);
+	retval = fits_update_key_fixdbl(fp,"CCDATEMP",Multrun_Data.Temperature,3,"CCD Temperature at START of multrun",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1242,7 +1261,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 62;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating CCDATEMP failed(%.2f,%s,%d,%s).",
-			Multrun_Data.temperature,filename, status,buff);
+			Multrun_Data.Temperature,filename, status,buff);
 		return FALSE;
 	}
 
@@ -1278,7 +1297,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update REQEXP keyword  */
-	retval = fits_update_key_fixdbl(fp,"REQEXP",Multrun_Data.requestedExposureTime,4,"Exposure time requested by user",&status);
+	retval = fits_update_key_fixdbl(fp,"REQEXP",Multrun_Data.Requested_Exposure_Length,4,"Exposure time requested by user",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1292,7 +1311,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update MEDIAN keyword  */
-	retval = fits_update_key_fixdbl(fp,"MEDIAN",Multrun_Data.median_value,6,"The approx median of the centre values",&status);
+	retval = fits_update_key_fixdbl(fp,"MEDIAN",Multrun_Data.Median_Value,6,"The approx median of the centre values",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1301,12 +1320,12 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 64;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating MEDIAN failed(%.2f,%s,%d,%s).",
-			Multrun_Data.median_value,filename, status,buff);
+			Multrun_Data.Median_Value,filename, status,buff);
 		return FALSE;
 	}
 
 	/* update TIMECORR keyword  */
-	retval = fits_update_key_fixdbl(fp,"TIMECORR",Multrun_Data.TimeCorrection,0,"Time correction in ns for readout, FT and exposure",&status);
+	retval = fits_update_key_fixdbl(fp,"TIMECORR",Multrun_Data.Time_Correction,0,"Time correction in ns for readout, FT and exposure",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1315,7 +1334,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 65;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating TIMECORR failed(%.2f,%s,%d,%s).",
-			Multrun_Data.TimeCorrection,filename, status,buff);
+			Multrun_Data.Time_Correction,filename, status,buff);
 		return FALSE;
 	}
 
@@ -1461,7 +1480,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update NTPTIME keyword  */
-	retval = fits_update_key(fp,TSTRING,"NTPTIME",Multrun_Data.ntpTime,"Last time NTP status was checked",&status);
+	retval = fits_update_key(fp,TSTRING,"NTPTIME",Multrun_Data.NTP_Time,"Last time NTP status was checked",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1475,7 +1494,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 	}
 
 	/* update NTPSERVE keyword  */
-	retval = fits_update_key(fp,TSTRING,"NTPSERVE",Multrun_Data.ntpServer,"Address of ntp server",&status);
+	retval = fits_update_key(fp,TSTRING,"NTPSERVE",Multrun_Data.NTP_Server,"Address of ntp server",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1488,7 +1507,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		return FALSE;
 	}
 	/* update NTPERROR keyword  */
-	retval = fits_update_key_fixdbl(fp,"NTPERROR",Multrun_Data.ntpDrift,3,"Uncertainty in ntp time in msec",&status);
+	retval = fits_update_key_fixdbl(fp,"NTPERROR",Multrun_Data.NTP_Drift,3,"Uncertainty in ntp time in msec",&status);
 	if(retval)
 	{
 		fits_get_errstatus(status,buff);
@@ -1497,7 +1516,7 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 		Fits_Filename_UnLock(filename);
 		Multrun_Error_Number = 42;
 		sprintf(Multrun_Error_String,"Exposure_Save: Updating NTPERROR failed(%.2f,%s,%d,%s).",
-			Multrun_Data.temperature,filename, status,buff);
+			Multrun_Data.Temperature,filename, status,buff);
 		return FALSE;
 	}
 	/* update AIRMASS keyword  */
@@ -2236,24 +2255,28 @@ int Multrun_Exposure_Save(char *filename, unsigned long *exposure_data,int ncols
 }
 
 
-float start_time_correction (float exposure){
-	/* This function corrects the multrun epoch time so that the time of the start
-	 * of image acquisition is taken. It subtracts the readout time and the frame 
-	 * transfer time, derived from the horizontal and vertical shift speeds. These
-	 * speeds are in microseconds per pixel. Note tv_nsec is in nanoseconds so that
-	 * 1 microsec = 1000 nanosec! 
-	 *
-	 * For a single Multrun, the correction will be the same for each image, as it is a 
-	 * function of VSspeed, HSspeed and the exposure time. Use in conjunction with 
-	 * correct_start_time() to get the UTSTART struct timespec. 
-	 * @return Returns the value in nanoseconds of the correction */
+/**
+ * This function corrects the multrun epoch time so that the time of the start
+ * of image acquisition is taken. It subtracts the readout time and the frame 
+ * transfer time, derived from the horizontal and vertical shift speeds. These
+ * speeds are in microseconds per pixel. Note tv_nsec is in nanoseconds so that
+ * 1 microsec = 1000 nanosec! 
+ * For a single Multrun, the correction will be the same for each image, as it is a 
+ * function of VSspeed, HSspeed and the exposure time. Use in conjunction with 
+ * Multrun_Correct_Start_Time() to get the UTSTART struct timespec. 
+ * The value of Multrun_Data.Time_Correction is set to the value in nanoseconds of the correction.
+ * @param exposure The length of the exposure in seconds.
+ * @see #Multrun_Data
+ */
+static void Multrun_Start_Time_Correction(float exposure)
+{
 
 	int image_rows = CCD_Setup_Get_NRows(); 
 	int image_cols = CCD_Setup_Get_NCols(); 
 	float readout_time, ft_time;
 
 #if LOGGING > 4
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"start_time_correction: %d %d  H:%.2f V:%.2f",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Multrun_Start_Time_Correction: %d %d  H:%.2f V:%.2f",
 			      image_rows,image_cols,Multrun_Data.HSspeed,Multrun_Data.VSspeed);
 #endif
 
@@ -2263,25 +2286,31 @@ float start_time_correction (float exposure){
 
 #if LOGGING > 4
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
-			      "start_time_correction: readout time %.2f ms : FT time: %.2f ms",
+			      "Multrun_Start_Time_Correction: readout time %.2f ms : FT time: %.2f ms",
 			      readout_time/1000,ft_time/1000);
 #endif
 
-	/* Return time correction in nanoseconds */
-	return (readout_time*1e3 + ft_time*1e3 + exposure*1e9 );
+	/* set time correction in nanoseconds */
+	Multrun_Data.Time_Correction = (readout_time*1e3 + ft_time*1e3 + exposure*1e9 );
 }
 
 
-int correct_start_time (struct timespec *t){
-	/* This function applies the time correction derived in start_time_correction() */
-	int seconds = (int)(floor(Multrun_Data.TimeCorrection/1e9));  
-	float nseconds = Multrun_Data.TimeCorrection - seconds*1e9;
+/**
+ * This function applies the time correction derived in Multrun_Start_Time_Correction().
+ * @param t The timespec to correct.
+ * @see #Multrun_Data
+ */
+static void Multrun_Correct_Start_Time(struct timespec *t)
+{
+	int seconds = (int)(floor(Multrun_Data.Time_Correction/1e9));  
+	float nseconds = Multrun_Data.Time_Correction - seconds*1e9;
 	t->tv_sec-=seconds;
 	t->tv_nsec-=nseconds;
-	if (t->tv_nsec <0){
+	if (t->tv_nsec <0)
+	{
 		t->tv_sec-=1;
-		t->tv_nsec+=1e9; }
-	return 0;
+		t->tv_nsec+=1e9; 
+	}
 }
 
 
@@ -2984,8 +3013,32 @@ static int fexist(char *filename)
 	return TRUE;
 }
 
+/**
+ * This routine gets the current value of Exposure Status.
+ * Exposure_Status is defined in Exposure_Data.
+ * @return The current status of exposure.
+ * @see #CCD_EXPOSURE_STATUS
+ * @see #Multrun_Data
+ */
+enum CCD_EXPOSURE_STATUS CCD_Multrun_Get_Exposure_Status(void)
+{
+	return Multrun_Data.Exposure_Status;
+}
+
+/**
+ * Get the time the current exposure has been underway.
+ * @return The time the current exposure has been underway, in milliseconds.
+ */
+int CCD_Multrun_Get_Elapsed_Exposure_Time(void)
+{
+	return Multrun_Data.Elapsed_Exposure_Time;
+}
+
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.5  2010/03/26 14:39:49  cjm
+** Changed from bitwise to absolute logging levels.
+**
 ** Revision 1.4  2010/02/09 14:56:45  cjm
 ** Added Fits_Filename_Lock, Fits_Filename_UnLock and associated helper routines.
 ** Added lock and unlock calls into Multrun_Exposure_Save to create FITS file locks
