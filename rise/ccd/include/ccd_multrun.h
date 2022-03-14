@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* ccd_multrun.h
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_multrun.h,v 1.3 2012-08-22 13:08:21 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_multrun.h,v 1.4 2022-03-14 15:58:51 cjm Exp $
 */
 #ifndef CCD_MULTRUN_H
 #define CCD_MULTRUN_H
@@ -34,6 +34,7 @@
 #define _POSIX_C_SOURCE 199309L
 #include <time.h>
 #include "ccd_global.h"
+#include "ccd_exposure.h" /* needed for CCD_EXPOSURE_STATUS enum */
 
 /* These #define/enum definitions should match with those in CCDLibrary.java */
 /**
@@ -180,43 +181,55 @@ struct Header {
  * Structure used to hold local data to ccd_multrun.
  * <dl>
  * <dt>Exposure_Status</dt> <dd>Whether an operation is being performed to CLEAR, EXPOSE or READOUT the CCD.</dd>
- * <dt>Start_Exposure_Clear_Time</dt> <dd>The amount of time before we are due to start an exposure, 
- * 	that a CLEAR_ARRAY command should be sent to the controller. This time is in seconds, 
- * 	and must be greater than the time the CLEAR_ARRAY command takes to clock all accumulated charge off the CCD 
- * 	(approx 5 seconds for a 2kx2k EEV42-40).</dd>
- * <dt>Start_Exposure_Offset_Time</dt> <dd>The amount of time, in milliseconds, before the desired start of 
- * 	exposure that we should send the START_EXPOSURE command, to allow for transmission delay.</dd>
- * <dt>Readout_Remaining_Time</dt> <dd>Amount of time, in milleseconds,
- * 	remaining for an exposure when we change status to READOUT, to stop RDM/TDL/WRMs affecting the readout.</dd>
+ * <dt>Last_Multrun_Exposures</dt> <dd>Keeps track of the Andor series throughout a multrun.</dd>
  * <dt>Exposure_Length</dt> <dd>The last exposure length to be set.</dd>
- * <dt>Exposure_Start_Time</dt> <dd>The time stamp when the START_EXPOSURE command was sent to the controller.</dd>
+ * <dt>Requested_Exposure_Length</dt> <dd>The exposure length requested, before modifications due to Andor
+ *     constraints. In seconds.</dd>
+ * <dt>Temperature</dt> <dd>The array temperature in degrees centigrade. </dd>
+ * <dt>Exposure_Start_Time</dt> <dd>The time the exposure started. This is calculated after the image
+ *     has been read out by subtracting the exposure length, readout time and frame transfer time from a 
+ *     timestamp. See Multrun_Start_Time_Correction.</dd>
+ * <dt>Exposure_Epoch_Time</dt> <dd>Exposure timestamp taken at the end of each exposure.</dd>
+ * <dt>Multrun_Start_Time</dt> <dd>Exposure timestamp taken at the start of a multrun.</dd>
+ * <dt>Last_Image_Time</dt> <dd>Exposure timestamp taken at the start of each exposure.</dd>
+ * <dt>Elapsed_Exposure_Time</dt> <dd>The elapsed time since the start of the last exposure, in milliseconds.</dd>
+ * <dt>HSspeed</dt> <dd>Andor Horizontal Shift speed in us per pixel.</dd>
+ * <dt>VSspeed</dt> <dd>Andor Verical Shift speed in us per pixel.</dd>
+ * <dt>Time_Correction</dt> <dd>The time correction is the number of nanoseconds to do the exposure 
+ *     and readout and frame transfer. This can be applied to a timestamp generated when an image is ready, to get
+ *     the time the exposure started.</dd>
+ * <dt>Median_Value</dt> <dd>The approximate median value of the central pixels.</dd>
+ * <dt>NTP_Time</dt> <dd>Last time NTP status was checked.</dd>
+ * <dt>NTP_Server</dt> <dd>Address of ntp server.</dd>
+ * <dt>NTP_Drift</dt> <dd>Uncertainty in ntp time in msec.</dd>
+ * <dt>Time_Start</dt> <dd>Seconds since the epoch when the Multflat was started.</dd>
+ * <dt>Max_Time</dt> <dd>Maximum length of time to attempt flats, in seconds.</dd>
+ * <dt>Is_Mult_Flat</dt> <dd>Boolean, true if we are attempting flats.</dd>
  * </dl>
- * @see ccd_dsp.html#CCD_EXPOSURE_STATUS
+ * @see ccd_exposure.html#CCD_EXPOSURE_STATUS
  */
-
-struct Multrun_Struct {
+struct Multrun_Struct 
+{
 	enum CCD_EXPOSURE_STATUS Exposure_Status;
-	int Start_Exposure_Clear_Time;
-	int Start_Exposure_Offset_Time;
-	int Readout_Remaining_Time;
-	long lastMultrunExposures;
+	long Last_Multrun_Exposures;
 	float Exposure_Length;
-	float requestedExposureTime;
-	double temperature;
+	float Requested_Exposure_Length;
+	double Temperature;
 	struct timespec Exposure_Start_Time;
 	struct timespec Exposure_Epoch_Time;
 	struct timespec Multrun_Start_Time;
-	struct timespec LastImageTime;
+	struct timespec Last_Image_Time;
+	int Elapsed_Exposure_Time;
 	float HSspeed;
 	float VSspeed;
-	float TimeCorrection;
-	double median_value;
-	char ntpTime[256];
-	char ntpServer[256];
-	float ntpDrift; 
-	time_t timeStart;
-	long maxTime;
-	int isMultFlat;
+	float Time_Correction;
+	double Median_Value;
+	char NTP_Time[256];
+	char NTP_Server[256];
+	float NTP_Drift;
+	time_t Time_Start;
+	long Max_Time;
+	int Is_Mult_Flat;
 };
 
 /* external function declarations */
@@ -232,15 +245,15 @@ extern void ParseFilename(char *filename, struct LtFilename *ltfn);
 extern int getLargestMultrunNumber (struct DirList *dl, int size_dl);
 extern int getLargestRunNumber (struct DirList *dl, int size_dl, int multrun);
 
-extern float start_time_correction (float exposure);
-extern int correct_start_time (struct timespec *t);
 extern void sorter(double *a,int n);
 extern void swap(int i, int j,double *a);
 extern double median(double *a,int n);
 extern float getNewExposureTime( double oldCounts, float oldExposure);
 extern int getNtpDrift(char *server, float *drift);
-extern char *chomp (char *string); 
+extern char *chomp (char *string);
 
+extern enum CCD_EXPOSURE_STATUS CCD_Multrun_Get_Exposure_Status(void);
+extern int CCD_Multrun_Get_Elapsed_Exposure_Time(void);
 extern int CCD_Multrun_Get_Error_Number(void);
 extern void CCD_Multrun_Error(void);
 extern void CCD_Multrun_Error_String(char *error_string);
