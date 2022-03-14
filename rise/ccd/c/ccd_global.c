@@ -19,12 +19,12 @@
 */
 /* ccd_global.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_global.c,v 1.2 2010-03-26 14:39:49 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_global.c,v 1.3 2022-03-14 15:23:03 cjm Exp $
 */
 /**
  * ccd_global.c contains routines that tie together all the modules that make up libccd.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -76,16 +76,10 @@
 #endif /* CCD_GLOBAL_READOUT_MLOCK */
 #include "log_udp.h"
 #include "ccd_global.h"
-#include "ccd_pci.h"
-#include "ccd_text.h"
-#include "ccd_interface.h"
-#include "ccd_dsp.h"
-#include "ccd_dsp_download.h"
 #include "ccd_exposure.h"
 #include "ccd_multrun.h"
 #include "ccd_temperature.h"
 #include "ccd_setup.h"
-#include "ccd_filter_wheel.h"
 #include "atmcdLXd.h"
 
 /* hash definitions */
@@ -169,7 +163,7 @@ eSTAR_Config_Properties_t rProperties;
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_global.c,v 1.2 2010-03-26 14:39:49 cjm Exp $";
+static char rcsid[] = "$Id: ccd_global.c,v 1.3 2022-03-14 15:23:03 cjm Exp $";
 /**
  * Variable holding error code of last operation performed by ccd_dsp.
  */
@@ -218,19 +212,11 @@ static char Global_Buff[CCD_GLOBAL_ERROR_STRING_LENGTH];
  * Note some of the initialisation can produce errors. Currently these are just printed out, this should
  * perhaps return an error code when this occurs.
  * </i>
- * @param interface_device The device the library will write DSP commands to. The routine calls
- * 	<a href="ccd_interface.html#CCD_Interface_Set_Device">CCD_Interface_Set_Device</a> to set the
- * 	device.
  * @see #Global_Data
- * @see ccd_interface.html#CCD_Interface_Set_Device
- * @see ccd_interface.html#CCD_Interface_Initialise
- * @see ccd_dsp.html#CCD_DSP_Initialise
- * @see ccd_dsp_download.html#CCD_DSP_Download_Initialise
  * @see ccd_exposure.html#CCD_Exposure_Initialise
  * @see ccd_setup.html#CCD_Setup_Initialise
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Initialise
  */
-void CCD_Global_Initialise(enum CCD_INTERFACE_DEVICE_ID interface_device)
+void CCD_Global_Initialise(void)
 {
 	CCD_Setup_Initialise();
 	CCD_Exposure_Initialise();
@@ -260,8 +246,6 @@ void CCD_Global_Initialise(enum CCD_INTERFACE_DEVICE_ID interface_device)
  * <b>Note</b> you cannot call both CCD_Global_Error and CCD_Global_Error_String to print the error string and 
  * get a string copy of it, only one of the error routines can be called after libccd has generated an error.
  * A second call to one of these routines will generate a 'Error not found' error!.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Get_Error_Number
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Error
  * @see ccd_setup.html#CCD_Setup_Get_Error_Number
  * @see ccd_setup.html#CCD_Setup_Error
  * @see ccd_exposure.html#CCD_Exposure_Get_Error_Number
@@ -270,14 +254,6 @@ void CCD_Global_Initialise(enum CCD_INTERFACE_DEVICE_ID interface_device)
  * @see ccd_multrun.html#CCD_Multrun_Error
  * @see ccd_temperature.html#CCD_Temperature_Get_Error_Number
  * @see ccd_temperature.html#CCD_Temperature_Error
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_dsp.html#CCD_DSP_Error
- * @see ccd_dsp_download.html#CCD_DSP_Download_Get_Error_Number
- * @see ccd_dsp_download.html#CCD_DSP_Download_Error
- * @see ccd_interface.html#CCD_Interface_Get_Error_Number
- * @see ccd_interface.html#CCD_Interface_Error
- * @see ccd_pci.html#CCD_PCI_Get_Error_Number
- * @see ccd_pci.html#CCD_PCI_Error
  * @see #CCD_Global_Get_Current_Time_String
  * @see #Global_Error_Number
  * @see #Global_Error_String
@@ -287,11 +263,6 @@ void CCD_Global_Error(void)
 	char time_string[32];
 	int found = FALSE;
 
-	if(CCD_Filter_Wheel_Get_Error_Number() != 0)
-	{
-		found = TRUE;
-		CCD_Filter_Wheel_Error();
-	}
 	if(CCD_Setup_Get_Error_Number() != 0)
 	{
 		found = TRUE;
@@ -312,36 +283,6 @@ void CCD_Global_Error(void)
 		found = TRUE;
 		fprintf(stderr,"\t");
 		CCD_Temperature_Error();
-	}
-	if(CCD_DSP_Download_Get_Error_Number() != 0)
-	{
-		found = TRUE;
-		fprintf(stderr,"\t");
-		CCD_DSP_Download_Error();
-	}
-	if(CCD_DSP_Get_Error_Number() != 0)
-	{
-		found = TRUE;
-		fprintf(stderr,"\t");
-		CCD_DSP_Error();
-	}
-	if(CCD_Interface_Get_Error_Number() != 0)
-	{
-		found = TRUE;
-		fprintf(stderr,"\t\t");
-		CCD_Interface_Error();
-	}
-	if(CCD_PCI_Get_Error_Number() != 0)
-	{
-		found = TRUE;
-		fprintf(stderr,"\t\t\t");
-		CCD_PCI_Error();
-	}
-	if(CCD_Text_Get_Error_Number() != 0)
-	{
-		found = TRUE;
-		fprintf(stderr,"\t\t\t");
-		CCD_Text_Error();
 	}
 	if(Global_Error_Number != 0)
 	{
@@ -365,8 +306,6 @@ void CCD_Global_Error(void)
  * A second call to one of these routines will generate a 'Error not found' error!.
  * @param error_string A character buffer big enough to store the longest possible error message. It is
  * recomended that it is at least 1024 bytes in size.
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Get_Error_Number
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Error_String
  * @see ccd_setup.html#CCD_Setup_Get_Error_Number
  * @see ccd_setup.html#CCD_Setup_Error_String
  * @see ccd_exposure.html#CCD_Exposure_Get_Error_Number
@@ -375,14 +314,6 @@ void CCD_Global_Error(void)
  * @see ccd_multrun.html#CCD_Multrun_Error_String
  * @see ccd_temperature.html#CCD_Temperature_Get_Error_Number
  * @see ccd_temperature.html#CCD_Temperature_Error_String
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_dsp.html#CCD_DSP_Error_String
- * @see ccd_dsp_download.html#CCD_DSP_Download_Get_Error_Number
- * @see ccd_dsp_download.html#CCD_DSP_Download_Error_String
- * @see ccd_interface.html#CCD_Interface_Get_Error_Number
- * @see ccd_interface.html#CCD_Interface_Error_String
- * @see ccd_pci.html#CCD_PCI_Get_Error_Number
- * @see ccd_pci.html#CCD_PCI_Error_String
  * @see #CCD_Global_Get_Current_Time_String
  * @see #Global_Error_Number
  * @see #Global_Error_String
@@ -392,10 +323,6 @@ void CCD_Global_Error_String(char *error_string)
 	char time_string[32];
 
 	strcpy(error_string,"");
-	if(CCD_Filter_Wheel_Get_Error_Number() != 0)
-	{
-		CCD_Filter_Wheel_Error_String(error_string);
-	}
 	if(CCD_Setup_Get_Error_Number() != 0)
 	{
 		CCD_Setup_Error_String(error_string);
@@ -412,31 +339,6 @@ void CCD_Global_Error_String(char *error_string)
 	{
 		strcat(error_string,"\t");
 		CCD_Temperature_Error_String(error_string);
-	}
-	if(CCD_DSP_Download_Get_Error_Number() != 0)
-	{
-		strcat(error_string,"\t");
-		CCD_DSP_Download_Error_String(error_string);
-	}
-	if(CCD_DSP_Get_Error_Number() != 0)
-	{
-		strcat(error_string,"\t");
-		CCD_DSP_Error_String(error_string);
-	}
-	if(CCD_Interface_Get_Error_Number() != 0)
-	{
-		strcat(error_string,"\t\t");
-		CCD_Interface_Error_String(error_string);
-	}
-	if(CCD_PCI_Get_Error_Number() != 0)
-	{
-		strcat(error_string,"\t\t\t");
-		CCD_PCI_Error_String(error_string);
-	}
-	if(CCD_Text_Get_Error_Number() != 0)
-	{
-		strcat(error_string,"\t\t\t");
-		CCD_Text_Error_String(error_string);
 	}
 	if(Global_Error_Number != 0)
 	{
@@ -920,8 +822,44 @@ int CCD_Global_Memory_UnLock_All(void)
 	return TRUE;
 }
 
+/**
+ * Return a string for an Andor error code. See atmcdLXd.h.
+ * @param error_code The Andor error code.
+ * @return A static string representation of the error code.
+ */
+char* CCD_Global_ErrorCode_To_String(unsigned int error_code)
+{
+	switch(error_code)
+	{
+		case DRV_SUCCESS:
+			return "DRV_SUCCESS";
+		case DRV_ACQUIRING:
+			return "DRV_ACQUIRING";
+		case DRV_IDLE:
+			return "DRV_IDLE";
+		case DRV_P1INVALID:
+			return "DRV_P1INVALID";
+		case DRV_P2INVALID:
+			return "DRV_P2INVALID";
+		case DRV_P3INVALID:
+			return "DRV_P3INVALID";
+		case DRV_P4INVALID:
+			return "DRV_P4INVALID";
+		case DRV_ERROR_NOCAMERA:
+			return "DRV_ERROR_NOCAMERA";
+		case DRV_NOT_AVAILABLE:
+			return "DRV_NOT_AVAILABLE";
+		default:
+			return "UNKNOWN";
+	}
+	return "UNKNOWN";
+}
+
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2010/03/26 14:39:49  cjm
+** Changed from bitwise to absolute logging levels.
+**
 ** Revision 1.1  2009/10/15 10:16:23  cjm
 ** Initial revision
 **
