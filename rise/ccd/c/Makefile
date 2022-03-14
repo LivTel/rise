@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/c/Makefile,v 1.2 2010-03-26 14:40:05 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/c/Makefile,v 1.3 2022-03-14 16:08:46 cjm Exp $
 
 include			../../../Makefile.common
 include			../../Makefile.common
@@ -47,8 +47,11 @@ FTMODE = -DFTMODE=1
 #ANDORCFLAGS = -I/usr/local/include $(FTMODE)
 #ANDORLIB = -L/usr/local/lib -landor -lm
 #installed in $(RISE_SRC_HOME)/andor/include and $(RISE_SRC_HOME)/andor/lib
-ANDORCFLAGS = -I$(RISE_SRC_HOME)/andor/include $(FTMODE)
-ANDORLIB = -L$(RISE_SRC_HOME)/andor/lib -landor -lm
+#ANDORCFLAGS = -I$(RISE_SRC_HOME)/andor/include $(FTMODE)
+#ANDORLIB = -L$(RISE_SRC_HOME)/andor/lib -landor -lm
+# Now use common ltdevsrv version
+ANDORCFLAGS = -I$(LT_SRC_HOME)/andor/andor-2.85.30000/include $(FTMODE)
+ANDORLIB = -L$(LT_SRC_HOME)/andor/andor-2.85.30000/lib -landor -lm
 
 # estar_config (used for property loading)
 ESTARCONFIGLIBHOME = $(eSTAR_LIB_HOME)
@@ -117,8 +120,8 @@ CFLAGS = -g $(CCHECKFLAG) -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR) $(ESTARCON
 
 LINTFLAGS = -I$(INCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR)
 DOCFLAGS = -static
-SRCS 		= 	ccd_interface.c ccd_pci.c ccd_text.c ccd_global.c ccd_dsp.c ccd_dsp_download.c \
-			ccd_filter_wheel.c ccd_temperature.c ccd_setup.c ccd_exposure.c ccd_multrun.c 
+SRCS 		= 	ccd_global.c ccd_temperature.c ccd_setup.c ccd_exposure.c ccd_multrun.c 
+# ccd_filter_wheel.c ccd_interface.c ccd_pci.c ccd_text.c ccd_dsp.c ccd_dsp_download.c 
 HEADERS		=	$(SRCS:%.c=%.h)
 OBJS		=	$(SRCS:%.c=%.o)
 DOCS 		= 	$(SRCS:%.c=$(DOCSDIR)/%.html)
@@ -181,6 +184,10 @@ backup: tidy
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.2  2010/03/26 14:40:05  cjm
+# Changed from bitwise to absolute logging levels.
+# Added log_udp CFLAGS.
+#
 # Revision 1.1  2009/10/15 10:24:02  cjm
 # Initial revision
 #
@@ -248,309 +255,178 @@ backup: tidy
 
 # DO NOT DELETE
 
-ccd_interface.o: /usr/include/stdio.h /usr/include/features.h
-ccd_interface.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_interface.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_interface.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_interface.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_interface.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_interface.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_interface.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_interface.o: /usr/include/bits/stdio_lim.h
-ccd_interface.o: /usr/include/bits/sys_errlist.h /usr/include/string.h
-ccd_interface.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
-ccd_interface.o: /usr/include/sys/types.h /usr/include/time.h
-ccd_interface.o: /usr/include/signal.h /usr/include/bits/sigset.h
-ccd_interface.o: /usr/include/bits/signum.h /usr/include/errno.h
-ccd_interface.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-ccd_interface.o: /usr/include/asm/errno.h /usr/include/sys/time.h
-ccd_interface.o: /usr/include/bits/time.h /usr/include/sys/select.h
-ccd_interface.o: /usr/include/bits/select.h
-ccd_interface.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_interface.o: /home/dev/src/rise/ccd/include/ccd_interface.h
-ccd_interface.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_interface.o: /home/dev/src/rise/ccd/include/ccd_text.h
-ccd_interface.o: /home/dev/src/rise/ccd/include/ccd_pci.h
-ccd_pci.o: /usr/include/stdio.h /usr/include/features.h
-ccd_pci.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_pci.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_pci.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_pci.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_pci.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_pci.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_pci.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_pci.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-ccd_pci.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
-ccd_pci.o: /usr/include/bits/confname.h /usr/include/string.h
-ccd_pci.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
-ccd_pci.o: /usr/include/sys/types.h /usr/include/time.h /usr/include/signal.h
-ccd_pci.o: /usr/include/bits/sigset.h /usr/include/bits/signum.h
-ccd_pci.o: /usr/include/errno.h /usr/include/bits/errno.h
-ccd_pci.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
-ccd_pci.o: /usr/include/sys/time.h /usr/include/bits/time.h
-ccd_pci.o: /usr/include/sys/select.h /usr/include/bits/select.h
-ccd_pci.o: /usr/include/sys/mman.h /usr/include/bits/mman.h
-ccd_pci.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_pci.o: /home/dev/src/rise/ccd/include/ccd_interface.h
-ccd_pci.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_pci.o: /home/dev/src/rise/ccd/include/ccd_pci.h
-ccd_text.o: /usr/include/stdio.h /usr/include/features.h
-ccd_text.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_text.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_text.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_text.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_text.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_text.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_text.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_text.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-ccd_text.o: /usr/include/stdlib.h /usr/include/string.h /usr/include/errno.h
-ccd_text.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-ccd_text.o: /usr/include/asm/errno.h /usr/include/unistd.h
-ccd_text.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
-ccd_text.o: /usr/include/time.h /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_text.o: /home/dev/src/rise/ccd/include/ccd_interface.h
-ccd_text.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_text.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
-ccd_text.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
-ccd_text.o: /home/dev/src/rise/ccd/include/ccd_pci.h
-ccd_text.o: /home/dev/src/rise/ccd/include/ccd_text.h
-ccd_text.o: /usr/include/sys/types.h
 ccd_global.o: /usr/include/stdio.h /usr/include/features.h
-ccd_global.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_global.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_global.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_global.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_global.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_global.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_global.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_global.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+ccd_global.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+ccd_global.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
+ccd_global.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+ccd_global.o: /usr/include/libio.h /usr/include/_G_config.h
+ccd_global.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+ccd_global.o: /usr/include/gconv.h /usr/include/bits/stdio_lim.h
+ccd_global.o: /usr/include/bits/sys_errlist.h /usr/include/getopt.h
 ccd_global.o: /usr/include/errno.h /usr/include/bits/errno.h
 ccd_global.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
-ccd_global.o: /usr/include/limits.h
-ccd_global.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/limits.h
-ccd_global.o: /usr/include/sys/types.h /usr/include/time.h
-ccd_global.o: /usr/include/string.h /usr/include/unistd.h
+ccd_global.o: /usr/include/asm-generic/errno.h
+ccd_global.o: /usr/include/asm-generic/errno-base.h /usr/include/limits.h
+ccd_global.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+ccd_global.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+ccd_global.o: /usr/include/bits/xopen_lim.h /usr/include/sys/types.h
+ccd_global.o: /usr/include/time.h /usr/include/string.h /usr/include/unistd.h
 ccd_global.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
+ccd_global.o: /home/dev/src/log_udp/include/log_udp.h
 ccd_global.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_global.o: /home/dev/src/rise/ccd/include/ccd_interface.h
 ccd_global.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_global.o: /home/dev/src/rise/ccd/include/ccd_pci.h
-ccd_global.o: /home/dev/src/rise/ccd/include/ccd_text.h
-ccd_global.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
-ccd_global.o: /home/dev/src/rise/ccd/include/ccd_dsp_download.h
 ccd_global.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
+ccd_global.o: /home/dev/src/rise/ccd/include/ccd_multrun.h
+ccd_global.o: /usr/include/dirent.h /usr/include/bits/dirent.h
 ccd_global.o: /home/dev/src/rise/ccd/include/ccd_temperature.h
 ccd_global.o: /home/dev/src/rise/ccd/include/ccd_setup.h
-ccd_global.o: /home/dev/src/rise/ccd/include/ccd_filter_wheel.h
-ccd_global.o: /home/dev/src/rise/andor/include/atmcdLXd.h
-ccd_dsp.o: /usr/include/errno.h /usr/include/features.h
-ccd_dsp.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_dsp.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-ccd_dsp.o: /usr/include/asm/errno.h /usr/include/fcntl.h
-ccd_dsp.o: /usr/include/bits/fcntl.h /usr/include/sys/types.h
-ccd_dsp.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_dsp.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_dsp.o: /usr/include/bits/typesizes.h /usr/include/time.h
-ccd_dsp.o: /usr/include/signal.h /usr/include/bits/sigset.h
-ccd_dsp.o: /usr/include/bits/signum.h /usr/include/stdio.h
-ccd_dsp.o: /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h
-ccd_dsp.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_dsp.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_dsp.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-ccd_dsp.o: /usr/include/stdlib.h /usr/include/string.h /usr/include/unistd.h
-ccd_dsp.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
-ccd_dsp.o: /usr/include/pthread.h /usr/include/sched.h
-ccd_dsp.o: /usr/include/bits/sched.h /usr/include/bits/pthreadtypes.h
-ccd_dsp.o: /usr/include/bits/initspin.h /usr/include/bits/sigthread.h
-ccd_dsp.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_dsp.o: /home/dev/src/rise/ccd/include/ccd_interface.h
-ccd_dsp.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_dsp.o: /home/dev/src/rise/ccd/include/ccd_pci.h
-ccd_dsp.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
-ccd_dsp.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
-ccd_dsp.o: /home/dev/src/rise/andor/include/atmcdLXd.h
-ccd_dsp_download.o: /usr/include/errno.h /usr/include/features.h
-ccd_dsp_download.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_dsp_download.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-ccd_dsp_download.o: /usr/include/asm/errno.h /usr/include/fcntl.h
-ccd_dsp_download.o: /usr/include/bits/fcntl.h /usr/include/sys/types.h
-ccd_dsp_download.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_dsp_download.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_dsp_download.o: /usr/include/bits/typesizes.h /usr/include/time.h
-ccd_dsp_download.o: /usr/include/signal.h /usr/include/bits/sigset.h
-ccd_dsp_download.o: /usr/include/bits/signum.h /usr/include/stdio.h
-ccd_dsp_download.o: /usr/include/libio.h /usr/include/_G_config.h
-ccd_dsp_download.o: /usr/include/wchar.h /usr/include/bits/wchar.h
-ccd_dsp_download.o: /usr/include/gconv.h
-ccd_dsp_download.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_dsp_download.o: /usr/include/bits/stdio_lim.h
-ccd_dsp_download.o: /usr/include/bits/sys_errlist.h /usr/include/stdlib.h
-ccd_dsp_download.o: /usr/include/string.h /usr/include/unistd.h
-ccd_dsp_download.o: /usr/include/bits/posix_opt.h
-ccd_dsp_download.o: /usr/include/bits/confname.h
-ccd_dsp_download.o: /home/dev/src/rise/ccd/include/ccd_interface.h
-ccd_dsp_download.o: /home/dev/src/rise/ccd/include/ccd_pci.h
-ccd_dsp_download.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
-ccd_dsp_download.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_dsp_download.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_filter_wheel.o: /usr/include/stdio.h /usr/include/features.h
-ccd_filter_wheel.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_filter_wheel.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_filter_wheel.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_filter_wheel.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_filter_wheel.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_filter_wheel.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_filter_wheel.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_filter_wheel.o: /usr/include/bits/stdio_lim.h
-ccd_filter_wheel.o: /usr/include/bits/sys_errlist.h /usr/include/string.h
-ccd_filter_wheel.o: /usr/include/math.h /usr/include/bits/huge_val.h
-ccd_filter_wheel.o: /usr/include/bits/mathdef.h /usr/include/bits/mathcalls.h
-ccd_filter_wheel.o: /usr/include/time.h /usr/include/sys/time.h
-ccd_filter_wheel.o: /usr/include/bits/time.h /usr/include/sys/select.h
-ccd_filter_wheel.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
-ccd_filter_wheel.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_filter_wheel.o: /home/dev/src/rise/ccd/include/ccd_interface.h
-ccd_filter_wheel.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_filter_wheel.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
-ccd_filter_wheel.o: /home/dev/src/rise/ccd/include/ccd_filter_wheel.h
+ccd_global.o: /home/dev/src/andor/andor-2.85.30000/include/atmcdLXd.h
 ccd_temperature.o: /usr/include/stdio.h /usr/include/features.h
-ccd_temperature.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_temperature.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_temperature.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_temperature.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_temperature.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_temperature.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_temperature.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_temperature.o: /usr/include/bits/stdio_lim.h
-ccd_temperature.o: /usr/include/bits/sys_errlist.h /usr/include/string.h
-ccd_temperature.o: /usr/include/math.h /usr/include/bits/huge_val.h
-ccd_temperature.o: /usr/include/bits/mathdef.h /usr/include/bits/mathcalls.h
-ccd_temperature.o: /usr/include/time.h
+ccd_temperature.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+ccd_temperature.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
+ccd_temperature.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+ccd_temperature.o: /usr/include/libio.h /usr/include/_G_config.h
+ccd_temperature.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+ccd_temperature.o: /usr/include/gconv.h /usr/include/bits/stdio_lim.h
+ccd_temperature.o: /usr/include/bits/sys_errlist.h /usr/include/getopt.h
+ccd_temperature.o: /usr/include/string.h /usr/include/math.h
+ccd_temperature.o: /usr/include/bits/huge_val.h /usr/include/bits/mathdef.h
+ccd_temperature.o: /usr/include/bits/mathcalls.h /usr/include/time.h
+ccd_temperature.o: /home/dev/src/log_udp/include/log_udp.h
 ccd_temperature.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_temperature.o: /home/dev/src/rise/ccd/include/ccd_interface.h
 ccd_temperature.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_temperature.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
 ccd_temperature.o: /home/dev/src/rise/ccd/include/ccd_temperature.h
-ccd_temperature.o: /home/dev/src/rise/andor/include/atmcdLXd.h
+ccd_temperature.o: /home/dev/src/andor/andor-2.85.30000/include/atmcdLXd.h
 ccd_setup.o: /usr/include/stdio.h /usr/include/features.h
-ccd_setup.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_setup.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_setup.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_setup.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_setup.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_setup.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_setup.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_setup.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-ccd_setup.o: /usr/include/stdlib.h /usr/include/string.h /usr/include/fcntl.h
-ccd_setup.o: /usr/include/bits/fcntl.h /usr/include/sys/types.h
-ccd_setup.o: /usr/include/time.h /usr/include/signal.h
+ccd_setup.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+ccd_setup.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
+ccd_setup.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+ccd_setup.o: /usr/include/libio.h /usr/include/_G_config.h
+ccd_setup.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+ccd_setup.o: /usr/include/gconv.h /usr/include/bits/stdio_lim.h
+ccd_setup.o: /usr/include/bits/sys_errlist.h /usr/include/getopt.h
+ccd_setup.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
+ccd_setup.o: /usr/include/bits/waitstatus.h /usr/include/sys/types.h
+ccd_setup.o: /usr/include/time.h /usr/include/string.h /usr/include/fcntl.h
+ccd_setup.o: /usr/include/bits/fcntl.h /usr/include/sys/stat.h
+ccd_setup.o: /usr/include/bits/stat.h /usr/include/signal.h
 ccd_setup.o: /usr/include/bits/sigset.h /usr/include/bits/signum.h
+ccd_setup.o: /usr/include/bits/siginfo.h /usr/include/bits/sigaction.h
+ccd_setup.o: /usr/include/bits/sigstack.h /usr/include/sys/ucontext.h
+ccd_setup.o: /usr/include/bits/sigcontext.h /usr/include/asm/sigcontext.h
 ccd_setup.o: /usr/include/errno.h /usr/include/bits/errno.h
 ccd_setup.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
-ccd_setup.o: /usr/include/math.h /usr/include/bits/huge_val.h
-ccd_setup.o: /usr/include/bits/mathdef.h /usr/include/bits/mathcalls.h
-ccd_setup.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
-ccd_setup.o: /usr/include/bits/confname.h
+ccd_setup.o: /usr/include/asm-generic/errno.h
+ccd_setup.o: /usr/include/asm-generic/errno-base.h /usr/include/math.h
+ccd_setup.o: /usr/include/bits/huge_val.h /usr/include/bits/mathdef.h
+ccd_setup.o: /usr/include/bits/mathcalls.h /usr/include/unistd.h
+ccd_setup.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
+ccd_setup.o: /home/dev/src/log_udp/include/log_udp.h
+ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
 ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_interface.h
 ccd_setup.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
-ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_dsp_download.h
 ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_temperature.h
 ccd_setup.o: /home/dev/src/rise/ccd/include/ccd_setup.h
-ccd_setup.o: /home/dev/src/rise/andor/include/atmcdLXd.h
+ccd_setup.o: /home/dev/src/andor/andor-2.85.30000/include/atmcdLXd.h
 ccd_exposure.o: /usr/include/stdio.h /usr/include/features.h
-ccd_exposure.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_exposure.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_exposure.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_exposure.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_exposure.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_exposure.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_exposure.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_exposure.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-ccd_exposure.o: /usr/include/stdlib.h /usr/include/string.h
+ccd_exposure.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+ccd_exposure.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
+ccd_exposure.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+ccd_exposure.o: /usr/include/libio.h /usr/include/_G_config.h
+ccd_exposure.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+ccd_exposure.o: /usr/include/gconv.h /usr/include/bits/stdio_lim.h
+ccd_exposure.o: /usr/include/bits/sys_errlist.h /usr/include/getopt.h
+ccd_exposure.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
+ccd_exposure.o: /usr/include/bits/waitstatus.h /usr/include/sys/types.h
+ccd_exposure.o: /usr/include/time.h /usr/include/string.h
 ccd_exposure.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
-ccd_exposure.o: /usr/include/sys/types.h /usr/include/time.h
+ccd_exposure.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
 ccd_exposure.o: /usr/include/signal.h /usr/include/bits/sigset.h
-ccd_exposure.o: /usr/include/bits/signum.h /usr/include/errno.h
+ccd_exposure.o: /usr/include/bits/signum.h /usr/include/bits/siginfo.h
+ccd_exposure.o: /usr/include/bits/sigaction.h /usr/include/bits/sigstack.h
+ccd_exposure.o: /usr/include/sys/ucontext.h /usr/include/bits/sigcontext.h
+ccd_exposure.o: /usr/include/asm/sigcontext.h /usr/include/errno.h
 ccd_exposure.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-ccd_exposure.o: /usr/include/asm/errno.h /usr/include/unistd.h
+ccd_exposure.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+ccd_exposure.o: /usr/include/asm-generic/errno-base.h /usr/include/unistd.h
 ccd_exposure.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
+ccd_exposure.o: /home/dev/src/log_udp/include/log_udp.h
 ccd_exposure.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
 ccd_exposure.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_exposure.o: /home/dev/src/rise/ccd/include/ccd_interface.h
 ccd_exposure.o: /home/dev/src/estar/config/include/estar_config.h
-ccd_exposure.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
 ccd_exposure.o: /home/dev/src/rise/ccd/include/ccd_setup.h
-ccd_exposure.o: /home/dev/src/cfitsio3200/include/fitsio.h
-ccd_exposure.o: /usr/include/limits.h
-ccd_exposure.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/limits.h
-ccd_exposure.o: /home/dev/src/cfitsio3200/include/longnam.h
+ccd_exposure.o: /home/dev/src/cfitsio3310/include/fitsio.h
+ccd_exposure.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
+ccd_exposure.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+ccd_exposure.o: /usr/include/bits/posix2_lim.h /usr/include/bits/xopen_lim.h
+ccd_exposure.o: /home/dev/src/cfitsio3310/include/longnam.h
 ccd_exposure.o: /home/dev/src/ngatastro/include/ngat_astro.h
 ccd_exposure.o: /home/dev/src/ngatastro/include/ngat_astro_mjd.h
-ccd_exposure.o: /home/dev/src/rise/andor/include/atmcdLXd.h
+ccd_exposure.o: /home/dev/src/andor/andor-2.85.30000/include/atmcdLXd.h
 ccd_multrun.o: /usr/include/stdio.h /usr/include/features.h
-ccd_multrun.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ccd_multrun.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ccd_multrun.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
-ccd_multrun.o: /usr/include/bits/typesizes.h /usr/include/libio.h
-ccd_multrun.o: /usr/include/_G_config.h /usr/include/wchar.h
-ccd_multrun.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-ccd_multrun.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
-ccd_multrun.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
-ccd_multrun.o: /usr/include/stdlib.h /usr/include/string.h
-ccd_multrun.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
-ccd_multrun.o: /usr/include/sys/types.h /usr/include/time.h
-ccd_multrun.o: /usr/include/signal.h /usr/include/bits/sigset.h
-ccd_multrun.o: /usr/include/bits/signum.h /usr/include/errno.h
-ccd_multrun.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-ccd_multrun.o: /usr/include/asm/errno.h /usr/include/unistd.h
+ccd_multrun.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
+ccd_multrun.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
+ccd_multrun.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+ccd_multrun.o: /usr/include/libio.h /usr/include/_G_config.h
+ccd_multrun.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+ccd_multrun.o: /usr/include/gconv.h /usr/include/bits/stdio_lim.h
+ccd_multrun.o: /usr/include/bits/sys_errlist.h /usr/include/getopt.h
+ccd_multrun.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
+ccd_multrun.o: /usr/include/bits/waitstatus.h /usr/include/sys/types.h
+ccd_multrun.o: /usr/include/time.h /usr/include/string.h /usr/include/fcntl.h
+ccd_multrun.o: /usr/include/bits/fcntl.h /usr/include/sys/stat.h
+ccd_multrun.o: /usr/include/bits/stat.h /usr/include/signal.h
+ccd_multrun.o: /usr/include/bits/sigset.h /usr/include/bits/signum.h
+ccd_multrun.o: /usr/include/bits/siginfo.h /usr/include/bits/sigaction.h
+ccd_multrun.o: /usr/include/bits/sigstack.h /usr/include/sys/ucontext.h
+ccd_multrun.o: /usr/include/bits/sigcontext.h /usr/include/asm/sigcontext.h
+ccd_multrun.o: /usr/include/errno.h /usr/include/bits/errno.h
+ccd_multrun.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+ccd_multrun.o: /usr/include/asm-generic/errno.h
+ccd_multrun.o: /usr/include/asm-generic/errno-base.h /usr/include/unistd.h
 ccd_multrun.o: /usr/include/bits/posix_opt.h /usr/include/bits/confname.h
 ccd_multrun.o: /usr/include/math.h /usr/include/bits/huge_val.h
 ccd_multrun.o: /usr/include/bits/mathdef.h /usr/include/bits/mathcalls.h
+ccd_multrun.o: /home/dev/src/log_udp/include/log_udp.h
 ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_interface.h
 ccd_multrun.o: /home/dev/src/estar/config/include/estar_config.h
 ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
 ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_multrun.h
 ccd_multrun.o: /usr/include/dirent.h /usr/include/bits/dirent.h
-ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
 ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_setup.h
 ccd_multrun.o: /home/dev/src/rise/ccd/include/ccd_temperature.h
-ccd_multrun.o: /home/dev/src/cfitsio3200/include/fitsio.h
-ccd_multrun.o: /usr/include/limits.h
-ccd_multrun.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/limits.h
-ccd_multrun.o: /home/dev/src/cfitsio3200/include/longnam.h
+ccd_multrun.o: /home/dev/src/cfitsio3310/include/fitsio.h
+ccd_multrun.o: /usr/include/limits.h /usr/include/bits/posix1_lim.h
+ccd_multrun.o: /usr/include/bits/local_lim.h /usr/include/linux/limits.h
+ccd_multrun.o: /usr/include/bits/posix2_lim.h /usr/include/bits/xopen_lim.h
+ccd_multrun.o: /home/dev/src/cfitsio3310/include/longnam.h
 ccd_multrun.o: /home/dev/src/ngatastro/include/ngat_astro.h
 ccd_multrun.o: /home/dev/src/ngatastro/include/ngat_astro_mjd.h
-ccd_multrun.o: /home/dev/src/rise/andor/include/atmcdLXd.h
+ccd_multrun.o: /home/dev/src/andor/andor-2.85.30000/include/atmcdLXd.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/stdio.h /usr/include/features.h
-ngat_rise_ccd_CCDLibrary.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-ngat_rise_ccd_CCDLibrary.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stddef.h
-ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/types.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/sys/cdefs.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/wordsize.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/gnu/stubs.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/gnu/stubs-32.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/types.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/typesizes.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/libio.h /usr/include/_G_config.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/wchar.h /usr/include/bits/wchar.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/gconv.h
-ngat_rise_ccd_CCDLibrary.o: /usr/lib/gcc-lib/i386-redhat-linux/3.2.2/include/stdarg.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/stdio_lim.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/sys_errlist.h
-ngat_rise_ccd_CCDLibrary.o: /usr/include/stdlib.h /usr/include/string.h
-ngat_rise_ccd_CCDLibrary.o: /usr/java/j2sdk1.4.2_06/include/jni.h
-ngat_rise_ccd_CCDLibrary.o: /usr/java/j2sdk1.4.2_06/include/linux/jni_md.h
-ngat_rise_ccd_CCDLibrary.o: /usr/include/time.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/getopt.h /usr/include/stdlib.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/waitflags.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/bits/waitstatus.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/sys/types.h /usr/include/time.h
+ngat_rise_ccd_CCDLibrary.o: /usr/include/string.h
+ngat_rise_ccd_CCDLibrary.o: /usr/java/jdk1.5.0_22/include/jni.h
+ngat_rise_ccd_CCDLibrary.o: /usr/java/jdk1.5.0_22/include/linux/jni_md.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_global.h
-ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_interface.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/estar/config/include/estar_config.h
-ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_dsp.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_exposure.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_multrun.h
 ngat_rise_ccd_CCDLibrary.o: /usr/include/dirent.h /usr/include/bits/dirent.h
-ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_filter_wheel.h
-ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_pci.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_setup.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_temperature.h
-ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ccd_text.h
-ngat_rise_ccd_CCDLibrary.o: /usr/include/sys/types.h
 ngat_rise_ccd_CCDLibrary.o: /home/dev/src/rise/ccd/include/ngat_rise_ccd_CCDLibrary.h
