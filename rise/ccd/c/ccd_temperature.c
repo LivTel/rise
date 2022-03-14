@@ -19,20 +19,14 @@
 */
 /* ccd_temperature.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_temperature.c,v 1.2 2010-03-26 14:39:49 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_temperature.c,v 1.3 2022-03-14 15:23:03 cjm Exp $
 */
 
 /**
  * ccd_temperature holds the routines for calulating the current CCD temperature and setting the CCDs
  * temperature.
- * The CCD_Temperature_Get function calculates the temperature of the the ccd using the
- * Chebychev series and the coefficients given for the CY7 Series
- * Silicon Diodes Standard Curve #10 manufactured by Omega Engineering
- * For this diode, there are eleven (11) coefficients.  Also, the adu-
- * to-voltage conversion factor is needed to use the formula given by
- * Omega Engineering.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -48,7 +42,6 @@
 #include <time.h>
 #include "log_udp.h"
 #include "ccd_global.h"
-#include "ccd_dsp.h"
 #include "ccd_temperature.h"
 #include "atmcdLXd.h"
 
@@ -56,144 +49,9 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_temperature.c,v 1.2 2010-03-26 14:39:49 cjm Exp $";
-
-/**
- * The number of coefficients used to calculate the temperature.
- */
-#define TEMPERATURE_COEFF_COUNT			11
-
-/**
- * The number of coefficients used to calculate the temperature.
- */
-#define TEMPERATURE_DEFAULT_NTEMP		TEMPERATURE_COEFF_COUNT
-
-/**
- * Temperature Coefficient 0.
- */
-#define TEMPERATURE_DEFAULT_COEFF_0		287.756797
-/**
- * Temperature Coefficient 1.
- */
-#define TEMPERATURE_DEFAULT_COEFF_1		-194.144823
-/**
- * Temperature Coefficient 2.
- */
-#define TEMPERATURE_DEFAULT_COEFF_2		-3.837903
-/**
- * Temperature Coefficient 3.
- */
-#define TEMPERATURE_DEFAULT_COEFF_3		-1.318325
-/**
- * Temperature Coefficient 4.
- */
-#define TEMPERATURE_DEFAULT_COEFF_4		-0.109120
-/**
- * Temperature Coefficient 5.
- */
-#define TEMPERATURE_DEFAULT_COEFF_5		-0.393265
-/**
- * Temperature Coefficient 6.
- */
-#define TEMPERATURE_DEFAULT_COEFF_6		0.146911
-/**
- * Temperature Coefficient 7.
- */
-#define TEMPERATURE_DEFAULT_COEFF_7		-0.111192
-/**
- * Temperature Coefficient 8.
- */
-#define TEMPERATURE_DEFAULT_COEFF_8		0.028877
-/**
- * Temperature Coefficient 9.
- */
-#define TEMPERATURE_DEFAULT_COEFF_9		-0.029286
-/**
- * Temperature Coefficient 10.
- */
-#define TEMPERATURE_DEFAULT_COEFF_10		0.015619
-
-/**
- * The default upper voltage used to calculate CCD temperature.
- */
-#define TEMPERATURE_DEFAULT_VU			0.999614
-/**
- * The default lower voltage used to calculate CCD temperature.
- */
-#define TEMPERATURE_DEFAULT_VL			0.079767
-
-/**
- * The default adu per volt used to calculate CCD temperature.
- */
-#define TEMPERATURE_DEFAULT_ADU_PER_VOLT	1366.98
-/**
- * The default adu offset used to calculate CCD temperature.
- */
-#define TEMPERATURE_DEFAULT_ADU_OFFSET		2045
-
-/**
- * The number of times to read the SDSU CCD Controller to determine the temperature.
- * @see #CCD_Temperature_Get
- */
-#define TEMPERATURE_MAX_CHECKS  		30
-
-/**
- * How close the calculated temperature has to be to the target temperature when calculating an ADU count
- * for a given temperature.
- * @see #Temperature_Calc_Temp_ADU
- */
-#define TEMPERATURE_TOLERANCE			0.5
-/**
- * The number of times to try to improve the accuracy of the ADU count when trying to work out an ADU
- * count for a given temperature. This stops the algorithm going into an infinite loop trying to get
- * an ADU count thats within <a href="#TEMPERATURE_TOLERANCE">TEMPERATURE_TOLERANCE</a> of the target temperature.
- * @see #Temperature_Calc_Temp_ADU
- */
-#define TEMPERATURE_MAX_TOLERANCE_TRIALS	30
-/**
- * Definition of the memory address where the Temperature regulation ADU counts are held,
- * in utility board Y memory space. This is the same value as is in the DSP code (DAC0).
- * @see#CCD_Temperature_Get_Heater_ADU
- */
-#define TEMPERATURE_HEATER_ADDRESS		(0x2)
-/**
- * This is the address on the SDSU utility board, Y memory space, to read the current ADU count of the thermistor
- * mounted on the utility board. 
- * This ADU count is read from the temperature monitoring device.
- */
-#define TEMPERATURE_UTILITY_BOARD_ADU_ADDRESS	(0x7)
-/**
- * This is the address on the SDSU utility board, Y memory space, to read the current ADU count of the thermistor
- * mounted in the dewar. 
- * This ADU count is read from the temperature monitoring device.
- */
-#define TEMPERATURE_CURRENT_ADU_ADDRESS		(0xc)
-/**
- * This is the address on the SDSU utility board to write the required ADU count. This ADU count
- * is derived from a temperature, and allows the utility board to control the CCD temperature.
- */
-#define TEMPERATURE_REQUIRED_ADU_ADDRESS	(0x1c)
-/**
- * How long we sleep for, in milliseconds, between successive calls to read
- * the current temperature ADU count from the utility board. The ADU count is
- * only calculated every 3ms.
- */
-#define TEMPERATURE_GET_SLEEP_MS	(2)
+static char rcsid[] = "$Id: ccd_temperature.c,v 1.3 2022-03-14 15:23:03 cjm Exp $";
 
 /* data types */
-/**
- * Data type holding local data to ccd_temperature. This data is all the numerical constants neccessary to
- * calculate temperatures for a particular temperature sensor connected to the system.
- */
-typedef struct Temperature_Struct
-{
-	int	Temp_Coeff_Count;
-	float	V_Upper;
-	float	V_Lower;
-	float	Adu_Per_Volt;
-	int	Adu_Offset;
-	float	Temp_Coeff[TEMPERATURE_COEFF_COUNT];
-} TEMPERATURE_ATTR;
 
 /* external variables */
 
@@ -206,181 +64,85 @@ static int Temperature_Error_Number = 0;
  * Local variable holding description of the last error that occured.
  */
 static char Temperature_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
-/**
- * Data holding the current diode configuration values for a particular temperature sensor.
- */
-static TEMPERATURE_ATTR Temperature_Data = 
-{
-	TEMPERATURE_DEFAULT_NTEMP,
-	TEMPERATURE_DEFAULT_VU,TEMPERATURE_DEFAULT_VL,
-	TEMPERATURE_DEFAULT_ADU_PER_VOLT,TEMPERATURE_DEFAULT_ADU_OFFSET,
-	{TEMPERATURE_DEFAULT_COEFF_0,TEMPERATURE_DEFAULT_COEFF_1,TEMPERATURE_DEFAULT_COEFF_2,
-	TEMPERATURE_DEFAULT_COEFF_3,TEMPERATURE_DEFAULT_COEFF_4,
-	TEMPERATURE_DEFAULT_COEFF_5,TEMPERATURE_DEFAULT_COEFF_6,TEMPERATURE_DEFAULT_COEFF_7,
-	TEMPERATURE_DEFAULT_COEFF_8,TEMPERATURE_DEFAULT_COEFF_9,
-	TEMPERATURE_DEFAULT_COEFF_10}
-};
 
 /* internal function definitions */
-static float Temperature_Temperature(float temp_coeff[],int n,float vu,float vl,float adu_per_volt,int adu_offset,
-	float adu);
-static int Temperature_Calc_Temp_ADU(float temp_coeff[],int n,float vu,float vl,float adu_per_volt,int adu_offset,
-	float temperature);
 
 /* external functions */
 /**
- * This routine gets the current temperature of the CCD in the dewar using the SDSU CCD Controller utility board.
- * It reads the utility board using CCD_DSP_Command_RDM to read memory which has the digital counts 
- * of the voltage from the temperature sensor in it. This is done TEMPERATURE_MAX_CHECKS times.
- * The temperature is calculated from the adu by calling Temperature_Temperature. 
- * If the voltage is out of range an error is returned.
+ * This routine gets the current temperature of the CCD. 
+ * GetStatus is called first, and if the status is not DRV_IDLE an error is returned.
+ * GetTemperatureF is called to retrieve the temperature. The current temperature and status are logged.
  * @param temperature The address of a variable to hold the calculated temperature to be returned.
  * 	The returned temperature is in degrees centigrade.
  * @return TRUE if the operation was successfull and the temperature returned was sensible, FALSE
  * 	if a failure occured or the temperature returned was not sensible.
- * @see #TEMPERATURE_MAX_CHECKS
- * @see #TEMPERATURE_CURRENT_ADU_ADDRESS
- * @see #TEMPERATURE_GET_SLEEP_MS
- * @see #Temperature_Temperature
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
+ * @see #Temperature_Error_Number
+ * @see #Temperature_Error_String
+ * @see ccd_global.html#CCD_Global_ErrorCode_To_String
+ * @see ccd_global.html#CCD_Global_Log_Format
  */
 int CCD_Temperature_Get(double *temperature)
 {
-	/* Lots of crap related to DSP. Removed for Andor  IT */
 	float temp;
 	int error;
-	
+
 	/* First get status. We must not be active! */
 	GetStatus(&error);
 	if(error!=DRV_IDLE) 
-		return TRUE;
+	{
+		(*temperature) = 0.0;
+		Temperature_Error_Number = 1;
+		sprintf(Temperature_Error_String,"CCD_Temperature_Get:GetStatus not DRV_IDLE:%d (%s).",error,
+			CCD_Global_ErrorCode_To_String(error));
+		return FALSE;
+	}
 
 	error=GetTemperatureF(&temp);
-	*temperature = (double)temp;
+	(*temperature) = (double)temp;
 #if LOGGING > 0
 	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get: Temperature %f degC %d",
 			      *temperature,error);
 #endif
 	GetStatus(&error);
 #if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get: Current Status %d",error);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get: Current Status %d (%s).",error,
+			CCD_Global_ErrorCode_To_String(error));
 #endif
 	return TRUE;
 
 }
 
 /**
- * This routine gets the current ADU of the utility board temperature sensor.
- * It reads the utility board using CCD_DSP_Command_RDM to read memory which has the digital counts 
- * of the voltage from the utility board temperature sensor in it.
- * @param adu The address of a variable to hold the Analogue Digital Units to be returned.
- * @return TRUE if the operation was successfull, FALSE if a failure occured.
- * @see #TEMPERATURE_UTILITY_BOARD_ADU_ADDRESS
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- */
-int CCD_Temperature_Get_Utility_Board_ADU(int *adu)
-{
-	int retval;
-
-	Temperature_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Utility_Board() started.");
-#endif
-	if(adu == NULL)
-	{
-		Temperature_Error_Number = 8;
-		sprintf(Temperature_Error_String,"CCD_Temperature_Get:adu pointer was NULL.");
-		return FALSE;
-	}
-	retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,TEMPERATURE_UTILITY_BOARD_ADU_ADDRESS);
-	if((retval == 0)&&(CCD_DSP_Get_Error_Number() != 0))
-	{
-		Temperature_Error_Number = 6;
-		sprintf(Temperature_Error_String,"CCD_Temperature_Get_Utility_Board:"
-			"Read temperature failed");
-		return FALSE;
-	}
-	(*adu) = retval;
-#if LOGGING > 9
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Utility_Board():returned %d.",
-			      (*adu));
-#endif
-	return TRUE;
-}
-
-/**
- * Routine to set the target temperature the SDSU CCD Controller will try to keep the CCD at during
- * operation of the camera. First <a href="#Temperature_Calc_Temp_ADU">Temperature_Calc_Temp_ADU</a> 
- * is called to get an ADU value for the
- * target_temperature and this is then written to the utility board using a 
- * write memory command using CCD_DSP_Command_WRM.
+ * Routine to set the target temperature the CCD Controller.
  * @param target_temperature The temperature we want the CCD cooled to, in degrees centigrade.
  * @return TRUE if the target temperature was set, FALSE if an error occured.
- * @see #TEMPERATURE_REQUIRED_ADU_ADDRESS
- * @see ccd_dsp.html#CCD_DSP_Command_WRM
  */
 int CCD_Temperature_Set(double target_temperature)
 {
-	int adu = 0;
+	unsigned long andor_error_num;
 
 	Temperature_Error_Number = 0;
 #if LOGGING > 0
 	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Set(temperature=%.2f) started.",
 		target_temperature);
 #endif
-	/* get the target adu count from target_temperature using the setup data */
-	adu = Temperature_Calc_Temp_ADU(Temperature_Data.Temp_Coeff,Temperature_Data.Temp_Coeff_Count,
-		Temperature_Data.V_Upper,Temperature_Data.V_Lower, 
-		Temperature_Data.Adu_Per_Volt,Temperature_Data.Adu_Offset,target_temperature);
-	/* write the target to memory */
-	if(CCD_DSP_Command_WRM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,
-		TEMPERATURE_REQUIRED_ADU_ADDRESS,adu) != CCD_DSP_DON)
+	andor_error_num = SetTemperature(target_temperature);
+	if(andor_error_num != DRV_SUCCESS)
 	{
 		Temperature_Error_Number = 2;
-		sprintf(Temperature_Error_String,"Setting CCD Temperature failed.");
+		sprintf(Temperature_Error_String,"CCD_Temperature_Set:Andor SetTemperature failure(%lu).",
+			andor_error_num);
+		return FALSE;
+	}
+	andor_error_num=CoolerON();
+	if(andor_error_num != DRV_SUCCESS)
+	{
+		Temperature_Error_Number = 3;
+		sprintf(Temperature_Error_String,"CCD_Temperature_Set:Andor CoolerON failure(%lu).",andor_error_num);
 		return FALSE;
 	}
 #if LOGGING > 0
 	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Set() returned TRUE.");
-#endif
-	return TRUE;
-}
-
-/**
- * This routine gets the current ADU count of the voltage fed into the heater that regulates
- * the CCD temperature.
- * CCD_DSP_Command_RDM is used to read the relevant DSP memory location.
- * @param heater_adu The address of an integer to hold the current heater ADU.
- * @return TRUE if the operation was successfull and the temperature returned was sensible, FALSE
- * 	if a failure occured or the temperature returned was not sensible.
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- * @see #TEMPERATURE_HEATER_ADDRESS
- */
-int CCD_Temperature_Get_Heater_ADU(int *heater_adu)
-{
-	int retval;
-
-	Temperature_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Heater_ADU() started.");
-#endif
-	if(heater_adu == NULL)
-	{
-		Temperature_Error_Number = 4;
-		sprintf(Temperature_Error_String,"CCD_Temperature_Get_Heater_ADU:adu was NULL.");
-		return FALSE;
-	}
-	retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,TEMPERATURE_HEATER_ADDRESS);
-	if((retval == 0)&&(CCD_DSP_Get_Error_Number() != 0))
-	{
-		Temperature_Error_Number = 5;
-		sprintf(Temperature_Error_String,"CCD_Temperature_Get_Heater_ADU:Read memory failed.");
-		return FALSE;
-	}
-	(*heater_adu) = retval;
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Temperature_Get_Heater_ADU() returned %#x.",
-		(*heater_adu));
 #endif
 	return TRUE;
 }
@@ -437,117 +199,12 @@ void CCD_Temperature_Error_String(char *error_string)
 /* -----------------------------------------------------------------------------
 ** 	internal functions 
 ** ----------------------------------------------------------------------------- */
-/**
- * Calculates the temperature from the adu, using the parameters passed in for a particular diode.
- * @param temp_coeff A set of temperature coefficients for the particular diode used for measuring the
- * 	temperature.
- * @param n The number of temperature coefficients passed in the temp_coeff array.
- * @param vu The upper voltage limit.
- * @param vl The lower voltage limit.
- * @param adu_per_volt The number of ADU's per volt.
- * @param adu_offset The offset to add to the ADU.
- * @param adu The adu we want the temperature for.
- * @return The temperature in degrees centigrade.
- */
-static float Temperature_Temperature(float temp_coeff[], int n,float vu, float vl,float adu_per_volt,int adu_offset,
-	float adu)
-{
-	int i;
-
-	float temperature = -273.15,voltage = 0.0,tc[TEMPERATURE_COEFF_COUNT],x;
-
-/* Convert adu's to voltage */
-	voltage = (adu - (float) adu_offset) / adu_per_volt;
-
-/* Calculate dimensionless variable for the Chebychev series */
-	x = ((voltage - vl) - (vu - voltage)) / (vu - vl);
-
-	tc[0] = 1;
-	tc[1] = x;
-
-	if (n <=2 )
-	{
-		temperature += temp_coeff[0] + (temp_coeff[1] * x);  /* changed voltage to x */ 
-	}
-	else
-	{
-		temperature += temp_coeff[0] + (temp_coeff[1] * x);
-		for (i = 2; i < n; i++)
-		{
-			tc[i] = 2.0 * x * tc[i-1] - tc[i-2];
-			temperature += temp_coeff[i] * tc[i];
-		}
-	}
-	return temperature;
-}
-
-/**
- * Determine an adu value for a given temperature. The algorithm is numerical. A start adu is calculated midway 
- * between 
- * the upper and lower voltage limits. <a href="#Temperature_Temperature">Temperature_Temperature</a> is called
- * to get temperature based on this guess, and then the guess adu is refined to be midway between
- * the midpoint and one of the limits. The process is repeated for up to 
- * <a href="#TEMPERATURE_MAX_TOLERANCE_TRIALS">TEMPERATURE_MAX_TOLERANCE_TRIALS</a> times or until 
- * the calculated temperature
- * is within <a href="#TEMPERATURE_TOLERANCE">TEMPERATURE_TOLERANCE</a> of the required temperature.
- * @return Returns the adu for the temperature.
- * @param temp_coeff A set of temperature coefficients for the particular diode used for measuring the
- * 	temperature.
- * @param n The number of temperature coefficients passed in the temp_coeff array.
- * @param vu The upper voltage limit.
- * @param vl The lower voltage limit.
- * @param adu_per_volt The number of ADU's per volt.
- * @param adu_offset The offset to add to the ADU.
- * @param temperature The temperature we want the adu for.
- */
-static int Temperature_Calc_Temp_ADU(float temp_coeff[], int n,float vu, float vl,float adu_per_volt,int adu_offset,
-	float temperature)
-{
-	int tolerance = 0, trials = 0;
-	float adu = 0.0,vmid,lower,upper,target_temp=-273.15;
-	int iadu;
-
-	lower = vl;
-	upper = vu;
-
-	vmid = (lower + upper) * 0.5;
-
-/* Numerically determine v for a given temperature   */
-/* Choose an initial adu in the middle of vu and vl  */
-	adu = vmid * adu_per_volt + (float) adu_offset;
-
-	tolerance = (fabs(target_temp - temperature) > TEMPERATURE_TOLERANCE);
-
-	while (tolerance && (trials < TEMPERATURE_MAX_TOLERANCE_TRIALS))
-	{
-		target_temp = Temperature_Temperature(temp_coeff,n,vu,vl,adu_per_volt,adu_offset,adu);
-		tolerance = (fabs(target_temp - temperature) > TEMPERATURE_TOLERANCE);
-		if (tolerance)
-		{
-			if (target_temp < temperature)
-			{
-				upper = vmid;
-				vmid = (lower + upper) * 0.5;
-				adu = vmid * adu_per_volt + (float) adu_offset;
-			}
-			else if (target_temp > temperature)
-			{
-				lower = vmid;
-				vmid = (lower + upper) * 0.5;
-				adu = vmid * adu_per_volt + (float) adu_offset;
-			}
-		}
-		trials++;
-	}
-/* ensure adu's are in range. */
-	iadu = (int)adu;
-	iadu = iadu & 0xfff;
-/* return adu */
-	return iadu;
-}
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.2  2010/03/26 14:39:49  cjm
+** Changed from bitwise to absolute logging levels.
+**
 ** Revision 1.1  2009/10/15 10:16:23  cjm
 ** Initial revision
 **
