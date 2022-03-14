@@ -18,7 +18,7 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* ccd_exposure.h
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_exposure.h,v 1.1 2009-10-15 10:16:27 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/include/ccd_exposure.h,v 1.2 2022-03-14 15:58:51 cjm Exp $
 */
 #ifndef CCD_EXPOSURE_H
 #define CCD_EXPOSURE_H
@@ -34,16 +34,6 @@
 #define _POSIX_C_SOURCE 199309L
 #include <time.h>
 #include "ccd_global.h"
-
-/* These #define/enum definitions should match with those in CCDLibrary.java */
-/**
- * When bits 3 and 5 in the HSTR are set, the SDSU controllers are reading out.
- */
-#define CCD_EXPOSURE_HSTR_READOUT				(0x5)
-/**
- * How many bits to shift the HSTR register to get the READOUT status bits.
- */
-#define CCD_EXPOSURE_HSTR_BIT_SHIFT				(0x3)
 
 /**
  * Return value from CCD_DSP_Get_Exposure_Status. 
@@ -81,10 +71,6 @@ extern void CCD_Exposure_Initialise(void);
 extern int CCD_Exposure_Expose(int clear_array,int open_shutter,struct timespec start_time,int exposure_time,
 			       char **filename_list,int filename_count);
 extern int CCD_Exposure_Bias(char *filename);
-extern int CCD_Exposure_Open_Shutter(void);
-extern int CCD_Exposure_Close_Shutter(void);
-extern int CCD_Exposure_Pause(void);
-extern int CCD_Exposure_Resume(void);
 extern int CCD_Exposure_Abort(void);
 extern int CCD_Exposure_Read_Out_CCD(char *filename);
 
@@ -99,6 +85,8 @@ extern int CCD_Exposure_Get_Start_Exposure_Offset_Time(void);
 extern void CCD_Exposure_Set_Readout_Remaining_Time(int time);
 extern int CCD_Exposure_Get_Readout_Remaining_Time(void);
 extern void CCD_Exposure_Set_Exposure_Start_Time(void);
+extern int CCD_Exposure_Get_Abort(void);
+extern int CCD_Exposure_Set_Abort(int value);
 
 extern int CCD_Exposure_Get_Error_Number(void);
 extern void CCD_Exposure_Error(void);
