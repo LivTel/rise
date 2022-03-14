@@ -19,13 +19,13 @@
 */
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.3 2010-03-26 14:39:49 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.4 2022-03-14 15:23:03 cjm Exp $
 */
 /**
  * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
  * exposures.
  * @author SDSU, Chris Mottram
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -48,10 +48,8 @@
 #include <sys/time.h>
 #endif
 #include "log_udp.h"
+#include "ccd_exposure.h"
 #include "ccd_global.h"
-#include "ccd_dsp.h"
-#include "ccd_dsp_download.h"
-#include "ccd_interface.h"
 #include "ccd_temperature.h"
 #include "ccd_setup.h"
 #include "atmcdLXd.h"
@@ -59,77 +57,9 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.3 2010-03-26 14:39:49 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.4 2022-03-14 15:23:03 cjm Exp $";
 
 /* #defines */
-/**
- * Used when performing a short hardware test (in <a href="#CCD_Setup_Hardware_Test">CCD_Setup_Hardware_Test</a>),
- * This is the number of times each board's data link is tested using the 
- * <a href="ccd_dsp.html#CCD_DSP_TDL">TDL</a> command.
- */
-#define SETUP_SHORT_TEST_COUNT		(10)
-
-/**
- * The maximum value that can be sent as a data value argument to the Test Data Link SDSU command.
- * According to the documentation, this can be any 24bit number.
- */
-#define TDL_MAX_VALUE 			(16777216)	/* 2^24 */
-
-/**
- * The bit on the timing board, X memory space, location 0, which is set when the 
- * timing board is idling between exposures (idle clocking the CCD).
- */
-#define SETUP_TIMING_IDLMODE		(1<<2)
-/**
- * The SDSU controller address, on the Timing board, Y memory space, 
- * where the number of columns (binned) to be read out  is stored.
- */
-#define SETUP_ADDRESS_DIMENSION_COLS	(0x1)
-/**
- * The SDSU controller address, on the Timing board, Y memory space, 
- * where the number of rows (binned) to be read out  is stored.
- */
-#define SETUP_ADDRESS_DIMENSION_ROWS	(0x2)
-/**
- * The SDSU controller address, on the Timing board, Y memory space, 
- * where the X (Serial) Binning factor is stored.
- */
-#define SETUP_ADDRESS_BIN_X		(0x5)
-/**
- * The SDSU controller address, on the Timing board, Y memory space, 
- * where the Y (Parallel) Binning factor is stored.
- */
-#define SETUP_ADDRESS_BIN_Y		(0x6)
-/**
- * The SDSU controller address, on the Utility board, Y memory space, 
- * where the digitized ADU counts for the high voltage (+36v) supply voltage are stored.
- */
-#define SETUP_HIGH_VOLTAGE_ADDRESS	(0x8)
-/**
- * The SDSU controller address, on the Utility board, Y memory space, 
- * where the digitized ADU counts for the low voltage (+15v) supply voltage are stored.
- */
-#define SETUP_LOW_VOLTAGE_ADDRESS	(0x9)
-/**
- * The SDSU controller address, on the Utility board, Y memory space, 
- * where the digitized ADU counts for the negative low voltage (-15v) supply voltage are stored.
- */
-#define SETUP_MINUS_LOW_VOLTAGE_ADDRESS	(0xa)
-/**
- * The SDSU controller address, on the Utility board, Y memory space, 
- * where the digitized ADU counts for the vacuum gauge (if present) are stored.
- */
-#define SETUP_VACUUM_GAUGE_ADDRESS	(0xf)
-/**
- * How many times to read the vacuum guage memory on the utility board, when
- * sampling the voltage returned by the vacuum gauge. 
- */
-#define SETUP_VACUUM_GAUGE_SAMPLE_COUNT	(10)
-
-/**
- * Memory buffer size for mmap/malloc.
- */
-#define SETUP_MEMORY_BUFFER_SIZE      (9680000)
 /**
  * The width of bias strip to use when windowing.
  */
@@ -143,29 +73,10 @@ static char rcsid[] = "$Id: ccd_setup.c,v 1.3 2010-03-26 14:39:49 cjm Exp $";
  * <dt>NRows</dt> <dd>The number of rows that will be used on the CCD.</dd>
  * <dt>NSBin</dt> <dd>The amount of binning of columns on the CCD.</dd>
  * <dt>NPBin</dt> <dd>The amount of binning of rows on the CCD.</dd>
- * <dt>DeInterlace_Type</dt> <dd>The type of deinterlacing the image will require. This depends on the way the
- * 	SDSU CCD Controller reads out the CCD. Acceptable values in 
- * 	<a href="ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE">CCD_DSP_DEINTERLACE_TYPE</a> are:
- *	CCD_DSP_DEINTERLACE_SINGLE,
- *	CCD_DSP_DEINTERLACE_FLIP,
- *	CCD_DSP_DEINTERLACE_SPLIT_PARALLEL,
- * 	CCD_DSP_DEINTERLACE_SPLIT_SERIAL or
- * 	CCD_DSP_DEINTERLACE_SPLIT_QUAD.</dd>
- * <dt>Gain</dt> <dd>The gain setting used to configure the CCD electronics.</dd>
- * <dt>Amplifier</dt> <dd>The amplifier setting used to configure the CCD electronics.</dd>
- * <dt>Idle</dt> <dd>A boolean, set as to whether we set the CCD electronics to Idle clock or not.</dd>
  * <dt>Window_Flags</dt> <dd>The window flags for this setup. Determines which of the four possible windows
  * 	are in use for this setup.</dd>
  * <dt>Window_List</dt> <dd>A list of window positions on the CCD. Theere are a maximum of CCD_SETUP_WINDOW_COUNT
  * 	windows. The windows should not overlap in either dimension.</dd>
- * <dt>Power_Complete</dt> <dd>A boolean value indicating whether the power cycling operation was completed
- * 	successfully.</dd>
- * <dt>PCI_Complete</dt> <dd>A boolean value indicating whether the PCI interface program was completed
- * 	successfully.</dd>
- * <dt>Timing_Complete</dt> <dd>A boolean value indicating whether the timing program was completed
- * 	successfully.</dd>
- * <dt>Utility_Complete</dt> <dd>A boolean value indicating whether the utility program was completed
- * 	successfully.</dd>
  * <dt>Dimension_Complete</dt> <dd>A boolean value indicating whether the dimension setup was completed
  * 	successfully.</dd>
  * <dt>Setup_In_Progress</dt> <dd>A boolean value indicating whether the setup operation is in progress.</dd>
@@ -177,16 +88,8 @@ struct Setup_Struct
 	int NRows;
 	int NSBin;
 	int NPBin;
-	enum CCD_DSP_DEINTERLACE_TYPE DeInterlace_Type;
-	enum CCD_DSP_GAIN Gain;
-	enum CCD_DSP_AMPLIFIER Amplifier;
-	int Idle;
 	int Window_Flags;
 	struct CCD_Setup_Window_Struct Window_List[CCD_SETUP_WINDOW_COUNT];
-	int Power_Complete;
-	int PCI_Complete;
-	int Timing_Complete;
-	int Utility_Complete;
 	int Dimension_Complete;
 	int Setup_In_Progress;
 };
@@ -195,7 +98,7 @@ struct Setup_Struct
 
 /* local variables */
 /**
- * Variable holding error code of last operation performed by ccd_dsp.
+ * Variable holding error code of last operation performed by ccd_setup.
  */
 static int Setup_Error_Number = 0;
 /**
@@ -229,10 +132,6 @@ void CCD_Setup_Initialise(void)
 	Setup_Data.NRows = 0;
 	Setup_Data.NSBin = 0;
 	Setup_Data.NPBin = 0;
-	Setup_Data.DeInterlace_Type = CCD_DSP_DEINTERLACE_SINGLE;
-	Setup_Data.Gain = CCD_DSP_GAIN_ONE;
-	Setup_Data.Amplifier = CCD_DSP_AMPLIFIER_LEFT;
-	Setup_Data.Idle = FALSE;
 	Setup_Data.Window_Flags = 0;
 	for(i=0;i<CCD_SETUP_WINDOW_COUNT;i++)
 	{
@@ -241,118 +140,46 @@ void CCD_Setup_Initialise(void)
 		Setup_Data.Window_List[i].X_End = -1;
 		Setup_Data.Window_List[i].Y_End = -1;
 	}
-	Setup_Data.Power_Complete = FALSE;
-	Setup_Data.PCI_Complete = FALSE;
-	Setup_Data.Timing_Complete = FALSE;
-	Setup_Data.Utility_Complete = FALSE;
 	Setup_Data.Dimension_Complete = FALSE;
 /* print some compile time information to stdout */
 	fprintf(stdout,"CCD_Setup_Initialise:%s.\n",rcsid);
-/* Useless stuff in ANDOR  IT 
-#ifdef CCD_SETUP_TIMING_DOWNLOAD_IDLE
-	fprintf(stdout,"CCD_Setup_Initialise:Stop timing board Idling whilst downloading timing board DSP code.\n");
-#else
-	fprintf(stdout,"CCD_Setup_Initialise:NOT Stopping timing board Idling "
-		"whilst downloading timing board DSP code.\n");
-#endif */
 }
 
 /**
- * The routine that sets up the SDSU CCD Controller. This routine does the following:
+ * The routine that sets up the CCD Controller. This routine does the following:
  * <ul>
- * <li>Resets setup completion flags.</li>
- * <li>Loads a PCI board program from ROM/file.</li>
- * <li>Resets the SDSU CCD Controller.</li>
- * <li>Does a hardware test on the data links to each board in the controller. This is done
- * 	SETUP_SHORT_TEST_COUNT times.</li>
- * <li>Loads a timing board program from ROM/application/file.</li>
- * <li>Loads a utility board program from ROM/application/file.</li>
- * <li>Switches the boards analogue power on.</li>
- * <li>Setup the array's gain and readout speed.</li>
  * <li>Sets the arrays target temperature.</li>
- * <li>Setup the readout clocks to idle(or not!).</li>
  * </ul>
  * Array dimension information also needs to be setup before the controller can take exposures 
  * (see CCD_Setup_Dimensions).
  * This routine can be aborted with CCD_Setup_Abort.
- * @param pci_load_type Where the routine is going to load the timing board application from. One of
- * 	<a href="#CCD_SETUP_LOAD_TYPE">CCD_SETUP_LOAD_TYPE</a>:
- * 	CCD_SETUP_LOAD_ROM or
- * 	CCD_SETUP_LOAD_FILENAME. The PCI DSP has no applications.
- * @param pci_filename The filename of the DSP code on disc that will be loaded if the
- * 	pci_load_type is CCD_SETUP_LOAD_FILENAME.
- * @param timing_load_type Where the routine is going to load the timing board application from. One of
- * 	<a href="#CCD_SETUP_LOAD_TYPE">CCD_SETUP_LOAD_TYPE</a>:
- * 	CCD_SETUP_LOAD_ROM, CCD_SETUP_LOAD_APPLICATION or
- * 	CCD_SETUP_LOAD_FILENAME.
- * @param timing_application_number The application number of the DSP code on EEPROM that will be loaded if the 
- * 	timing_load_type is CCD_SETUP_LOAD_APPLICATION.
- * @param timing_filename The filename of the DSP code on disc that will be loaded if the
- * 	timing_load_type is CCD_SETUP_LOAD_FILENAME.
- * @param utility_load_type Where the routine is going to load the utility board application from. One of
- * 	<a href="#CCD_SETUP_LOAD_TYPE">CCD_SETUP_LOAD_TYPE</a>:
- * 	CCD_SETUP_LOAD_APPLICATION or
- * 	CCD_SETUP_LOAD_FILENAME.
- * @param utility_application_number The application number of the DSP code on EEPROM that will be loaded if the 
- * 	utility_load_type is CCD_SETUP_LOAD_APPLICATION.
- * @param utility_filename The filename of the DSP code on disc that will be loaded if the
- * 	utility_load_type is CCD_SETUP_LOAD_FILENAME.
  * @param target_temperature Specifies the target temperature the CCD is meant to run at. 
- * @param gain Specifies the gain to use for the CCD video processors. Acceptable values are
- * 	<a href="ccd_dsp.html#CCD_DSP_GAIN">CCD_DSP_GAIN</a>:
- * 	CCD_DSP_GAIN_ONE, CCD_DSP_GAIN_TWO,
- * 	CCD_DSP_GAIN_FOUR and CCD_DSP_GAIN_NINE.
- * @param gain_speed Set to true for fast integrator speed, false for slow integrator speed.
- * @param idle If true puts CCD clocks in readout sequence, but not transferring any data, whenever a
- * 	command is not executing.
  * @return Returns TRUE if the setup is successfully completed, FALSE if the setup fails or is aborted.
- * @see #CCD_Setup_Hardware_Test
  * @see #CCD_Temperature_Set
- * @see #SETUP_SHORT_TEST_COUNT
  * @see #CCD_Setup_Dimensions
  * @see #CCD_Setup_Abort
- * @see ccd_dsp.html#CCD_DSP_Command_Flush_Reply_Buffer
  */
-int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
-	enum CCD_SETUP_LOAD_TYPE timing_load_type,int timing_application_number,char *timing_filename,
-	enum CCD_SETUP_LOAD_TYPE utility_load_type,int utility_application_number,char *utility_filename,
-	double target_temperature,enum CCD_DSP_GAIN gain,int gain_speed,int idle)
+int CCD_Setup_Startup(double target_temperature)
 {
 /* ANDOR STUFF .....  */
 	long lNumCameras;
 	int iSelectedCamera  = 0; 
 	unsigned long error;
 	int andorTargetTemp=(int)target_temperature; /* ANDOR function takes an int! */
-	int cTemp = 0;
 	long lCameraHandle;
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup(pci_load_type=%d,"
-		"timing_load_type=%d,timing_application=%d,utility_load_type=%d,utility_application=%d,"
-		"temperature=%.2f,gain=%d,gain_speed=%d,idle=%d) started.",pci_load_type,
-		timing_load_type,timing_application_number,utility_load_type,utility_application_number,
-		target_temperature,gain,gain_speed,idle);
-	if(pci_filename != NULL)
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup has pci_filename=%s.",pci_filename);
-	if(timing_filename != NULL)
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup has timing_filename=%s.",
-				      timing_filename);
-	if(utility_filename != NULL)
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup has utility_filename=%s.",
-				      utility_filename);
+	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup(temperature=%.2f) started.",
+			      target_temperature);
 #endif
 /* we are in a setup routine */
 	Setup_Data.Setup_In_Progress = TRUE;
 /* reset completion flags - even dimension flag is reset, as the controller itself is reset */
-	Setup_Data.Power_Complete = FALSE;
-	Setup_Data.PCI_Complete = FALSE;
-	Setup_Data.Timing_Complete = FALSE;
-	Setup_Data.Utility_Complete = FALSE;
 	Setup_Data.Dimension_Complete = FALSE;
 
 	/* Load the parameter file */
-	eSTAR_Config_Parse_File("rise.ccs.properties",&rProperties);	
+	eSTAR_Config_Parse_File("ccs.properties",&rProperties);	
 	eSTAR_Config_Print_Error();
 	eSTAR_Config_Get_Int(&rProperties,"ccs.libccd.cooling",&(mrParams.ccdCool));
 	
@@ -419,7 +246,7 @@ int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
 	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: SetFrameTransferMode OFF %lu",error);
 #endif
 #endif
-      
+	/*
 	while (GetTemperature(&cTemp)!=DRV_TEMPERATURE_STABILIZED && mrParams.ccdCool==1)
 	{
 #if LOGGING > 0
@@ -428,7 +255,7 @@ int CCD_Setup_Startup(enum CCD_SETUP_LOAD_TYPE pci_load_type,char *pci_filename,
 #endif
 		sleep (10);
 	}
-
+	*/
 #if LOGGING > 0
 	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Startup: Initialisation complete...");
 #endif
@@ -491,16 +318,6 @@ int CCD_Setup_Shutdown(void)
  *	ncols.
  * @param npbin The amount of binning applied to pixels in rows.This parameter will change internally
  *	nrows.
- * @param amplifier Which amplifier to use when reading out data from the CCD. Possible values come from
- * 	the CCD_DSP_AMPLIFIER enum.
- * @param deinterlace_type The algorithm to use for deinterlacing the resulting data. The data needs to be
- * 	deinterlaced if the CCD is read out from multiple readouts. One of
- * 	<a href="ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE">CCD_DSP_DEINTERLACE_TYPE</a>:
- * 	CCD_DSP_DEINTERLACE_SINGLE,
- * 	CCD_DSP_DEINTERLACE_FLIP,
- * 	CCD_DSP_DEINTERLACE_SPLIT_PARALLEL,
- * 	CCD_DSP_DEINTERLACE_SPLIT_SERIAL,
- * 	CCD_DSP_DEINTERLACE_SPLIT_QUAD.
  * @param window_flags Information on which of the sets of window positions supplied contain windows to be used.
  * @param window_list A list of CCD_Setup_Window_Structs defining the position of the windows. The list should
  * 	<b>always</b> contain <b>four</b> entries, one for each possible window. The window_flags parameter
@@ -513,25 +330,22 @@ int CCD_Setup_Shutdown(void)
  * @see #Setup_Window_List
  * @see #CCD_Setup_Abort
  * @see #CCD_Setup_Window_Struct
- * @see ccd_dsp.html#CCD_DSP_AMPLIFIER
- * @see ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE
  */
 int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
-	enum CCD_DSP_AMPLIFIER amplifier,enum CCD_DSP_DEINTERLACE_TYPE deinterlace_type,
-	int window_flags,struct CCD_Setup_Window_Struct window_list[])
+			 int window_flags,struct CCD_Setup_Window_Struct window_list[])
 {
   int error;
 
 	Setup_Error_Number = 0;
 #if LOGGING > 0
 	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Dimensions(ncols=%d,nrows=%d,nsbin=%d,npbin=%d,"
-		"amplifier=%d,deinterlace_type=%d,window_flags=%d) started.",ncols,nrows,nsbin,npbin,
-		amplifier,deinterlace_type,window_flags);
+		"window_flags=%d) started.",ncols,nrows,nsbin,npbin,
+		window_flags);
 #endif
 /* we are in a setup routine */
 	Setup_Data.Setup_In_Progress = TRUE;
 /* reset abort flag - we havn't aborted yet! */
-	CCD_DSP_Set_Abort(FALSE); 
+	CCD_Exposure_Set_Abort(FALSE); 
 /* reset dimension flag */
 	Setup_Data.Dimension_Complete = FALSE;
 /* first do the binning */
@@ -560,7 +374,7 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 		return FALSE; 
 	}
 /* if we have aborted - stop here */
-	if(CCD_DSP_Get_Abort())
+	if(CCD_Exposure_Get_Abort())
 	{
 		Setup_Data.Setup_In_Progress = FALSE;
 		Setup_Error_Number = 78;
@@ -568,7 +382,7 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 		return FALSE;
 	}
 /* if we have aborted - stop here */
-	if(CCD_DSP_Get_Abort())
+	if(CCD_Exposure_Get_Abort())
 	{
 		Setup_Data.Setup_In_Progress = FALSE;
 		Setup_Error_Number = 79;
@@ -593,7 +407,7 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 
 
 /* if we have aborted - stop here */
-	if(CCD_DSP_Get_Abort())
+	if(CCD_Exposure_Get_Abort())
 	{
 		Setup_Data.Setup_In_Progress = FALSE;
 		Setup_Error_Number = 80;
@@ -615,120 +429,6 @@ int CCD_Setup_Dimensions(int ncols,int nrows,int nsbin,int npbin,
 }
 
 /**
- * Routine that performs a hardware test on the PCI, timing and utility boards. It does this by doing 
- * sending TDL commands to the boards and testing the results. This routine is called from
- * CCD_Setup_Startup.
- * @param test_count The number of times to perform the TDL command <b>on each board</b>. The test is performed on
- * 	three boards, PCI, timing and utility.
- * @return If all the TDL commands fail to one of the boards it returns FALSE, otherwise
- *	it returns TRUE. If some commands fail a warning is given.
- * @see ccd_dsp.html#CCD_DSP_Command_TDL
- * @see #CCD_Setup_Startup
- */
-int CCD_Setup_Hardware_Test(int test_count)
-{
-	int i;				/* loop number */
-	int value;			/* value sent to tdl */
-	int value_increment;		/* amount to increment value for each pass through the loop */
-	int retval;			/* return value from dsp_command */
-	int pci_errno,tim_errno,util_errno;	/* num of test encountered, per board */
-
-	Setup_Error_Number = 0;
-	CCD_DSP_Set_Abort(FALSE);
-	value_increment = TDL_MAX_VALUE/test_count;
-
-	/* test the PCI board test_count times */
-	pci_errno = 0;
-	value = 0;
-	for(i=1; i<=test_count; i++)
-	{
-		retval = CCD_DSP_Command_TDL(CCD_DSP_INTERFACE_BOARD_ID,value);
-		if(retval != value)
-			pci_errno++;
-		value += value_increment;
-	}
-/* if we have aborted - stop here */
-	if(CCD_DSP_Get_Abort())
-	{
-		Setup_Data.Setup_In_Progress = FALSE;
-		Setup_Error_Number = 81;
-		sprintf(Setup_Error_String,"CCD_Setup_Hardware_Test:Aborted.");
-		return FALSE;
-	}
-	/* test the timimg board test_count times */
-	tim_errno = 0;
-	value = 0;
-	for(i=1; i<=test_count; i++)
-	{
-		retval = CCD_DSP_Command_TDL(CCD_DSP_TIM_BOARD_ID,value);
-		if(retval != value)
-			tim_errno++;
-		value += value_increment;
-	}
-/* if we have aborted - stop here */
-	if(CCD_DSP_Get_Abort())
-	{
-		Setup_Data.Setup_In_Progress = FALSE;
-		Setup_Error_Number = 82;
-		sprintf(Setup_Error_String,"CCD_Setup_Hardware_Test:Aborted.");
-		return FALSE;
-	}
-	/* test the utility board test_count times */
-	util_errno = 0;
-	value = 0;	
-	for(i=1; i<=test_count; i++)
-	{
-		retval = CCD_DSP_Command_TDL(CCD_DSP_UTIL_BOARD_ID,value);
-		if(retval != value)
-			util_errno++;
-		value += value_increment;
-	}
-/* if we have aborted - stop here */
-	if(CCD_DSP_Get_Abort())
-	{
-		Setup_Data.Setup_In_Progress = FALSE;
-		Setup_Error_Number = 83;
-		sprintf(Setup_Error_String,"CCD_Setup_Hardware_Test:Aborted.");
-		return FALSE;
-	}
-
-	/* if some PCI errors occured, setup an error message and determine whether it was fatal or not */
-	if(pci_errno > 0)
-	{
-		Setup_Error_Number = 36;
-		sprintf(Setup_Error_String,"Interface Board Hardware Test:Failed %d of %d times",
-			pci_errno,test_count);
-		if(pci_errno < test_count)
-			CCD_Setup_Warning();
-		else
-			return FALSE;
-	}
-	/* if some timing errors occured, setup an error message and determine whether it was fatal or not */
-	if(tim_errno > 0)
-	{
-		Setup_Error_Number = 4;
-		sprintf(Setup_Error_String,"Timing Board Hardware Test:Failed %d of %d times",
-			tim_errno,test_count);
-		if(tim_errno < test_count)
-			CCD_Setup_Warning();
-		else
-			return FALSE;
-	}
-	/* if some utility errors occured, setup an error message and determine whether it was fatal or not */
-	if(util_errno > 0)
-	{
-		Setup_Error_Number = 5;
-		sprintf(Setup_Error_String,"Utility Board Hardware Test:Failed %d of %d times",
-			util_errno,test_count);
-		if(util_errno < test_count)
-			CCD_Setup_Warning();
-		else
-			return FALSE;
-	}
-	return TRUE;
-}
-
-/**
  * Routine to abort a setup that is underway. This will cause CCD_Setup_Startup and CCD_Setup_Dimensions
  * to return FALSE as it will fail to complete the setup.
  * @see #CCD_Setup_Startup
@@ -739,7 +439,7 @@ void CCD_Setup_Abort(void)
 #if LOGGING > 0
 	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Abort() started.");
 #endif
-	CCD_DSP_Set_Abort(TRUE);
+	/* diddly */
 }
 
 /**
@@ -946,59 +646,6 @@ int CCD_Setup_Get_Window_Height(int window_index)
 }
 
 /**
- * Routine to return the current setting of the deinterlace type, used to unjumble data received from the CCD
- * when the CCD is being read out from multiple ports.
- * @return The current deinterlace type, one of
- * <a href="ccd_dsp.html#CCD_DSP_DEINTERLACE_TYPE">CCD_DSP_DEINTERLACE_TYPE</a>:
- * 	CCD_DSP_DEINTERLACE_SINGLE,
- * 	CCD_DSP_DEINTERLACE_FLIP,
- * 	CCD_DSP_DEINTERLACE_SPLIT_PARALLEL,
- * 	CCD_DSP_DEINTERLACE_SPLIT_SERIAL,
- * 	CCD_DSP_DEINTERLACE_SPLIT_QUAD.
- */
-enum CCD_DSP_DEINTERLACE_TYPE CCD_Setup_Get_DeInterlace_Type(void)
-{
-	return Setup_Data.DeInterlace_Type;
-}
-
-/**
- * Routine to return the current gain value used by the CCD Camera.
- * @return The current gain value, one of
- * 	<a href="ccd_dsp.html#CCD_DSP_GAIN">CCD_DSP_GAIN</a>:
- * 	CCD_DSP_GAIN_ONE, CCD_DSP_GAIN_TWO,
- * 	CCD_DSP_GAIN_FOUR and CCD_DSP_GAIN_NINE.
- * @see #Setup_Data
- * @see ccd_dsp.html#CCD_DSP_GAIN
- */
-enum CCD_DSP_GAIN CCD_Setup_Get_Gain(void)
-{
-	return Setup_Data.Gain;
-}
-
-/**
- * Routine to return the amplifier used by the CCD Camera.
- * @return The current amplifier, in the enum CCD_DSP_AMPLIFIER.
- * @see #Setup_Data
- * @see ccd_dsp.html#CCD_DSP_AMPLIFIER
- */
-enum CCD_DSP_AMPLIFIER CCD_Setup_Get_Amplifier(void)
-{
-	return Setup_Data.Amplifier;
-}
-
-/**
- * Routine that returns whether the controller is set to Idle or not.
- * @return A boolean. This is TRUE if the controller is currently setup to idle clock the CCD, or FALSE if it
- * 	is not.
- * @see #CCD_Setup_Startup
- * @see #Setup_Data
- */
-int CCD_Setup_Get_Idle(void)
-{
-	return Setup_Data.Idle;
-}
-
-/**
  * Routine that returns the window flags number of the last successful dimension setup.
  * @return The window flags.
  * @see #CCD_Setup_Dimensions
@@ -1087,297 +734,6 @@ int CCD_Setup_Get_Setup_In_Progress(void)
 }
 
 /**
- * Routine to get the Analogue to Digital digitized value of the High Voltage (+36v) supply voltage.
- * This is read from the SETUP_HIGH_VOLTAGE_ADDRESS memory location, in Y memory space on the utility board.
- * @param hv_adu The address of an integer to store the adus.
- * return Returns TRUE if the adus were read, FALSE otherwise.
- * @see #SETUP_HIGH_VOLTAGE_ADDRESS
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- * @see ccd_dsp.html#CCD_DSP_BOARD_ID
- * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_global.html#CCD_Global_Log
- * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
- */
-int CCD_Setup_Get_High_Voltage_Analogue_ADU(int *hv_adu)
-{
-	int retval;
-
-	Setup_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_High_Voltage_Analogue_ADU() started.");
-#endif
-	if(hv_adu == NULL)
-	{
-		Setup_Error_Number = 51;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_High_Voltage_Analogue_ADU:adu was NULL.");
-		return FALSE;
-	}
-	retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_HIGH_VOLTAGE_ADDRESS);
-	if((retval == 0)&&(CCD_DSP_Get_Error_Number() != 0))
-	{
-		Setup_Error_Number = 52;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_High_Voltage_Analogue_ADU:Read memory failed.");
-		return FALSE;
-	}
-	(*hv_adu) = retval;
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_High_Voltage_Analogue_ADU() returned %#x.",
-		(*hv_adu));
-#endif
-	return TRUE;
-}
-
-/**
- * Routine to get the Analogue to Digital digitized value of the Low Voltage (+15v) supply voltage.
- * This is read from the SETUP_LOW_VOLTAGE_ADDRESS memory location, in Y memory space on the utility board.
- * @param lv_adu The address of an integer to store the adus.
- * return Returns TRUE if the adus were read, FALSE otherwise.
- * @see #SETUP_LOW_VOLTAGE_ADDRESS
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- * @see ccd_dsp.html#CCD_DSP_BOARD_ID
- * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_global.html#CCD_Global_Log
- * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
- */
-int CCD_Setup_Get_Low_Voltage_Analogue_ADU(int *lv_adu)
-{
-	int retval;
-
-	Setup_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Low_Voltage_Analogue_ADU() started.");
-#endif
-	if(lv_adu == NULL)
-	{
-		Setup_Error_Number = 53;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Low_Voltage_Analogue_ADU:adu was NULL.");
-		return FALSE;
-	}
-	retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_LOW_VOLTAGE_ADDRESS);
-	if((retval == 0)&&(CCD_DSP_Get_Error_Number() != 0))
-	{
-		Setup_Error_Number = 54;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Low_Voltage_Analogue_ADU:Read memory failed.");
-		return FALSE;
-	}
-	(*lv_adu) = retval;
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Low_Voltage_Analogue_ADU() returned %#x.",
-		(*lv_adu));
-#endif
-	return TRUE;
-}
-
-/**
- * Routine to get the Analogue to Digital digitized value of the Low Voltage Negative (-15v) supply voltage.
- * This is read from the SETUP_MINUS_LOW_VOLTAGE_ADDRESS memory location, in Y memory space on the utility board.
- * @param minus_lv_adu The address of an integer to store the adus.
- * return Returns TRUE if the adus were read, FALSE otherwise.
- * @see #SETUP_MINUS_LOW_VOLTAGE_ADDRESS
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- * @see ccd_dsp.html#CCD_DSP_BOARD_ID
- * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_global.html#CCD_Global_Log
- * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
- */
-int CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU(int *minus_lv_adu)
-{
-	int retval;
-
-	Setup_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU() started.");
-#endif
-	if(minus_lv_adu == NULL)
-	{
-		Setup_Error_Number = 55;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU:adu was NULL.");
-		return FALSE;
-	}
-	retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_MINUS_LOW_VOLTAGE_ADDRESS);
-	if((retval == 0)&&(CCD_DSP_Get_Error_Number() != 0))
-	{
-		Setup_Error_Number = 56;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU:Read memory failed.");
-		return FALSE;
-	}
-	(*minus_lv_adu) = retval;
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Minus_Low_Voltage_Analogue_ADU() returned %#x.",
-		(*minus_lv_adu));
-#endif
-	return TRUE;
-}
-
-/**
- * Routine to get the Analogue to Digital digitized value of the vacuum gauge.
- * <ul>
- * <li>The vacuum gauage is switched on using CCD_DSP_Command_VON.
- * <li>We enter a loop doing SETUP_VACUUM_GAUGE_SAMPLE_COUNT samples.
- * <li>A sample is read from the SETUP_VACUUM_GAUGE_ADDRESS memory location, in Y memory space on the utility board.
- * <li>We sleep for atleast 1 ms, to allow the 1ms utility board loop to re-sample the analogue input.
- * <li>We return the average sample.
- * </ul>
- * @param gauge_adu The address of an integer to store the adus.
- * return Returns TRUE if the adus were read, FALSE otherwise.
- * @see #SETUP_VACUUM_GAUGE_ADDRESS
- * @see #SETUP_VACUUM_GAUGE_SAMPLE_COUNT
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- * @see ccd_dsp.html#CCD_DSP_BOARD_ID
- * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_global.html#CCD_Global_Log
- * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
- * @see ccd_global.html#CCD_GLOBAL_ONE_MILLISECOND_NS
- */
-int CCD_Setup_Get_Vacuum_Gauge_ADU(int *gauge_adu)
-{
-	struct timespec sleep_time;
-	int adu_total;
-	int retval,i;
-
-	Setup_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU() started.");
-#endif
-	if(gauge_adu == NULL)
-	{
-		Setup_Error_Number = 57;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Vacuum_Gauge_ADU:adu was NULL.");
-		return FALSE;
-	}
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU():Switch on gauge.");
-#endif
-	retval = CCD_DSP_Command_VON();
-	if(retval == 0)
-	{
-		Setup_Error_Number = 65;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Vacuum_Gauge_ADU:Switch on gauge failed.");
-		return FALSE;
-	}
-	/* sleep for a while after switching on the Vacuum gauage, to allow the electronics to settle. 
-	** Note this effects the GET_STATUS return time. */
-	sleep_time.tv_sec = 1;
-	sleep_time.tv_nsec = 0;
-	nanosleep(&sleep_time,NULL);
-	/* start reading analogue voltages. */
-	adu_total = 0;
-	for(i=0;i<SETUP_VACUUM_GAUGE_SAMPLE_COUNT;i++)
-	{
-#if LOGGING > 0
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
-			       "CCD_Setup_Get_Vacuum_Gauge_ADU():Read analogue voltage(%d).",i);
-#endif
-		retval = CCD_DSP_Command_RDM(CCD_DSP_UTIL_BOARD_ID,CCD_DSP_MEM_SPACE_Y,SETUP_VACUUM_GAUGE_ADDRESS);
-		if((retval == 0)&&(CCD_DSP_Get_Error_Number() != 0))
-		{
-			Setup_Error_Number = 58;
-			sprintf(Setup_Error_String,"CCD_Setup_Get_Vacuum_Gauge_ADU:Read memory failed(%d).",i);
-			return FALSE;
-		}
-#if LOGGING > 0
-		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
-				      "CCD_Setup_Get_Vacuum_Gauge_ADU() sample %d returned %d.",i,retval);
-#endif
-		adu_total += retval;
-		/* sleep for at least 1 ms, to allow the controller electronics to re-sample the
-		** relevant analogue IO value */
-		sleep_time.tv_sec = 0;
-		sleep_time.tv_nsec = CCD_GLOBAL_ONE_MILLISECOND_NS;
-		nanosleep(&sleep_time,NULL);
-	}/* end for */
-	(*gauge_adu) = adu_total/SETUP_VACUUM_GAUGE_SAMPLE_COUNT;
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU() returned %d.",(*gauge_adu));
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU():Switch off gauge.");
-#endif
-	retval = CCD_DSP_Command_VOF();
-	if(retval == 0)
-	{
-		Setup_Error_Number = 66;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Vacuum_Gauge_ADU:Switch off gauge failed.");
-		return FALSE;
-	}
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_ADU():Finished.");
-#endif
-	return TRUE;
-}
-
-/**
- * Routine to get the value of the dewar vacuum gauge pressure, in mbar.
- * We use CCD_Setup_Get_Vacuum_Gauge_ADU to get the gauge ADUs.
- * @param gauge_mbar The address of an double to store the pressure, in mbar.
- * return Returns TRUE if the read was successful, FALSE otherwise.
- * @see #SETUP_VACUUM_GAUGE_ADDRESS
- * @see ccd_dsp.html#CCD_DSP_Command_RDM
- * @see ccd_dsp.html#CCD_DSP_BOARD_ID
- * @see ccd_dsp.html#CCD_DSP_MEM_SPACE
- * @see ccd_dsp.html#CCD_DSP_Get_Error_Number
- * @see ccd_global.html#CCD_Global_Log
- * @see ../../log_udp/cdocs/log_udp.html#LOG_VERBOSITY_VERBOSE
- */
-int CCD_Setup_Get_Vacuum_Gauge_MBar(double *gauge_mbar)
-{
-	int gauge_adu;
-	double gauge_voltage,power_value;
-
-	Setup_Error_Number = 0;
-#if LOGGING > 0
-	CCD_Global_Log(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar() started.");
-#endif
-	if(gauge_mbar == NULL)
-	{
-		Setup_Error_Number = 59;
-		sprintf(Setup_Error_String,"CCD_Setup_Get_Vacuum_Gauge_MBar:address was NULL.");
-		return FALSE;
-	}
-	if(!CCD_Setup_Get_Vacuum_Gauge_ADU(&gauge_adu))
-		return FALSE;
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar(): Gauge ADU = %d.",gauge_adu);
-#endif
-	/* 
-	** gauge_adu is in the range 0..4096, with 0=-3v, 2048 = 0v and 4096 = 3v.
-	** The gauge returns 0..10v, with a amplifier stage converting to 0..3v
-	** The gauge is out of range with voltages less than 1.9v and greater than 10v
-	*/
-	gauge_voltage = ((((double)gauge_adu)-2048.0)*10.0)/(2048.0);
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
-			      "CCD_Setup_Get_Vacuum_Gauge_MBar(): Gauge voltage (0..10v) = %.2fv.",gauge_voltage);
-#endif
-	/*
-	** At 2v, the pressure is 5x10^-4 mbar
-	** At 10v, the pressure is 1x10^3 mbar
-	** The scale is logorithmic (base 10).
-	** log(p) = mv + c (p=pressure, m=slope, v=voltage, c=constant)
-	** m = (log(10^3) - log(5x10^-4))/(10 -2)
-	**   = (3 - -3.3)/8
-	** m = 0.7578
-	** Plugging back into log(p) = mv + c, c = log(p) - mv
-	** c = -3.3  - ( 0.7578 x 2.0 )
-	** c = -4.875
-	** Therefore:
-	** p(mbar) = 10 ^ ((0.7875 x v) + -4.875)
-	*/
-	power_value = ((0.7875 * gauge_voltage)-4.875);
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar(): 10 ^ %g.",power_value);
-#endif
-	(*gauge_mbar) = pow(10.0,power_value);
-#if LOGGING > 0
-	CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,"CCD_Setup_Get_Vacuum_Gauge_MBar() returned %g mbar.",
-		(*gauge_mbar));
-#endif
-	return TRUE;
-}
-
-/**
  * Get the current value of ccd_setup's error number.
  * @return The current value of ccd_setup's error number.
  */
@@ -1455,9 +811,6 @@ void CCD_Setup_Warning(void)
  * @return Returns TRUE if the operation succeeds, FALSE if it fails.
  * @see #CCD_Setup_Dimensions
  * @see #Setup_Data
- * @see #SETUP_ADDRESS_BIN_X
- * @see #SETUP_ADDRESS_BIN_Y
- * @see ccd_dsp.html#CCD_DSP_Command_WRM
  */
 static int Setup_Binning(int nsbin,int npbin)
 {
@@ -1493,10 +846,6 @@ static int Setup_Binning(int nsbin,int npbin)
  *        windowing.
  * @return Returns TRUE if the operation succeeds, FALSE if it fails.
  * @see #CCD_Setup_Dimensions
- * @see #SETUP_ADDRESS_DIMENSION_COLS
- * @see #SETUP_ADDRESS_DIMENSION_ROWS
- * @see ccd_dsp.html#CCD_DSP_Command_WRM
- * @see ccd_dsp.html#CCD_DSP_WRM
  */
 static int Setup_Dimensions(int ncols,int nrows)
 {
@@ -1626,6 +975,9 @@ static int Setup_Controller_Windows(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2010/03/26 14:39:49  cjm
+** Changed from bitwise to absolute logging levels.
+**
 ** Revision 1.2  2009/10/21 13:53:10  cjm
 ** Setup properties now read from rise.ccs.properties.
 **
