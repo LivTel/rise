@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/test/Makefile,v 1.3 2022-03-14 16:09:53 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/test/Makefile,v 1.4 2022-03-15 16:13:47 cjm Exp $
 
 include ../../../Makefile.common
 include ../../Makefile.common
@@ -20,11 +20,8 @@ DOCSDIR 	= $(CCD_DOC_HOME)/$(TESTDIR)
 CFLAGS 		= -g -I$(INCDIR) -I$(CFITSIOINCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR) $(ESTARCONFIGCFLAGS) -c
 DOCFLAGS 	= -static
 
-SRCS 		= test.c test_filter_wheel.c ccd_read_memory.c ccd_write_memory.c time_millis.c \
-			ccd_read_memory_17.c ccd_test_data_link_17.c test_dsp_download.c test_reset_controller.c \
-			test_data_link.c test_idle_clocking.c test_analogue_power.c test_temperature.c \
-			test_setup_startup.c test_setup_dimensions.c test_setup_shutdown.c test_exposure.c \
-			test_shutter.c test_abort.c test_vacuum_gauge.c
+SRCS 		= test.c time_millis.c test_temperature.c \
+		  test_setup_startup.c test_setup_dimensions.c test_setup_shutdown.c test_exposure.c
 # posix_time.c 
 OBJS 		= $(SRCS:%.c=%.o)
 PROGS 		= $(SRCS:%.c=$(BINDIR)/%)
