@@ -19,14 +19,14 @@
 */
 /* ccd_exposure.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_exposure.c,v 1.4 2022-03-14 15:23:03 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_exposure.c,v 1.5 2022-03-15 16:14:12 cjm Exp $
 */
 /**
- * ccd_exposure.c contains routines for performing an exposure with the SDSU CCD Controller. There is a
+ * ccd_exposure.c contains routines for performing an exposure with an Andor camera. There is a
  * routine that does the whole job in one go, or several routines can be called to do parts of an exposure.
  * An exposure can be paused and resumed, or it can be stopped or aborted.
- * @author SDSU, Chris Mottram
- * @version $Revision: 1.4 $
+ * @author Chris Mottram
+ * @version $Revision: 1.5 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes
@@ -134,7 +134,7 @@ struct Exposure_Struct
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_exposure.c,v 1.4 2022-03-14 15:23:03 cjm Exp $";
+static char rcsid[] = "$Id: ccd_exposure.c,v 1.5 2022-03-15 16:14:12 cjm Exp $";
 
 /**
  * Variable holding error code of last operation performed by ccd_exposure.
@@ -1317,6 +1317,9 @@ static int fexist(char *filename)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.4  2022/03/14 15:23:03  cjm
+** Removed SDSU specific exposure code.
+**
 ** Revision 1.3  2010/03/26 14:39:49  cjm
 ** Changed from bitwise to absolute logging levels.
 **

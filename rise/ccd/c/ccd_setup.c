@@ -1,7 +1,7 @@
 /*   
     Copyright 2006, Astrophysics Research Institute, Liverpool John Moores University.
 
-    This file is part of Ccs.
+    This file is part of Rise.
 
     Ccs is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 */
 /* ccd_setup.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.4 2022-03-14 15:23:03 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_setup.c,v 1.5 2022-03-15 16:14:12 cjm Exp $
 */
 /**
- * ccd_setup.c contains routines to perform the setting of the SDSU CCD Controller, prior to performing
+ * ccd_setup.c contains routines to perform the setting up of the Andor camera, prior to performing
  * exposures.
- * @author SDSU, Chris Mottram
- * @version $Revision: 1.4 $
+ * @author Chris Mottram
+ * @version $Revision: 1.5 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -57,7 +57,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_setup.c,v 1.4 2022-03-14 15:23:03 cjm Exp $";
+static char rcsid[] = "$Id: ccd_setup.c,v 1.5 2022-03-15 16:14:12 cjm Exp $";
 
 /* #defines */
 /**
@@ -264,10 +264,12 @@ int CCD_Setup_Startup(double target_temperature)
 }
 
 /**
- * Routine to shut down the SDSU CCD Controller board. This consists of:
+ * Routine to shut down the connection to the Andor camera. This consists of:
  * <ul>
- * <li>Reseting the setup completion flags.
- * <li>Performing a power off command to switch off analogue voltages.
+ * <li>Calling SetTemperature to set the CCD temperature to 0.
+ * <li>Entering a loop, calling GetTemperature until the temperature is greater than the shutdown temperature (0).
+ * <li>Turning the cooler off using CoolerOFF.
+ * <li>Calling ShutDown to close the connection to the Andor camera.
  * </ul>
  * It then just remains to close the connection to the astro device driver.
  * @see #CCD_Setup_Startup
@@ -975,6 +977,9 @@ static int Setup_Controller_Windows(void)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.4  2022/03/14 15:23:03  cjm
+** Removed SDSU specific setup code.
+**
 ** Revision 1.3  2010/03/26 14:39:49  cjm
 ** Changed from bitwise to absolute logging levels.
 **

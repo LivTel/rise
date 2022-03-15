@@ -19,12 +19,12 @@
 */
 /* ccd_global.c
 ** low level ccd library
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_global.c,v 1.3 2022-03-14 15:23:03 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/c/ccd_global.c,v 1.4 2022-03-15 16:14:12 cjm Exp $
 */
 /**
- * ccd_global.c contains routines that tie together all the modules that make up libccd.
- * @author SDSU, Chris Mottram
- * @version $Revision: 1.3 $
+ * ccd_global.c contains routines that tie together all the modules that make up librise_ccd.
+ * @author  Chris Mottram
+ * @version $Revision: 1.4 $
  */
 /**
  * This hash define is needed before including source files give us POSIX.4/IEEE1003.1b-1993 prototypes.
@@ -163,7 +163,7 @@ eSTAR_Config_Properties_t rProperties;
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: ccd_global.c,v 1.3 2022-03-14 15:23:03 cjm Exp $";
+static char rcsid[] = "$Id: ccd_global.c,v 1.4 2022-03-15 16:14:12 cjm Exp $";
 /**
  * Variable holding error code of last operation performed by ccd_dsp.
  */
@@ -857,6 +857,9 @@ char* CCD_Global_ErrorCode_To_String(unsigned int error_code)
 
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.3  2022/03/14 15:23:03  cjm
+** Removed spurious (ex RATCam) code. Added CCD_Global_ErrorCode_To_String to get error text for RISE error codes.
+**
 ** Revision 1.2  2010/03/26 14:39:49  cjm
 ** Changed from bitwise to absolute logging levels.
 **
