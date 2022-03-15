@@ -18,17 +18,13 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 /* test.c
-** $Header: /space/home/eng/cjm/cvs/rise/ccd/test/test.c,v 1.1 2009-10-15 10:15:01 cjm Exp $
+** $Header: /space/home/eng/cjm/cvs/rise/ccd/test/test.c,v 1.2 2022-03-15 16:12:44 cjm Exp $
 */
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include "ccd_setup.h"
 #include "ccd_exposure.h"
-#include "ccd_filter_wheel.h"
-#include "ccd_dsp.h"
-#include "ccd_interface.h"
-#include "ccd_text.h"
 #include "ccd_temperature.h"
 #include "ccd_setup.h"
 #include "fitsio.h"
@@ -42,26 +38,18 @@
  * Note the setup is performed by downloading two DSP .lod files, tim.lod and util.lod,
  * which must be present in the bin directory otherwise an error is returned.
  * @author $Author: cjm $
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 /* hash defines */
 /**
- * Filename for the timing board DSP code .lod file.
- */
-#define TIMING_FILENAME "tim.lod"
-/**
- * Filename for the utility board DSP code .lod file.
- */
-#define UTILITY_FILENAME "util.lod"
-/**
  * The size of the image array in the X direction.
  */
-#define CCD_X_SIZE	2150
+#define CCD_X_SIZE      1024
 /**
  * The size of the image array in the Y direction.
  */
-#define CCD_Y_SIZE	2048
+#define CCD_Y_SIZE     1024
 /**
  * The amount of array binning in the X direction.
  */
@@ -75,7 +63,7 @@
 /**
  * Revision Control System identifier.
  */
-static char rcsid[] = "$Id: test.c,v 1.1 2009-10-15 10:15:01 cjm Exp $";
+static char rcsid[] = "$Id: test.c,v 1.2 2022-03-15 16:12:44 cjm Exp $";
 
 /* internal functions */
 static int Test_Save_Fits_Headers(int exposure_time,int ncols,int nrows,char *filename);
@@ -85,11 +73,9 @@ static void Test_Fits_Header_Error(int status);
  * Main program.
  * <ul>
  * <li>Initialises the library.
- * <li>The interface is opened.
  * <li>The controller is setup.
  * <li>The current temperature is retrieved.
  * <li>The controller dimensions are setup.
- * <li>The filter wheels are reset.
  * <li>Some fits headers are saved to disc.
  * <li>An exposure is taken.
  * <li>The interface to the controller is closed.
@@ -98,11 +84,9 @@ static void Test_Fits_Header_Error(int status);
  * @param argv The list of parameter strings.
  * @return This program returns 0 on success, and a positive number for failure.
  * @see ccd_global.html#CCD_Global_Initialise
- * @see ccd_interface.html#CCD_Interface_Open
  * @see ccd_temperature.html#CCD_Temperature_Get
  * @see ccd_setup.html#CCD_Setup_Startup
  * @see ccd_setup.html#CCD_Setup_Dimensions
- * @see ccd_filter_wheel.html#CCD_Filter_Wheel_Reset
  * @see #Test_Save_Fits_Headers
  * @see ccd_exposure.html#CCD_Exposure_Expose
  * @see ccd_setup.html#CCD_Setup_Shutdown
@@ -124,29 +108,10 @@ int main(int argc, char *argv[])
 	}
 
 	fprintf(stdout,"Test ...\n");
-	if(strcmp(argv[1],"pci")==0)
-		CCD_Global_Initialise(CCD_INTERFACE_DEVICE_PCI);
-	else if(strcmp(argv[1],"text")==0)
-		CCD_Global_Initialise(CCD_INTERFACE_DEVICE_TEXT);
-	else
-	{
-		fprintf(stdout,"test <device>: device is either [pci|text].\n");
-		exit(2);
-	}
+	CCD_Global_Initialise();
 
-	CCD_Text_Set_Print_Level(CCD_TEXT_PRINT_LEVEL_COMMANDS);
-
-	fprintf(stdout,"Test:CCD_Interface_Open\n");
-	if(!CCD_Interface_Open())
-	{
-		CCD_Global_Error();
-		exit(3);
-	}
 	fprintf(stdout,"Test:CCD_Setup_Startup\n");
-	if(!CCD_Setup_Startup(CCD_SETUP_LOAD_ROM,NULL,
-		CCD_SETUP_LOAD_FILENAME,0,TIMING_FILENAME,
-		CCD_SETUP_LOAD_FILENAME,1,UTILITY_FILENAME,-107.0,
-		CCD_DSP_GAIN_FOUR,TRUE,TRUE))
+	if(!CCD_Setup_Startup(-40.0))
 	{
 		CCD_Global_Error();
 		exit(4);
@@ -162,25 +127,13 @@ int main(int argc, char *argv[])
 	fprintf(stdout,"Test:CCD_Temperature_Get returned %.2f\n",temperature);
 
 	fprintf(stdout,"Test:CCD_Setup_Dimensions\n");
-	if(!CCD_Setup_Dimensions(CCD_X_SIZE,CCD_Y_SIZE,CCD_XBIN_SIZE,CCD_YBIN_SIZE,
-		CCD_DSP_AMPLIFIER_LEFT,CCD_DSP_DEINTERLACE_SINGLE,0,window_list))
+	if(!CCD_Setup_Dimensions(CCD_X_SIZE,CCD_Y_SIZE,CCD_XBIN_SIZE,CCD_YBIN_SIZE,0,window_list))
 	{
 		CCD_Global_Error();
 		exit(6);
 	}
 	fprintf(stdout,"Test:CCD_Setup_Dimensions completed\n");
 
-	fprintf(stdout,"Test:CCD_Setup_Filter_Wheel\n");
-	if(!CCD_Filter_Wheel_Reset(0))
-	{
-		CCD_Global_Error();
-		exit(7);
-	}
-	if(!CCD_Filter_Wheel_Reset(1))
-	{
-		CCD_Global_Error();
-		exit(8);
-	}
 	fprintf(stdout,"Test:CCD_Setup_Filter_Wheel completed\n");
 
 	if(!Test_Save_Fits_Headers(10000,CCD_X_SIZE/CCD_XBIN_SIZE,CCD_Y_SIZE/CCD_YBIN_SIZE,"test.fits"))
@@ -207,11 +160,6 @@ int main(int argc, char *argv[])
 	}
 	fprintf(stdout,"Test:CCD_Setup_Shutdown completed\n");
 
-	if(!CCD_Interface_Close())
-	{
-		CCD_Global_Error();
-		exit(12);
-	}
 	fprintf(stdout,"Test:CCD_Interface_Close\n");
 
 	fprintf(stdout,"Test:Finished Test ...\n");
@@ -324,6 +272,9 @@ static void Test_Fits_Header_Error(int status)
 }
 /*
 ** $Log: not supported by cvs2svn $
+** Revision 1.1  2009/10/15 10:15:01  cjm
+** Initial revision
+**
 ** Revision 1.16  2006/11/06 16:52:49  eng
 ** Added includes to fix implicit function declarations.
 **
