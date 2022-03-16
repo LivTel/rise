@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/test/Makefile,v 1.4 2022-03-15 16:13:47 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/test/Makefile,v 1.5 2022-03-16 11:13:53 cjm Exp $
 
 include ../../../Makefile.common
 include ../../Makefile.common
@@ -14,7 +14,7 @@ ANDORLIB = -L$(LT_SRC_HOME)/andor/andor-2.85.30000/lib -landor -lm
 
 INCDIR 		= $(CCD_SRC_HOME)/include
 TESTDIR 	= test
-BINDIR 		= $(CCD_BIN_HOME)/$(TESTDIR)
+BINDIR 		= $(CCD_BIN_HOME)/$(TESTDIR)/$(HOSTTYPE)
 DOCSDIR 	= $(CCD_DOC_HOME)/$(TESTDIR)
 
 CFLAGS 		= -g -I$(INCDIR) -I$(CFITSIOINCDIR) -I$(JNIINCDIR) -I$(JNIMDINCDIR) $(ESTARCONFIGCFLAGS) -c
@@ -23,76 +23,37 @@ DOCFLAGS 	= -static
 SRCS 		= test.c time_millis.c test_temperature.c \
 		  test_setup_startup.c test_setup_dimensions.c test_setup_shutdown.c test_exposure.c
 # posix_time.c 
-OBJS 		= $(SRCS:%.c=%.o)
+OBJS 		= $(SRCS:%.c=$(BINDIR)/%.o)
 PROGS 		= $(SRCS:%.c=$(BINDIR)/%)
 DOCS 		= $(SRCS:%.c=$(DOCSDIR)/%.html)
-SCRIPT_SRCS	= test_filter_wheel_ltccd1.csh test_filter_wheel_ltccd2.csh test_temperature_control
+SCRIPT_SRCS	= 
 SCRIPT_BINS	= $(SCRIPT_SRCS:%=$(BINDIR)/%)
 
 top: $(PROGS) scripts docs
 
-$(BINDIR)/test: test.o
-	cc -o $@ test.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/test: $(BINDIR)/test.o
+	cc -o $@ $(BINDIR)/test.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
 
-$(BINDIR)/test_filter_wheel: test_filter_wheel.o
-	cc -o $@ test_filter_wheel.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/test_temperature: $(BINDIR)/test_temperature.o
+	cc -o $@ $(BINDIR)/test_temperature.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
 
-$(BINDIR)/ccd_read_memory: ccd_read_memory.o
-	cc -o $@ ccd_read_memory.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/test_setup_startup: $(BINDIR)/test_setup_startup.o
+	cc -o $@ $(BINDIR)/test_setup_startup.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
 
-$(BINDIR)/ccd_write_memory: ccd_write_memory.o
-	cc -o $@ ccd_write_memory.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/test_setup_dimensions: $(BINDIR)/test_setup_dimensions.o
+	cc -o $@ $(BINDIR)/test_setup_dimensions.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
 
-$(BINDIR)/test_dsp_download: test_dsp_download.o
-	cc -o $@ test_dsp_download.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/test_setup_shutdown: $(BINDIR)/test_setup_shutdown.o
+	cc -o $@ $(BINDIR)/test_setup_shutdown.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
 
-$(BINDIR)/test_reset_controller: test_reset_controller.o
-	cc -o $@ test_reset_controller.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/test_exposure: $(BINDIR)/test_exposure.o
+	cc -o $@ $(BINDIR)/test_exposure.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
 
-$(BINDIR)/test_data_link: test_data_link.o
-	cc -o $@ test_data_link.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
+$(BINDIR)/posix_time: $(BINDIR)/posix_time.o
+	cc -o $@ $(BINDIR)/posix_time.o -L$(LT_LIB_HOME) $(TIMELIB) -lm -lc
 
-$(BINDIR)/test_idle_clocking: test_idle_clocking.o
-	cc -o $@ test_idle_clocking.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_analogue_power: test_analogue_power.o
-	cc -o $@ test_analogue_power.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_temperature: test_temperature.o
-	cc -o $@ test_temperature.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_setup_startup: test_setup_startup.o
-	cc -o $@ test_setup_startup.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_setup_dimensions: test_setup_dimensions.o
-	cc -o $@ test_setup_dimensions.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_setup_shutdown: test_setup_shutdown.o
-	cc -o $@ test_setup_shutdown.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_exposure: test_exposure.o
-	cc -o $@ test_exposure.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_shutter: test_shutter.o
-	cc -o $@ test_shutter.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_abort: test_abort.o
-	cc -o $@ test_abort.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/test_vacuum_gauge: test_vacuum_gauge.o
-	cc -o $@ test_vacuum_gauge.o -L$(LT_LIB_HOME) -lrise_ccd $(ANDORLIB) -lcfitsio $(TIMELIB) $(SOCKETLIB) -lm -lc
-
-$(BINDIR)/ccd_read_memory_17: ccd_read_memory_17.o
-	cc -o $@ ccd_read_memory_17.o -lm -lc
-
-$(BINDIR)/ccd_test_data_link_17: ccd_test_data_link_17.o
-	cc -o $@ ccd_test_data_link_17.o -lm -lc
-
-$(BINDIR)/posix_time: posix_time.o
-	cc -o $@ posix_time.o -L$(LT_LIB_HOME) $(TIMELIB) -lm -lc
-
-$(BINDIR)/time_millis: time_millis.o
-	cc -o $@ time_millis.o -L$(LT_LIB_HOME) $(TIMELIB) -lm -lc
+$(BINDIR)/time_millis: $(BINDIR)/time_millis.o
+	cc -o $@ $(BINDIR)/time_millis.o -L$(LT_LIB_HOME) $(TIMELIB) -lm -lc
 
 scripts: $(SCRIPT_BINS)
 
@@ -111,7 +72,7 @@ depend:
 	makedepend $(MAKEDEPENDFLAGS) -- $(CFLAGS) -- $(SRCS)
 
 clean:
-	$(RM) $(RM_OPTIONS) $(CCD_BIN_HOME)/test/test $(OBJS) $(TIDY_OPTIONS)
+	$(RM) $(RM_OPTIONS) $(PROGS) $(OBJS) $(TIDY_OPTIONS)
 
 tidy:
 	$(RM) $(RM_OPTIONS) $(TIDY_OPTIONS)
