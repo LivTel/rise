@@ -1,6 +1,6 @@
 # <rise_install:start>
-# $Header: /space/home/eng/cjm/cvs/rise/scripts/icc_cshrc,v 1.1 2017-10-23 15:17:45 cjm Exp $
-# $Revision: 1.1 $
+# $Header: /space/home/eng/cjm/cvs/rise/scripts/icc_cshrc,v 1.2 2022-03-17 13:28:51 cjm Exp $
+# $Revision: 1.2 $
 # Do not delete the above comment, it delimits the cshrc updated by the rise_tar_install script.
 # part of lt_environment, so we can call scripts
 setenv LT_HOME /icc
@@ -25,12 +25,15 @@ foreach dir ( ${LT_BIN_HOME}/lib/${HOSTTYPE} )
 end
 
 # Useful command aliass
-alias icsgui                            '/icc/bin/ccs_gui/java/icsgui'
+alias icsgui                            '/icc/bin/ics_gui/java/icsgui'
 alias rise_engineering_mode   		'/icc/bin/scripts/rise_engineering_mode'
 alias myps             			'ps -e -o pid,pcpu,vsz,ruser,args'
 
 #
 # $Log: not supported by cvs2svn $
+# Revision 1.1  2017/10/23 15:17:45  cjm
+# Initial revision
+#
 #
 # Do not delete the next comment, it delimits the cshrc updated by the rise_install script.
 # <rise_install:end>
