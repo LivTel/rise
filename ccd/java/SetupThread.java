@@ -6,7 +6,7 @@ import java.lang.*;
 import ngat.rise.ccd.*;
 
 /**
- * This class extends thread to support the setup of a CCD camera using the SDSU CCD Controller/libccd/CCDLibrary
+ * This class extends thread to support the setup of a CCD camera using the CCD Controller/librise_ccd/CCDLibrary
  * in a separate thread, so that it may be aborted by the main program whilst it is underway..
  * @author Chris Mottram
  * @version $Revision: 0.8 $
@@ -25,52 +25,7 @@ class SetupThread extends Thread
 	 * Private copy of variable to be passed into 
 	 * CCDSetupStartup.
 	 */
-	private int timing_load_type 		= 0;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private int timing_application_number 	= 0;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private String timing_filename 		= null;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private int utility_load_type 		= 0;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private int utility_application_number 	= 0;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private String utility_filename 	= null;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
 	private double target_temperature 	= 0.0;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private int gain 			= 0;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private boolean gain_speed 		= true;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupStartup.
-	 */
-	private boolean idle 			= false;
 	/**
 	 * Private copy of variable to be passed into 
 	 * CCDSetupDimensions.
@@ -92,11 +47,6 @@ class SetupThread extends Thread
 	 */
 	private int npbin 			= 0;
 	/**
-	 * Private copy of variable to be passed into 
-	 * CCDSetupDimensions.
-	 */
-	private int deinterlace_type 		= 0;
-	/**
 	 * Private copy of any exception returned by CCDSetupStartup and CCDSetupDimensions. 
 	 * This will be null for successful completion of the method.
 	 */
@@ -106,28 +56,15 @@ class SetupThread extends Thread
 	 * Constructor of the thread. Copys all the parameters, ready to pass them into
 	 * CCDSetupStartup and CCDSetupDimensions when the thread is run.
 	 */
-	public SetupThread(CCDLibrary libccd,
-		int timing_load_type,int timing_application_number,String timing_filename,
-		int utility_load_type,int utility_application_number,String utility_filename,
-		double target_temperature,int gain,boolean gain_speed,boolean idle,
-		int ncols,int nrows,int nsbin,int npbin,int deinterlace_type)
+	public SetupThread(CCDLibrary libccd,double target_temperature,
+			   int ncols,int nrows,int nsbin,int npbin)
 	{
 		this.libccd = libccd;
-		this.timing_load_type = timing_load_type;
-		this.timing_application_number = timing_application_number;
-		this.timing_filename = timing_filename;
-		this.utility_load_type = utility_load_type;
-		this.utility_application_number = utility_application_number;
-		this.utility_filename = utility_filename;
 		this.target_temperature = target_temperature;
-		this.gain = gain;
-		this.gain_speed = gain_speed;
-		this.idle = idle;
 		this.ncols = ncols;
 		this.nrows = nrows;
 		this.nsbin = nsbin;
 		this.npbin = npbin;
-		this.deinterlace_type = deinterlace_type;
 	}
 
 	/**
@@ -149,12 +86,8 @@ class SetupThread extends Thread
 			window_list[i] = new CCDLibrarySetupWindow();
 		try
 		{
-			libccd.CCDSetupStartup(CCDLibrary.CCD_SETUP_LOAD_ROM,null,
-				timing_load_type,timing_application_number,timing_filename,
-				utility_load_type,utility_application_number,utility_filename,
-				target_temperature,gain,gain_speed,idle);
-			libccd.CCDSetupDimensions(ncols,nrows,nsbin,npbin,CCDLibrary.CCD_DSP_AMPLIFIER_LEFT,
-				deinterlace_type,0,window_list);
+			libccd.CCDSetupStartup(target_temperature);
+			libccd.CCDSetupDimensions(ncols,nrows,nsbin,npbin,0,window_list);
 		}
 		catch(CCDLibraryNativeException e)
 		{

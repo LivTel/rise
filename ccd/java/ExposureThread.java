@@ -7,7 +7,7 @@ import ngat.rise.ccd.*;
 import ngat.fits.*;
 
 /**
- * This class extends thread to support the exposure of a CCD camera using the SDSU CCD Controller/libccd/CCDLibrary
+ * This class extends thread to support the exposure of a CCD camera using the CCD Controller/librise_ccd/CCDLibrary
  * in a separate thread, so that it may be aborted by the main program whilst it is underway.
  * @author Chris Mottram
  * @version $Revision: 0.14 $
@@ -27,11 +27,6 @@ class ExposureThread extends Thread
 	 * CCDExposureExpose.
 	 */
 	private boolean open_shutter;
-	/**
-	 * Private copy of variable to be passed into 
-	 * CCDExposureExpose.
-	 */
-	private boolean readout_ccd;
 	/**
 	 * X size of image.
 	 */
@@ -73,12 +68,10 @@ class ExposureThread extends Thread
 	 * Constructor of the thread. Copys all the parameters, ready to pass them into
 	 * CCDExposureExpose when the thread is run.
 	 */
-	public ExposureThread(CCDLibrary libccd,boolean open_shutter,boolean readout_ccd,
-		int xs,int ys,int msecs,String filename)
+	public ExposureThread(CCDLibrary libccd,boolean open_shutter,int xs,int ys,int msecs,String filename)
 	{
 		this.libccd = libccd;
 		this.open_shutter = open_shutter;
-		this.readout_ccd = readout_ccd;
 		this.xSize = xs;
 		this.ySize = ys;
 		this.msecs = msecs;

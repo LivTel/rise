@@ -9,7 +9,7 @@ BINDIR = $(CCD_BIN_HOME)/java
 DOCSDIR = $(CCD_DOC_HOME)/javadocs
 DOCFLAGS = -version -author -private
 
-SRCS = ExposureThread.java Test.java SetupThread.java AbortThread.java ReadOutThread.java
+SRCS = ExposureThread.java Test.java SetupThread.java AbortThread.java
 OBJS = $(SRCS:%.java=$(BINDIR)/%.class)
 DOCS = $(SRCS:%.java=$(DOCSDIR)/%.html)
 
@@ -18,7 +18,7 @@ top: $(OBJS) docs
 $(BINDIR)/%.class:%.java
 	$(JAVAC) $(JAVAC_OPTIONS) -d $(BINDIR) $<
 
-Test.class: Test.java $(BINDIR)/ExposureThread.class $(BINDIR)/AbortThread.class $(BINDIR)/SetupThread.class $(BINDIR)/ReadOutThread.class
+Test.class: Test.java $(BINDIR)/ExposureThread.class $(BINDIR)/AbortThread.class $(BINDIR)/SetupThread.class 
 	$(JAVAC) $(JAVAC_OPTIONS) -d $(BINDIR) Test.java
 
 $(BINDIR)/ExposureThread.class $(BINDIR)/AbortThread.class $(BINDIR)/SetupThread.class $(BINDIR)/ReadOutThread.class: 
