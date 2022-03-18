@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/misc/Makefile,v 1.1 2009-10-15 10:24:06 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/misc/Makefile,v 1.2 2022-03-18 10:57:31 cjm Exp $
 
 include ../../../Makefile.common
 include ../../Makefile.common
@@ -15,7 +15,7 @@ DEBUG_CFLAGS	= -DDEBUG
 CFLAGS 		= -g -I$(INCDIR) -I$(CFITSIOINCDIR) $(DEBUG_CFLAGS)
 DOCFLAGS 	= -static
 
-EXE_SRCS 	= dsp_command_num.c fits_get_data.c fits_get_header.c fits_get_mean.c \
+EXE_SRCS 	= fits_get_data.c fits_get_header.c fits_get_mean.c \
 		fits_add_keyword_value.c fits_get_keyword_value.c fits_get_keyword_comment.c \
 		fits_delete_keyword_value.c fits_copy_keyword_card.c fits_create_blank.c \
 		fits_sub.c fits_sub_value.c fits_flip.c fits_flip_double.c \
@@ -92,17 +92,6 @@ checkout:
 
 # DO NOT DELETE
 
-dsp_command_num.o: /usr/include/stdio.h /usr/include/features.h
-dsp_command_num.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
-dsp_command_num.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
-dsp_command_num.o: /usr/lib/gcc/i386-redhat-linux/4.1.1/include/stddef.h
-dsp_command_num.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
-dsp_command_num.o: /usr/include/libio.h /usr/include/_G_config.h
-dsp_command_num.o: /usr/include/wchar.h /usr/include/bits/wchar.h
-dsp_command_num.o: /usr/include/gconv.h
-dsp_command_num.o: /usr/lib/gcc/i386-redhat-linux/4.1.1/include/stdarg.h
-dsp_command_num.o: /usr/include/bits/stdio_lim.h
-dsp_command_num.o: /usr/include/bits/sys_errlist.h
 fits_get_data.o: /usr/include/stdio.h /usr/include/features.h
 fits_get_data.o: /usr/include/sys/cdefs.h /usr/include/bits/wordsize.h
 fits_get_data.o: /usr/include/gnu/stubs.h /usr/include/gnu/stubs-32.h
