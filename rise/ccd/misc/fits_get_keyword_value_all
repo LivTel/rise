@@ -1,0 +1,14 @@
+#!/bin/csh
+# fits_get_keyword_value_all <file spec>
+if ( $#argv < 3 ) then
+	echo "fits_get_keyword_value_all <keyword> <type> <file spec>"
+	exit 1
+endif
+set keyword = $1
+shift
+set type = $1
+shift
+foreach file ( $argv )
+	echo -n "$file "
+	fits_get_keyword_value $file $keyword $type
+end

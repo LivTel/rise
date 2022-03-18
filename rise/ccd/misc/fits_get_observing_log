@@ -1,0 +1,18 @@
+#!/bin/csh
+# fits_get_observing_log <file spec>
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/misc/fits_get_observing_log,v 1.1 2022-03-18 10:59:38 cjm Exp $
+if ( $#argv < 1 ) then
+	echo "fits_get_observing_log <file spec>"
+	exit 1
+endif
+foreach file ( $argv )
+	set object = `fits_get_keyword_value $file OBJECT STRING`
+	set exptime = `fits_get_keyword_value $file EXPTIME DOUBLE`
+	set dateobs = `fits_get_keyword_value $file DATE-OBS STRING`
+	set filter1 = `fits_get_keyword_value $file FILTER1 STRING`
+	set filter2 = `fits_get_keyword_value $file FILTER2 STRING`
+	echo "${file} ${object} ${dateobs} ${exptime} ${filter1} ${filter2}"
+end
+#
+# $Log: not supported by cvs2svn $
+#

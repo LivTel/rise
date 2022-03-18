@@ -1,0 +1,14 @@
+#!/bin/csh
+# fits_get_object <file spec>
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/misc/fits_get_object,v 1.1 2022-03-18 10:59:38 cjm Exp $
+if ( $#argv < 1 ) then
+	echo "fits_get_object <file spec>"
+	exit 1
+endif
+foreach file ( $argv )
+	echo -n "$file "
+	fits_get_keyword_value $file OBJECT STRING
+end
+#
+# $Log: not supported by cvs2svn $
+#
