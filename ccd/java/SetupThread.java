@@ -1,9 +1,9 @@
-// SetupThread.java -*- mode: Fundamental;-*-
-// $Header: /space/home/eng/cjm/cvs/rise/ccd/java/SetupThread.java,v 0.8 2001-01-31 16:57:56 cjm Exp $
+// SetupThread.java
+// $Header: /home/dev/src/ccd/java/RCS/SetupThread.java,v 0.8 2001/01/31 16:57:56 cjm Exp $
 import java.io.*;
 import java.lang.*;
 
-import ngat.ccd.*;
+import ngat.rise.ccd.*;
 
 /**
  * This class extends thread to support the setup of a CCD camera using the SDSU CCD Controller/libccd/CCDLibrary
@@ -16,7 +16,7 @@ class SetupThread extends Thread
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: SetupThread.java,v 0.8 2001-01-31 16:57:56 cjm Exp $");
+	public final static String RCSID = new String("$Id: SetupThread.java,v 0.8 2001/01/31 16:57:56 cjm Exp $");
 	/**
 	 * CCDLibrary object, the library object used to interface with the SDSU CCD Controller
 	 */
@@ -190,7 +190,10 @@ class SetupThread extends Thread
 }
  
 //
-// $Log: not supported by cvs2svn $
+// $Log: SetupThread.java,v $
+// Revision 0.8  2001/01/31 16:57:56  cjm
+// Fixed filename copying error.
+//
 // Revision 0.7  2000/06/12 14:12:43  cjm
 // Made changes to CCDSetupStartup and CCDSetupDimension calls
 // because of changed API.

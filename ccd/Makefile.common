@@ -1,10 +1,15 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/Makefile.common,v 1.1 2003-11-14 15:32:44 cjm Exp $
+# $Header: /home/dev/src/ccd/RCS/Makefile.common,v 1.1 2003/11/14 15:32:44 cjm Exp $
 
 SHELL			=	/bin/sh
 CCD_HOME		=	ccd
-CCD_SRC_HOME		= 	$(LT_SRC_HOME)/$(CCD_HOME)
-CCD_BIN_HOME		= 	$(LT_BIN_HOME)/$(CCD_HOME)
-CCD_DOC_HOME		= 	$(LT_DOC_HOME)/$(CCD_HOME)
+CCD_SRC_HOME		= 	$(RISE_SRC_HOME)/$(CCD_HOME)
+CCD_BIN_HOME		= 	$(RISE_BIN_HOME)/$(CCD_HOME)
+CCD_DOC_HOME		= 	$(RISE_DOC_HOME)/$(CCD_HOME)
+
+# log_udp library (log_udp.h is included for verbosity settings)
+LOG_UDP_HOME		= log_udp
+LOG_UDP_SRC_HOME	= $(LT_SRC_HOME)/$(LOG_UDP_HOME)
+LOG_UDP_CFLAGS		= -I$(LOG_UDP_SRC_HOME)/include
 
 #>>>>> IMPLICIT RULES <<<<<#
 .SUFFIXES:  .c,v .c .o .h,v .h
@@ -20,5 +25,8 @@ CCD_DOC_HOME		= 	$(LT_DOC_HOME)/$(CCD_HOME)
 	$(CC) $(CFLAGS) -c $<
 
 #
-# $Log: not supported by cvs2svn $
+# $Log: Makefile.common,v $
+# Revision 1.1  2003/11/14 15:32:44  cjm
+# Initial revision
+#
 #

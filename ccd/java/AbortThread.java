@@ -1,7 +1,7 @@
 // AbortThread.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccd/java/AbortThread.java,v 0.6 2003-03-26 15:52:25 cjm Exp $
+// $Header: /space/home/dev/src/ccd/java/RCS/AbortThread.java,v 0.6 2003/03/26 15:52:25 cjm Exp $
 import java.io.*;
-import ngat.ccd.*;
+import ngat.rise.ccd.*;
 /**
  * This class is a thread which when run, looks for a keypress on System.in, and then calls the parents
  * abort method.
@@ -13,7 +13,7 @@ class AbortThread extends Thread
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: AbortThread.java,v 0.6 2003-03-26 15:52:25 cjm Exp $");
+	public final static String RCSID = new String("$Id: AbortThread.java,v 0.6 2003/03/26 15:52:25 cjm Exp $");
 	/**
 	 * Parent class, call it's abort method if a keypress is detected.
 	 */
@@ -78,7 +78,10 @@ class AbortThread extends Thread
 }
  
 //
-// $Log: not supported by cvs2svn $
+// $Log: AbortThread.java,v $
+// Revision 0.6  2003/03/26 15:52:25  cjm
+// Changed for windowing API change.
+//
 // Revision 0.5  2000/01/24 16:32:20  cjm
 // Fixed error which caused run method to always abort.
 //

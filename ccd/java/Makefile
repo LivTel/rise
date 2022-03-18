@@ -1,5 +1,6 @@
-# Makefile -*- mode: Fundamental;-*-
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/java/Makefile,v 0.16 2001-01-29 17:12:50 cjm Exp $ 
+# Makefile
+# $Header: /home/dev/src/ccd/java/RCS/Makefile,v 0.16 2001/01/29 17:12:50 cjm Exp $ 
+include ../../../Makefile.common
 include ../../Makefile.common
 include ../Makefile.common
 
@@ -42,7 +43,10 @@ checkout:
 checkin:
 	-$(CI) $(CI_OPTIONS) $(SRCS)
 #
-# $Log: not supported by cvs2svn $
+# $Log: Makefile,v $
+# Revision 0.16  2001/01/29 17:12:50  cjm
+# Removed spurious CCDLibrary.h deletions.
+#
 # Revision 0.15  1999/12/10 10:59:05  cjm
 # Added backup target.
 #

@@ -1,9 +1,9 @@
 // ExposureThread.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccd/java/ExposureThread.java,v 0.14 2006-11-09 10:26:43 eng Exp $
+// $Header: /space/home/dev/src/ccd/java/RCS/ExposureThread.java,v 0.14 2006/11/09 10:26:43 eng Exp $
 import java.lang.*;
 import java.io.*;
 
-import ngat.ccd.*;
+import ngat.rise.ccd.*;
 import ngat.fits.*;
 
 /**
@@ -17,7 +17,7 @@ class ExposureThread extends Thread
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: ExposureThread.java,v 0.14 2006-11-09 10:26:43 eng Exp $");
+	public final static String RCSID = new String("$Id: ExposureThread.java,v 0.14 2006/11/09 10:26:43 eng Exp $");
 	/**
 	 * CCDLibrary object, the library object used to interface with the SDSU CCD Controller
 	 */
@@ -197,7 +197,10 @@ class ExposureThread extends Thread
 }
  
 //
-// $Log: not supported by cvs2svn $
+// $Log: ExposureThread.java,v $
+// Revision 0.14  2006/11/09 10:26:43  eng
+// Removed non-existant CCDExposureAbortReadout call.
+//
 // Revision 0.13  2003/03/26 15:52:25  cjm
 // Changed for windowing API change.
 //

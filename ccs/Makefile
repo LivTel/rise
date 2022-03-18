@@ -1,10 +1,12 @@
 # Makefile
-# $Header: /space/home/eng/cjm/cvs/rise/ccs/Makefile,v 1.2 2007-01-09 15:03:04 cjm Exp $ 
+# $Header: /home/dev/src/ccs/RCS/Makefile,v 1.2 2007/01/09 15:03:04 cjm Exp $ 
 
+include ../../Makefile.common
 include ../Makefile.common
 
 MAKE = make
-DIRS = java test latex npt mat
+DIRS = java test 
+#latex npt mat
 
 top:
 	@for i in $(DIRS); \
@@ -49,7 +51,10 @@ backup: checkin
 	tar cvf $(BACKUP_DIR)/ccs.tar .
 	compress $(BACKUP_DIR)/ccs.tar
 
-# $Log: not supported by cvs2svn $
+# $Log: Makefile,v $
+# Revision 1.2  2007/01/09 15:03:04  cjm
+# Changed some 'cd's to $(MAKE) -C.
+#
 # Revision 1.1  2003/11/14 15:31:31  cjm
 # Initial revision
 #

@@ -1,9 +1,9 @@
 // ReadOutThread.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccd/java/ReadOutThread.java,v 1.8 2006-11-09 10:26:44 eng Exp $
+// $Header: /space/home/dev/src/ccd/java/RCS/ReadOutThread.java,v 1.8 2006/11/09 10:26:44 eng Exp $
 import java.lang.*;
 import java.io.*;
 
-import ngat.ccd.*;
+import ngat.rise.ccd.*;
 
 /**
  * This class extends thread to support the readout of a CCD camera using the SDSU CCD Controller/libccd/CCDLibrary
@@ -16,7 +16,7 @@ class ReadOutThread extends Thread
 	/**
 	 * Revision Control System id string, showing the version of the Class
 	 */
-	public final static String RCSID = new String("$Id: ReadOutThread.java,v 1.8 2006-11-09 10:26:44 eng Exp $");
+	public final static String RCSID = new String("$Id: ReadOutThread.java,v 1.8 2006/11/09 10:26:44 eng Exp $");
 	/**
 	 * CCDLibrary object, the library object used to interface with the SDSU CCD Controller
 	 */
@@ -102,7 +102,10 @@ class ReadOutThread extends Thread
 }
  
 //
-// $Log: not supported by cvs2svn $
+// $Log: ReadOutThread.java,v $
+// Revision 1.8  2006/11/09 10:26:44  eng
+// Removed non-existant CCDExposureAbortReadout call.
+//
 // Revision 1.7  2003/03/26 15:52:25  cjm
 // Changed for windowing API change.
 //

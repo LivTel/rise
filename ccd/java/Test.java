@@ -1,9 +1,9 @@
 // Test.java
-// $Header: /space/home/eng/cjm/cvs/rise/ccd/java/Test.java,v 0.12 2003-03-26 15:52:25 cjm Exp $
+// $Header: /space/home/dev/src/ccd/java/RCS/Test.java,v 0.12 2003/03/26 15:52:25 cjm Exp $
 import java.lang.*;
 import java.io.*;
 
-import ngat.ccd.*;
+import ngat.rise.ccd.*;
 
 /**
  * This is the main test program.
@@ -405,7 +405,10 @@ class Test
 	}
 }
 //
-// $Log: not supported by cvs2svn $
+// $Log: Test.java,v $
+// Revision 0.12  2003/03/26 15:52:25  cjm
+// Changed for windowing API change.
+//
 // Revision 0.11  2001/01/31 17:03:27  cjm
 // Added interface selection capability/changed setup to load DSP code from .lod files.
 //

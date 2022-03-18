@@ -3,7 +3,7 @@
 
 include ../Makefile.common
 
-DIRS = c test java latex misc
+DIRS = c test java misc
 
 top:
 	@for i in $(DIRS); \
