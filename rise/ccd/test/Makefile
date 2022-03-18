@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/test/Makefile,v 1.5 2022-03-16 11:13:53 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/test/Makefile,v 1.6 2022-03-18 11:44:39 cjm Exp $
 
 include ../../../Makefile.common
 include ../../Makefile.common
@@ -22,7 +22,7 @@ DOCFLAGS 	= -static
 
 SRCS 		= test.c time_millis.c test_temperature.c \
 		  test_setup_startup.c test_setup_dimensions.c test_setup_shutdown.c test_exposure.c
-# posix_time.c 
+
 OBJS 		= $(SRCS:%.c=$(BINDIR)/%.o)
 PROGS 		= $(SRCS:%.c=$(BINDIR)/%)
 DOCS 		= $(SRCS:%.c=$(DOCSDIR)/%.html)
