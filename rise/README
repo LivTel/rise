@@ -1,0 +1,28 @@
+
+rise_ccd_20091006.tar.gz
+rise_ccs_20091006.tar.gz
+rise_ngat_ccd_20091006.tar.gz
+
+RISE ccs and ccd source code downloaded from rise on 06/10/09. Hopefully now keep the master here, depending on
+Ian Todds edits.
+
+andor
+-----
+
+Copied from rise:/usr/local/lib and rise:/usr/local/include
+
+Release Procedure
+-----------------
+
+Currently, as a user on ltdevsrv/ ltobs9:
+cd ~dev/src
+tar cvfz rise_<date>.tar.gz rise
+
+Copy tar to rise.
+As eng on rise:
+cp rise_<date>.tar.gz ~dev/src
+cd ~dev/src
+tar xvfz rise_<date>.tar.gz
+cd rise
+make
+reboot

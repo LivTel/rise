@@ -1,0 +1,14 @@
+# $Header: /space/home/eng/cjm/cvs/rise/Makefile.common,v 1.1 2022-03-18 14:11:27 cjm Exp $
+
+SHELL			=	/bin/sh
+RISE_HOME		=	rise
+RISE_SRC_HOME		= 	$(LT_SRC_HOME)/$(RISE_HOME)
+RISE_BIN_HOME		= 	$(LT_BIN_HOME)/$(RISE_HOME)
+RISE_DOC_HOME		= 	$(LT_DOC_HOME)/$(RISE_HOME)
+
+#
+# $Log: not supported by cvs2svn $
+# Revision 1.1  2003/11/14 15:32:44  cjm
+# Initial revision
+#
+#

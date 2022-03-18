@@ -1,0 +1,29 @@
+eng's crontab:
+
+*/5 * * * * perl /usr/local/bin/RiseNTPStatd
+
+RiseNTPStatd calls ntpstat and writes into /tmp/RiseNTPStat.data
+
+'gmtime - ntpserver - ntpperror
+
+where ntperror is retrieved from the 'time correct to within <ntperror> ms' ntpstat message
+
+/home/dev/src/rise/ccs/java/rise.ccs.properties:
+
+# NTP Stuff
+ntp.datafile					=/tmp/RiseNTPStat.data
+
+Used in ~dev/src/rise/ccd/c/ccd_multrun.c:
+Expose function
+	/* Grab the NTP drift stats */
+	error = getNtpDriftFile(mrParams.ntpDriftFile);
+This is in code before the StartAcquistion and acquistion loop.
+
+getNtpDriftFile reads the file specified by ntp.datafile, and puts the parsed data into:
+Multrun_Data.NTP_Time - Multrun_Data.NTP_Server - Multrun_Data.NTP_Drift
+
+This is written into the FITS headers as follows:
+NTPTIME  - Multrun_Data.NTP_Time - "Last time NTP status was checked"
+NTPSERVE - Multrun_Data.NTP_Server - "Address of ntp server"
+NTPERROR - Multrun_Data.NTP_Drift - "Uncertainty in ntp time in msec"
+
