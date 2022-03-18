@@ -1,7 +1,7 @@
 /*   
     Copyright 2006, Astrophysics Research Institute, Liverpool John Moores University.
 
-    This file is part of Ccs.
+    This file is part of Rise.
 
     Ccs is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,17 +87,8 @@ public class TESTImplementation extends SETUPImplementation implements JMSComman
 	/**
 	 * This method gets the TEST command's acknowledge time.
 	 * <br>This command causes the instrument to carry out self-test routines.
-	 * The acknowledge time is the default acknowledge time, plaus a time depending on the 
-	 * level of test to perform:
-	 * <ul>
-	 * <li>TEST_LEVEL_QUICK_TEST. This takes HARDWARE_TEST_COUNT*BOARD_COUNT*TIME_PER_TEST to perform.
-	 * </ul> 
 	 * @param command The command instance we are implementing.
 	 * @return An instance of ACK with the timeToComplete set.
-	 * @see #TEST_LEVEL_QUICK_TEST
-	 * @see #HARDWARE_TEST_COUNT
-	 * @see #BOARD_COUNT
-	 * @see #TIME_PER_TEST
 	 * @see ngat.message.base.ACK#setTimeToComplete
 	 * @see CcsTCPServerConnectionThread#getDefaultAcknowledgeTime
 	 */
@@ -111,24 +102,15 @@ public class TESTImplementation extends SETUPImplementation implements JMSComman
 		level = testCommand.getLevel();
 		acknowledge = new ACK(command.getId());
 		acknowledgeTime = serverConnectionThread.getDefaultAcknowledgeTime();
-		if((level&TEST_LEVEL_QUICK_TEST) != 0)
-			acknowledgeTime += HARDWARE_TEST_COUNT*BOARD_COUNT*TIME_PER_TEST;
 		acknowledge.setTimeToComplete(acknowledgeTime);
 		return acknowledge;
 	}
 
 	/**
 	 * This method implements the TEST command. 
-	 * The implementation depends on the level of test requested:
-	 * <ul>
-	 * <li>TEST_LEVEL_QUICK_TEST. A Setup Hardware Test is performed, which tests the data links to
-	 * 	three boards on the controller (PCI/timing/utility) HARDWARE_TEST_COUNT times.
-	 * </ul>
 	 * Not all levels of TEST have been implemented.
 	 * @param command The command, of class TEST, to perform.
 	 * @return An object of class TEST_DONE is returned.
-	 * @see #TEST_LEVEL_QUICK_TEST
-	 * @see #HARDWARE_TEST_COUNT
 	 */
 	public COMMAND_DONE processCommand(COMMAND command)
 	{
@@ -137,23 +119,6 @@ public class TESTImplementation extends SETUPImplementation implements JMSComman
 		int level = 0;
 
 		level = testCommand.getLevel();
-		if((level&TEST_LEVEL_QUICK_TEST) != 0)
-		{
-		// Test the data link.
-			try
-			{
-				libccd.CCDSetupHardwareTest(HARDWARE_TEST_COUNT);
-			}
-			catch(CCDLibraryNativeException e)
-			{
-				ccs.error(this.getClass().getName()+":processCommand:"+
-					command+":"+e);
-				testDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_BASE+2100);
-				testDone.setErrorString(e.toString());
-				testDone.setSuccessful(false);
-				return testDone;
-			}
-		}
 		testDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_NO_ERROR);
 		testDone.setErrorString("");
 		testDone.setSuccessful(true);
