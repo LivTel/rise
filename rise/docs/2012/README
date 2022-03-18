@@ -1,0 +1,76 @@
+detector.ini
+------------
+find /mnt/old_disk/ -name 'detector.ini' -print
+/mnt/old_disk/usr/local/etc/andor/detector.ini
+/mnt/old_disk/home/dev/src/autoguider/andor/andor2.12-20060220/examples/common/detector.ini
+/mnt/old_disk/home/dev/src/autoguider/andor/andor2.12/examples/common/detector.ini
+
+Created backup of: /usr/local/etc/andor/detector.ini
+
+
+
+/etc/grub.conf
+--------------
+
+Cannot access on old disk as in boot partition.
+cat /proc/meminfo
+MemTotal:      1950124 kB
+= 1904M
+Added to /etc/grub.conf:
+mem=1850M memmap=50M$1850M
+
+Andor installation
+------------------
+cd /home/eng/download/andor-2.85.30000
+./install_andor
+Choose CCD.
+chown -R eng:ltdev /usr/local/etc/andor/
+
+detector.ini
+------------
+cp ~/backups/detector.ini /usr/local/etc/andor/
+
+Changed rc.local:
+rc.local.rise
+
+Install Java
+------------
+./jdk-6u31-linux-i586-rpm.bin 
+
+/etc/init.d/autobooter needed changing for new directory structure:
+rise.autobooter
+Master copy updated
+
+Changed /icc/bin/autobooter/java/autobooter.properties for new directory structure::
+rise.autobooter.properties
+Master copy updated
+
+Changed /icc/bin/ccs/java/ccs.properties for new directory structure:
+rise.ccs.properties
+Master copy updated
+
+roots crontab:
+root.crontab
+
+eng's crontab:
+eng.crontab
+
+Also install Ian's ntp script:
+/usr/local/bin/RiseNTPStatd
+
+Latest RISE control computer motherboard:
+Gigabyte GA-H61M-S2 PC
+Something like:
+http://www.memoryexpress.com/Products/MX40735
+1 x Atheros 8151 LAN chip (10/100/1000 Mbit)
+http://rhythmcloud.blogspot.co.uk/2010/07/how-to-install-ar8151-v10-gigabit.html
+atl1e.ko
+http://elrepo.org/tiki/FAQ
+http://elrepo.org/tiki/DeviceIDs
+atl1e.ko:
+pci     1969:1083       kmod-atl1e
+http://elrepo.org/tiki/Driver+Versions
+kmod package	ELRepo kmod version	EL5 kernel	EL6.2 kernel	EL6.3 kernel
+atl1e		1.0.1.14		1.0.0.7-NAPI	1.0.0.7-NAPI	1.0.0.7-NAPI 
+http://elrepo.reloumirrors.net/elrepo/el5/i386/RPMS/kmod-atl1e-1.0.1.14-1.el5.elrepo.i686.rpm
+http://elrepo.reloumirrors.net/elrepo/el5/i386/RPMS/kmod-atl1e-PAE-1.0.1.14-1.el5.elrepo.i686.rpm

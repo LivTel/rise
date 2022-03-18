@@ -1,0 +1,37 @@
+Gigabyte GA-H61M-S2PV
+
+Motherboard Network device does not work.
+
+GA-H61M-S2PV (rev. 2.1)
+http://uk.gigabyte.com/products/product-page.aspx?pid=4294#ov
+1 x Realtek 8111F chip (10/100/1000 Mbit)
+
+GA-H61M-S2PV (rev. 2.0)
+http://uk.gigabyte.com/products/product-page.aspx?pid=4091#ov
+1 x Atheros 8151 LAN chip (10/100/1000 Mbit)
+
+GA-H61M-S2PV (rev. 1.0)   
+http://uk.gigabyte.com/products/product-page.aspx?pid=4065#sp
+1 x Realtek 8111E LAN chip (10/100/1000 Mbit)
+
+/sbin/lspci -nn | grep -i net
+02:00.0 Ethernet controller [0200]: Atheros Communications Inc. AR8151 v2.0 Gigabit Ethernet [1969:1083] (rev c0)
+04:01.0 Ethernet controller [0200]: 3Com Corporation 3c905C-TX/TX-M [Tornado] [10b7:9200] (rev 78)
+
+Therefore network card:
+Atheros Communications Inc. AR8151 v2.0 Gigabit Ethernet [1969:1083]
+
+kmod-atl1e-PAE-1.0.1.14-1.el5.elrepo.i686.rpm:
+kmod-atl1e-PAE-1.0.1.14-1.el5.elrepo does not support that pci id
+
+rpm -e kmod-atl1e-1.0.1.14-1.el5.elrepo
+
+
+Installed AR81Family-linux-v1.0.1.14.tar.gz:
+mkdir atl1e
+cp AR81Family-linux-v1.0.1.14.tar.gz atl1e
+cd atl1e
+su
+make install
+/sbin/depmod -a
+/sbin/modprobe atl1e

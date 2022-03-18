@@ -1,0 +1,85 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use threads;
+
+
+# This simple perl script polls the ntp server and writes out a single line file
+# with the date, ntpserver and ntperror. 
+
+my $debug = 0;
+
+my $outfile = "/tmp/RiseNTPStat.data";
+my $ntpCommand = "/usr/bin/ntpstat ";
+my @commandOutput = undef;
+my $time = "undefined";
+my %ntpstats =(	'ntpserver',"undefined",
+		'ntperror', -999.9,
+		'ntptime',"undefined");
+
+
+# Spawn off a thread to grab the ntp time.
+my $thr1 = threads->create("RunCommand");
+
+$thr1->join;
+
+exit 0;
+
+#===============================================================================
+
+
+sub RunCommand {
+ # REQ: %ntpstats hash array
+ $time = gmtime;
+ @commandOutput = `$ntpCommand`;
+ if($debug) { print "RunCommand: @commandOutput\n"; }
+ ExtractNTPData();
+ PrintNTPData(); 
+ return;
+}
+
+
+sub ExtractNTPData {
+ # REQ: @commandOutput array with output of ntpstat
+ # REQ: %ntpstats hash array
+
+ my ($start,$end) = (0,0);
+
+ if($commandOutput[0] =~ m/unsynchronised/) {
+   $ntpstats{'ntpserver'} = "none-unsynchronised";
+   $ntpstats{'ntpperror'} = -999.9;
+   $ntpstats{'ntptime'} = "$time"; }
+
+ elsif($commandOutput[0] =~ m/synchronised to NTP server/) {
+   $start = index($commandOutput[0],"(");
+   $end   = index($commandOutput[0],")");
+   $ntpstats{'ntpserver'} = substr($commandOutput[0],$start+1,$end-$start-1);
+   
+   $start = index($commandOutput[1],"within");
+   $end   = index($commandOutput[1],"ms");
+   $ntpstats{'ntpperror'} = substr($commandOutput[1],$start+7,$end-$start-7);
+   $ntpstats{'ntptime'} = "$time"; }
+
+ # Command outputs to stderr, so need to impliment pipe instead!
+ #elsif($commandOutput[0] =~ m/Unable to talk to NTP daemon/) {
+  # $ntpstats{'ntpserver'} = "none-ntpd-inactive";
+  # $ntpstats{'ntpperror'} = -999.9;
+  # $ntpstats{'ntptime'} = "$time"; }
+ 
+ else {
+   $ntpstats{'ntpserver'} = "none-unknown-error";
+   $ntpstats{'ntpperror'} = -999.9;
+   $ntpstats{'ntptime'} = "$time"; }
+}
+
+
+sub PrintNTPData {
+ if($debug) {print "$ntpstats{'ntptime'} :: $ntpstats{'ntpserver'} :: $ntpstats{'ntpperror'}\n";}
+
+ open FH, "> $outfile";
+ print FH "$ntpstats{'ntptime'} - $ntpstats{'ntpserver'} - $ntpstats{'ntpperror'}\n";
+ close FH; 
+}
+
+
+

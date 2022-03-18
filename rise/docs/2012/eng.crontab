@@ -1,0 +1,3 @@
+*/5 * * * * perl /usr/local/bin/RiseNTPStatd
+# instrument archive logs
+35 11 * * *  $HOME/scripts/rise_archive_logs

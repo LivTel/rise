@@ -1,0 +1,77 @@
+See rise_motherboard.txt for network card install/configuration.
+
+Andor installation
+------------------
+scp /home/dev/src/andor/andor-2.85.30000.0.tar.gz eng@rise:download
+cd /home/eng/download/andor-2.85.30000
+./install_andor
+Choose CCD.
+chown -R eng:ltdev /usr/local/etc/andor/
+
+
+detector.ini
+------------
+scp ~dev/src/rise/docs/2017/detector.ini  eng@rise:download
+cp ~/download/detector.ini /usr/local/etc/andor/
+
+
+/etc/grub.conf
+--------------
+
+Copied example from old disk ltdevsrv:/home/dev/src/rise/docs/2017/grub.conf.rise e.g.:
+title CentOS (2.6.18-308.el5PAE) ImageBuffer
+	root (hd0,0)
+	kernel /vmlinuz-2.6.18-308.el5PAE ro root=/dev/VolGroup00/LogVol00 rhgb quiet mem=510M@0x20200000 mem=890M@0x40200000 memmap=10M@0x38108000
+	initrd /initrd-2.6.18-308.el5PAE.img
+
+
+Changed rc.local:
+rc.local.rise
+Basically adding:
+sh /etc/andordrvlx_load DMA_MODE=1
+Andor install has already added /etc/andordrvlx_load but NOT DMA_MODE=1.
+
+Install Java
+------------
+scp -C ~/download/jdk-7u71-linux-i586.rpm eng@rise:download/
+rpm -i jdk-7u71-linux-i586.rpm 
+
+./jdk-6u31-linux-i586-rpm.bin 
+
+/etc/init.d/autobooter needed changing for new directory structure:
+rise.autobooter
+Master copy updated
+
+Changed /icc/bin/autobooter/java/autobooter.properties for new directory structure::
+rise.autobooter.properties
+Master copy updated
+
+Changed /icc/bin/ccs/java/ccs.properties for new directory structure:
+rise.ccs.properties
+Master copy updated
+
+roots crontab:
+root.crontab
+
+eng's crontab:
+eng.crontab
+
+Also install Ian's ntp script:
+/usr/local/bin/RiseNTPStatd
+
+Latest RISE control computer motherboard:
+Gigabyte GA-H61M-S2 PC
+Something like:
+http://www.memoryexpress.com/Products/MX40735
+1 x Atheros 8151 LAN chip (10/100/1000 Mbit)
+http://rhythmcloud.blogspot.co.uk/2010/07/how-to-install-ar8151-v10-gigabit.html
+atl1e.ko
+http://elrepo.org/tiki/FAQ
+http://elrepo.org/tiki/DeviceIDs
+atl1e.ko:
+pci     1969:1083       kmod-atl1e
+http://elrepo.org/tiki/Driver+Versions
+kmod package	ELRepo kmod version	EL5 kernel	EL6.2 kernel	EL6.3 kernel
+atl1e		1.0.1.14		1.0.0.7-NAPI	1.0.0.7-NAPI	1.0.0.7-NAPI 
+http://elrepo.reloumirrors.net/elrepo/el5/i386/RPMS/kmod-atl1e-1.0.1.14-1.el5.elrepo.i686.rpm
+http://elrepo.reloumirrors.net/elrepo/el5/i386/RPMS/kmod-atl1e-PAE-1.0.1.14-1.el5.elrepo.i686.rpm
