@@ -1,4 +1,4 @@
-# $Header: /space/home/eng/cjm/cvs/rise/ccd/misc/Makefile,v 1.2 2022-03-18 10:57:31 cjm Exp $
+# $Header: /space/home/eng/cjm/cvs/rise/ccd/misc/Makefile,v 1.3 2022-03-18 11:13:14 cjm Exp $
 
 include ../../../Makefile.common
 include ../../Makefile.common
@@ -20,8 +20,8 @@ EXE_SRCS 	= fits_get_data.c fits_get_header.c fits_get_mean.c \
 		fits_delete_keyword_value.c fits_copy_keyword_card.c fits_create_blank.c \
 		fits_sub.c fits_sub_value.c fits_flip.c fits_flip_double.c \
 		fits_delete_blank_header.c fits_median.c fits_modify_comment.c fits16_signed_to_unsigned.c \
-		fits_to_targa.c targa_combine.c fits_sub_image.c fits_normalise.c 
-# This does not compile atm fits_histogram.c 
+		fits_to_targa.c targa_combine.c fits_sub_image.c fits_normalise.c
+
 LIB_SRCS	= targa.c
 SRCS		= $(EXE_SRCS) $(LIB_SRCS)
 OBJS		=	$(SRCS:%.c=%.o)
