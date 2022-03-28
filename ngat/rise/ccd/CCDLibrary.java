@@ -1,7 +1,7 @@
 /*   
     Copyright 2006, Astrophysics Research Institute, Liverpool John Moores University.
 
-    This file is part of NGAT.
+    This file is part of Rise.
 
     NGAT is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
