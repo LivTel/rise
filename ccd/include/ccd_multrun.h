@@ -254,6 +254,7 @@ extern char *chomp (char *string);
 
 extern enum CCD_EXPOSURE_STATUS CCD_Multrun_Get_Exposure_Status(void);
 extern int CCD_Multrun_Get_Elapsed_Exposure_Time(void);
+extern double CCD_Multrun_Get_Cached_Temperature(void);
 extern int CCD_Multrun_Get_Error_Number(void);
 extern void CCD_Multrun_Error(void);
 extern void CCD_Multrun_Error_String(char *error_string);

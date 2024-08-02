@@ -3034,6 +3034,17 @@ int CCD_Multrun_Get_Elapsed_Exposure_Time(void)
 	return Multrun_Data.Elapsed_Exposure_Time;
 }
 
+/**
+ * Return the CCD temperature, that was cached at the start of Expose (called from CCD_Multrun_Expose).
+ * @return The cached CCD temperature.
+ * @see #Expose
+ * @see #Multrun_Data
+ */
+double CCD_Multrun_Get_Cached_Temperature(void)
+{
+	return Multrun_Data.Temperature;
+}
+
 /*
 ** $Log: not supported by cvs2svn $
 ** Revision 1.5  2010/03/26 14:39:49  cjm

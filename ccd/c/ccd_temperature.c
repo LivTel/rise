@@ -70,7 +70,8 @@ static char Temperature_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
 /* external functions */
 /**
  * This routine gets the current temperature of the CCD. 
- * GetStatus is called first, and if the status is not DRV_IDLE an error is returned.
+ * GetStatus is called first, and if the status is not DRV_IDLE we assume a MULTRUN is in progress
+ * and return the last cached temperature (CCD_Multrun_Get_Cached_Temperature).
  * GetTemperatureF is called to retrieve the temperature. The current temperature and status are logged.
  * @param temperature The address of a variable to hold the calculated temperature to be returned.
  * 	The returned temperature is in degrees centigrade.
@@ -78,6 +79,7 @@ static char Temperature_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
  * 	if a failure occured or the temperature returned was not sensible.
  * @see #Temperature_Error_Number
  * @see #Temperature_Error_String
+ * @see ccd_multrun.html#CCD_Multrun_Get_Cached_Temperature
  * @see ccd_global.html#CCD_Global_ErrorCode_To_String
  * @see ccd_global.html#CCD_Global_Log_Format
  */
@@ -90,11 +92,17 @@ int CCD_Temperature_Get(double *temperature)
 	GetStatus(&error);
 	if(error!=DRV_IDLE) 
 	{
+		/* we are probably doing a multrun (ccd_multrun.c:Expose).
+		** Lets return the ccd temperature cached at the start of Expose */
+		(*temperature) = CCD_Multrun_Get_Cached_Temperature();
+		return TRUE;
+		/*
 		(*temperature) = 0.0;
 		Temperature_Error_Number = 1;
 		sprintf(Temperature_Error_String,"CCD_Temperature_Get:GetStatus not DRV_IDLE:%d (%s).",error,
 			CCD_Global_ErrorCode_To_String(error));
 		return FALSE;
+		*/
 	}
 
 	error=GetTemperatureF(&temp);
