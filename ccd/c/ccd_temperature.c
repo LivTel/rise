@@ -42,6 +42,7 @@
 #include <time.h>
 #include "log_udp.h"
 #include "ccd_global.h"
+#include "ccd_multrun.h"
 #include "ccd_temperature.h"
 #include "atmcdLXd.h"
 
@@ -85,6 +86,7 @@ static char Temperature_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
  */
 int CCD_Temperature_Get(double *temperature)
 {
+	double cached_temperature;
 	float temp;
 	int error;
 
@@ -94,7 +96,16 @@ int CCD_Temperature_Get(double *temperature)
 	{
 		/* we are probably doing a multrun (ccd_multrun.c:Expose).
 		** Lets return the ccd temperature cached at the start of Expose */
-		(*temperature) = CCD_Multrun_Get_Cached_Temperature();
+		cached_temperature = CCD_Multrun_Get_Cached_Temperature();
+#if LOGGING > 0
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
+				      "CCD_Temperature_Get: CCD_Multrun_Get_Cached_Temperature returned temperature %f degC.",cached_temperature);
+#endif
+		(*temperature) = cached_temperature;
+#if LOGGING > 0
+		CCD_Global_Log_Format(LOG_VERBOSITY_VERBOSE,
+				      "CCD_Temperature_Get: Using Multrun cached Temperature %f degC.",(*temperature));
+#endif
 		return TRUE;
 		/*
 		(*temperature) = 0.0;
