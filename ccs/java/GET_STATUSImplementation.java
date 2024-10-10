@@ -29,6 +29,7 @@ import ngat.message.ISS_INST.ISS_TO_INST;
 import ngat.message.ISS_INST.GET_STATUS;
 import ngat.message.ISS_INST.GET_STATUS_DONE;
 import ngat.util.ExecuteCommand;  
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation for the GET_STATUS command sent to a server using the
@@ -296,6 +297,9 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 				libccd.CCDTemperatureGet(ccdTemperature);
 				hashTable.put("Temperature",new Double(ccdTemperature.getValue()+
 								       CENTIGRADE_TO_KELVIN));
+				ccs.log(Logging.VERBOSITY_INTERMEDIATE,this.getClass().getName()+
+					":getIntermediateStatus:Temperature returned was:"+ccdTemperature.getValue()+
+					" C.");
 			}
 			catch(CCDLibraryNativeException e)
 			{
