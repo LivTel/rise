@@ -209,6 +209,7 @@ public class Ccs
 		fitsFilename.initialise();
 	// create CCDLibrary control object
 		libccd = new CCDLibrary();
+		libccd.CCDInitialise();
 	// Create instance of the FITS header JNI library.
 		libngatfits = new FitsHeader();
 	// Create instance of FITS header defaults
