@@ -181,7 +181,7 @@ struct Header {
  * Structure used to hold local data to ccd_multrun.
  * <dl>
  * <dt>Exposure_Status</dt> <dd>Whether an operation is being performed to CLEAR, EXPOSE or READOUT the CCD.</dd>
- * <dt>Last_Multrun_Exposures</dt> <dd>Keeps track of the Andor series throughout a multrun.</dd>
+ * <dt>Exposure_Number</dt> <dd>Which exposure in the multrun we are currently taking (based on the Andor series).</dd>
  * <dt>Exposure_Length</dt> <dd>The last exposure length to be set.</dd>
  * <dt>Requested_Exposure_Length</dt> <dd>The exposure length requested, before modifications due to Andor
  *     constraints. In seconds.</dd>
@@ -211,7 +211,7 @@ struct Header {
 struct Multrun_Struct 
 {
 	enum CCD_EXPOSURE_STATUS Exposure_Status;
-	long Last_Multrun_Exposures;
+	long Exposure_Number;
 	float Exposure_Length;
 	float Requested_Exposure_Length;
 	double Temperature;
@@ -253,6 +253,9 @@ extern int getNtpDrift(char *server, float *drift);
 extern char *chomp (char *string);
 
 extern enum CCD_EXPOSURE_STATUS CCD_Multrun_Get_Exposure_Status(void);
+extern int CCD_Multrun_Get_Exposure_Number(void);
+extern int CCD_Multrun_Get_Exposure_Length(void);
+extern struct timespec CCD_Multrun_Get_Exposure_Start_Time(void);
 extern int CCD_Multrun_Get_Elapsed_Exposure_Time(void);
 extern double CCD_Multrun_Get_Cached_Temperature(void);
 extern int CCD_Multrun_Get_Error_Number(void);

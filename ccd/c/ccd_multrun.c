@@ -92,7 +92,7 @@ static char Multrun_Error_String[CCD_GLOBAL_ERROR_STRING_LENGTH] = "";
  * Data holding the current status of ccd_multrun. This is statically initialised to the following:
  * <dl>
  * <dt>Exposure_Status</dt> <dd>CCD_EXPOSURE_STATUS_NONE</dd>
- * <dt>Last_Multrun_Exposures</dt> <dd>0</dd>
+ * <dt>Exposure_Number</dt> <dd>0</dd>
  * <dt>Exposure_Length</dt> <dd>0</dd>
  * <dt>Requested_Exposure_Length</dt> <dd>0.0</dd>
  * <dt>Temperature</dt> <dd>0.0</dd>
@@ -479,7 +479,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 					      Multrun_Data.Median_Value,expose_exposure_time); 
 #endif
 		}
-		remainingExposures = remainingExposures - Multrun_Data.Last_Multrun_Exposures;
+		remainingExposures = remainingExposures - Multrun_Data.Exposure_Number;
 
 		/* Check abort status */
 		if(CCD_Exposure_Get_Abort())
@@ -498,7 +498,7 @@ int CCD_Multflat_Expose(int open_shutter,long startTime,int exposure_time,long e
 #if LOGGING > 1
 	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,
 			   "CCD_Multflat_Expose: --- Finished %ld mult-flat in %d sec, last exp time: %.4f sec ---",
-			      Multrun_Data.Last_Multrun_Exposures,(int)(time(NULL)-Multrun_Data.Time_Start),
+			      Multrun_Data.Exposure_Number,(int)(time(NULL)-Multrun_Data.Time_Start),
 			      Multrun_Data.Exposure_Length);
 #endif
 #if LOGGING > 1
@@ -561,7 +561,7 @@ static unsigned int Expose(float exposure, int width, int height,long nimages,in
 	}
 	(*recalculate_exposure_length) = FALSE;
 	/* Reset the number of images taken this cycle */
-	Multrun_Data.Last_Multrun_Exposures = 0; 
+	Multrun_Data.Exposure_Number = 0; 
 	
 	/* Allocate the memory for the arrays */ 
 	longarray=(unsigned long*)malloc(pixels*sizeof(unsigned long));	
@@ -903,7 +903,7 @@ static unsigned int Expose(float exposure, int width, int height,long nimages,in
 				}
 
 				/* Let other funcs know how many were caught */
-				Multrun_Data.Last_Multrun_Exposures = series; 
+				Multrun_Data.Exposure_Number = series; 
 
 				/* Check that we haven't overran our time. */
 				if (ExpiredStatus(Multrun_Data.Time_Start,Multrun_Data.Max_Time)==1) 
@@ -3043,6 +3043,34 @@ static int fexist(char *filename)
 enum CCD_EXPOSURE_STATUS CCD_Multrun_Get_Exposure_Status(void)
 {
 	return Multrun_Data.Exposure_Status;
+}
+
+/**
+ * Get the current exposure in the multrun we are currently acquiring(as returned from the Andor library as their series).
+ * @return An integer, the number of images acquired in the multrun.
+ */
+int CCD_Multrun_Get_Exposure_Number(void)
+{
+	return Multrun_Data.Exposure_Number;
+}
+
+/**
+ * Get the exposure length of each frame of the multrun currently underway. This is the requested exposure length,
+ * potentially modifed by the Andor library so it works as a kinetic series exposure.
+ * @return The current exposure length, in milliseconds.
+ */
+int CCD_Multrun_Get_Exposure_Length(void)
+{
+	return Multrun_Data.Exposure_Length;
+}
+
+/**
+ * Get the exposure start time of the current frame of the multrun currently underway. 
+ * @return The current exposure start time, as a timespec timestamp.
+ */
+struct timespec CCD_Multrun_Get_Exposure_Start_Time(void)
+{
+	return Multrun_Data.Exposure_Start_Time;
 }
 
 /**
