@@ -117,7 +117,7 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * <li><b>Exposure Start Time, Exposure Length</b> The exposure start time, and the length of the current
 	 * 	(or last) exposure.
 	 * <li><b>Exposure Count, Exposure Number</b> How many exposures the current command has taken and how many
-	 * 	it will do in total (from the status object).
+	 * 	it will do in total.
 	 * </ul>
 	 * If the command requests a <b>INTERMEDIATE</b> level status, getIntermediateStatus is called.
 	 * If the command requests a <b>FULL</b> level status, getFullStatus is called.
@@ -129,8 +129,9 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see #getFullStatus
 	 * @see CcsStatus#getCurrentCommand
 	 * @see CCDLibrary#CCDExposureGetExposureStatus
-	 * @see CCDLibrary#CCDExposureGetExposureLength
-	 * @see CCDLibrary#CCDExposureGetExposureStartTime
+	 * @see CCDLibrary#CCDMultrunGetExposureLength
+	 * @see CCDLibrary#CCDMultrunGetExposureStartTime
+	 * @see CCDLibrary#CCDMultrunGetExposureNumber
 	 * @see CCDLibrary#CCDSetupGetNCols
 	 * @see CCDLibrary#CCDSetupGetNRows
 	 * @see CCDLibrary#CCDSetupGetNSBin
@@ -138,7 +139,6 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 	 * @see CCDLibrary#CCDSetupGetWindowFlags
 	 * @see CCDLibrary#CCDSetupGetSetupComplete
 	 * @see CcsStatus#getExposureCount
-	 * @see CcsStatus#getExposureNumber
 	 * @see CcsStatus#getProperty
 	 * @see CcsStatus#getPropertyInteger
 	 * @see CcsStatus#getPropertyBoolean
@@ -173,10 +173,10 @@ public class GET_STATUSImplementation extends INTERRUPTImplementation implements
 		hashTable.put("NPBin",new Integer(libccd.CCDSetupGetNPBin()));
 		hashTable.put("Window Flags",new Integer(libccd.CCDSetupGetWindowFlags()));
 		hashTable.put("Setup Status",new Boolean(libccd.CCDSetupGetSetupComplete()));
-		hashTable.put("Exposure Length",new Integer(libccd.CCDExposureGetExposureLength()));
-		hashTable.put("Exposure Start Time",new Long(libccd.CCDExposureGetExposureStartTime()));
+		hashTable.put("Exposure Length",new Integer(libccd.CCDMultrunGetExposureLength()));
+		hashTable.put("Exposure Start Time",new Long(libccd.CCDMultrunGetExposureStartTime()));
 		hashTable.put("Exposure Count",new Integer(status.getExposureCount()));
-		hashTable.put("Exposure Number",new Integer(status.getExposureNumber()));
+		hashTable.put("Exposure Number",new Integer(libccd.CCDMultrunGetExposureNumber()));
 	// intermediate level information - basic plus controller calls.
 		if(getStatusCommand.getLevel() >= GET_STATUS.LEVEL_INTERMEDIATE)
 		{
