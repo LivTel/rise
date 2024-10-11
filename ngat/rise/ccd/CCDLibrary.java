@@ -139,8 +139,8 @@ public class CCDLibrary
 	 */
 	private native int CCD_Exposure_Get_Exposure_Status();
 	/**
-	 * Native wrapper to libccd routine thats returns the length of the last exposure length set.
-c	 */
+	 * Native wrapper to librise_ccd routine thats returns the length of the last exposure length set.
+	 */
 	private native int CCD_Exposure_Get_Exposure_Length();
 	/**
 	 * Native wrapper to libccd routine thats returns the number of milliseconds since the EPOCH of
@@ -201,6 +201,19 @@ c	 */
 	 * Native wrapper to librise_ccd routine thats returns whether an exposure is currently in progress.
 	 */
 	private native int CCD_Multrun_Get_Exposure_Status();
+	/**
+	 * Native wrapper to librise_ccd routine thats returns the exposure we are currently on.
+	 */
+	private native int CCD_Multrun_Get_Exposure_Number();
+	/**
+	 * Native wrapper to librise_ccd routine thats returns the exposure length in milliseconds.
+	 */
+	private native int CCD_Multrun_Get_Exposure_Length();
+	/**
+	 * Native wrapper to librise_ccd routine thats returns the number of milliseconds since the EPOCH of
+	 * the exposure start time.
+	 */
+	private native long CCD_Multrun_Get_Exposure_Start_Time();
 	/**
 	 * Native wrapper to librise_ccd routine thats returns the elapsed exposure time in milliseconds.
 	 */
@@ -592,6 +605,36 @@ c	 */
 	public int CCDMultrunGetExposureStatus()
 	{
 		return CCD_Multrun_Get_Exposure_Status();
+	}
+
+	/**
+	 * Method to get the which exposure in the multrun we are currently acquiring.
+	 * @return The exposure number, an integer between 0 and the number of images in the multrun.
+	 * @see #CCD_Multrun_Get_Exposure_Number
+	 */
+	public int CCDMultrunGetExposureNumber()
+	{
+		return CCD_Multrun_Get_Exposure_Number();
+	}
+
+	/**
+	 * Method to get the exposure length of the current exposure.
+	 * @return The exposure length, in milliseconds.
+	 * @see #CCD_Multrun_Get_Exposure_Length
+	 */
+	public int CCDMultrunGetExposureLength()
+	{
+		return CCD_Multrun_Get_Exposure_Length();
+	}
+
+	/**
+	 * Method to get number of milliseconds since the EPOCH to the exposure start time.
+	 * @return A long, in milliseconds.
+	 * @see #CCD_Multrun_Get_Exposure_Start_Time
+	 */
+	public long CCDMultrunGetExposureStartTime()
+	{
+		return CCD_Multrun_Get_Exposure_Start_Time();
 	}
 
 	/**

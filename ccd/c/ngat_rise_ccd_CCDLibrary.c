@@ -512,6 +512,51 @@ JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure
 
 /**
  * Class:     ngat_rise_ccd_CCDLibrary<br>
+ * Method:    CCD_Multrun_Get_Exposure_Number<br>
+ * Signature: ()I<br>
+ * Java Native Interface routine to get the current exposure number in the multrun
+ * @return The current exposure number
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Number
+ */
+JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Number(JNIEnv *env, jobject obj)
+{
+	return CCD_Multrun_Get_Exposure_Number();
+}
+
+/**
+ * Class:     ngat_rise_ccd_CCDLibrary<br>
+ * Method:    CCD_Multrun_Get_Exposure_Length<br>
+ * Signature: ()I<br>
+ * Java native method to return the exposure length.
+ * @return The exposure length in milliseconds.
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Length
+ */
+JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Length(JNIEnv *env,jobject obj)
+{
+	return CCD_Multrun_Get_Exposure_Length();
+}
+
+/**
+ * Class:     ngat_rise_ccd_CCDLibrary<br>
+ * Method:    CCD_Multrun_Get_Exposure_Start_Time<br>
+ * Signature: ()J<br>
+ * Java Native method to get the exposure start time.
+ * @return A long, the time in milliseconds the exposure was started, since the EPOCH.
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Start_Time
+ */
+JNIEXPORT jlong JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Start_1Time(JNIEnv *env,jobject obj)
+{
+	struct timespec start_time;
+	jlong retval;
+
+	start_time = CCD_Multrun_Get_Exposure_Start_Time();
+	retval = ((jlong)start_time.tv_sec)*((jlong)1000L);
+	retval += ((jlong)start_time.tv_nsec)/((jlong)1000000L);
+	return retval;
+}
+
+/**
+ * Class:     ngat_rise_ccd_CCDLibrary<br>
  * Method:    CCD_Multrun_Get_Elapsed_Exposure_Time<br>
  * Signature: ()I<br>
  * Java Native Interface routine to get the elapsed exposure time.
