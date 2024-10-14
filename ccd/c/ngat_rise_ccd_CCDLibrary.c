@@ -429,12 +429,9 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose(JNIEnv
 	struct timespec start_time;
 	char **headers_list =NULL;
 
-	fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:1.\n");
 	retval = CCDLibrary_Java_String_List_To_C_List(env,obj,headers,
 						&jni_header_list, &jni_header_count,
 						&headers_list,&header_count);
-        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:2.\n");
-
 	if(retval == FALSE) return; /* Throw exception */ 
 
 	if(startTime > -1)
@@ -447,7 +444,6 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose(JNIEnv
 		start_time.tv_sec = 0;
 		start_time.tv_nsec = 0;
 	}
-        fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Expose:3.\n");
 
 	/* do exposure */
 	/* retval = CCD_Multrun_Expose(open_shutter,-1,exposureTime,exposures, headers_list); */
@@ -512,6 +508,51 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multflat_1Expose
 JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Status(JNIEnv *env, jobject obj)
 {
 	return CCD_Multrun_Get_Exposure_Status();
+}
+
+/**
+ * Class:     ngat_rise_ccd_CCDLibrary<br>
+ * Method:    CCD_Multrun_Get_Exposure_Number<br>
+ * Signature: ()I<br>
+ * Java Native Interface routine to get the current exposure number in the multrun
+ * @return The current exposure number
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Number
+ */
+JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Number(JNIEnv *env, jobject obj)
+{
+	return CCD_Multrun_Get_Exposure_Number();
+}
+
+/**
+ * Class:     ngat_rise_ccd_CCDLibrary<br>
+ * Method:    CCD_Multrun_Get_Exposure_Length<br>
+ * Signature: ()I<br>
+ * Java native method to return the exposure length.
+ * @return The exposure length in milliseconds.
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Length
+ */
+JNIEXPORT jint JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Length(JNIEnv *env,jobject obj)
+{
+	return CCD_Multrun_Get_Exposure_Length();
+}
+
+/**
+ * Class:     ngat_rise_ccd_CCDLibrary<br>
+ * Method:    CCD_Multrun_Get_Exposure_Start_Time<br>
+ * Signature: ()J<br>
+ * Java Native method to get the exposure start time.
+ * @return A long, the time in milliseconds the exposure was started, since the EPOCH.
+ * @see ccd_multrun.html#CCD_Multrun_Get_Exposure_Start_Time
+ */
+JNIEXPORT jlong JNICALL Java_ngat_rise_ccd_CCDLibrary_CCD_1Multrun_1Get_1Exposure_1Start_1Time(JNIEnv *env,jobject obj)
+{
+	struct timespec start_time;
+	jlong retval;
+
+	start_time = CCD_Multrun_Get_Exposure_Start_Time();
+	retval = ((jlong)start_time.tv_sec)*((jlong)1000L);
+	retval += ((jlong)start_time.tv_nsec)/((jlong)1000000L);
+	return retval;
 }
 
 /**
@@ -1052,12 +1093,16 @@ JNIEXPORT void JNICALL Java_ngat_rise_ccd_CCDLibrary_initialiseLoggerReference(J
 	/* if the class is null, one of the following exceptions occured:
 	** ClassFormatError,ClassCircularityError,NoClassDefFoundError,OutOfMemoryError */
 	if(cls == NULL)
+	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_initialiseLoggerReference:Failed to find Class ngat/util/logging/Logger.\n");
 		return;
+	}
 /* get relevant method id to call */
 /* log(int level,java/lang/String message) */
 	log_method_id = (*env)->GetMethodID(env,cls,"log","(ILjava/lang/String;)V");
 	if(log_method_id == NULL)
 	{
+		fprintf(stderr,"Java_ngat_rise_ccd_CCDLibrary_initialiseLoggerReference:Failed to get log method id.\n");
 		/* One of the following exceptions has been thrown:
 		** NoSuchMethodError, ExceptionInInitializerError, OutOfMemoryError */
 		return;

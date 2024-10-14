@@ -32,6 +32,7 @@ import ngat.message.ISS_INST.MULTRUN;
 import ngat.message.ISS_INST.MULTRUN_ACK;
 import ngat.message.ISS_INST.MULTRUN_DP_ACK;
 import ngat.message.ISS_INST.MULTRUN_DONE;
+import ngat.util.logging.*;
 
 /**
  * This class provides the implementation for the MULTRUN command sent to a server using the
@@ -145,7 +146,7 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 	//		return multRunDone;
 	// setup filename object
 		ccsFilename.nextMultRunNumber();
-		ccs.error(this.getClass().getName()+": Begin Multrun with " + 
+		ccs.log(Logging.VERBOSITY_TERSE,this.getClass().getName()+": Begin Multrun with " + 
 			multRunCommand.getNumberExposures()+ " exposures of " + 
 			multRunCommand.getExposureTime() + " ms");
 		try
@@ -490,7 +491,7 @@ public class MULTRUNImplementation extends EXPOSEImplementation implements JMSCo
 		multRunDone.setErrorNum(CcsConstants.CCS_ERROR_CODE_NO_ERROR);
 		multRunDone.setErrorString("");
 		multRunDone.setSuccessful(true);
-		ccs.error(this.getClass().getName()+": Finished Multrun.");
+		ccs.log(Logging.VERBOSITY_TERSE,this.getClass().getName()+": Finished Multrun.");
 	// return done object.
 		return multRunDone;
 	}

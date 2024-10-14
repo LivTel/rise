@@ -5,6 +5,7 @@ RISE_CCS_SRC_HOME		= 	$(RISE_SRC_HOME)/$(CCS_HOME)
 RISE_CCS_BIN_HOME		= 	$(RISE_BIN_HOME)/$(CCS_HOME)
 RISE_CCS_DOC_HOME		= 	$(RISE_DOC_HOME)/$(CCS_HOME)
 
+
 #
 # $Log: Makefile.common,v $
 # Revision 1.1  2003/11/14 15:31:40  cjm
