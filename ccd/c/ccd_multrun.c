@@ -546,7 +546,7 @@ static unsigned int Expose(float exposure, int width, int height,long nimages,in
 	struct timespec mr_current_time;
 
 #if LOGGING > 1
-	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose started: %.2f ms for %ld images.",
+	CCD_Global_Log_Format(LOG_VERBOSITY_INTERMEDIATE,"Expose started: %.2f s for %ld images.",
 			      exposure,nimages);
 #endif
 	Multrun_Data.Exposure_Status = CCD_EXPOSURE_STATUS_NONE;
@@ -3058,10 +3058,12 @@ int CCD_Multrun_Get_Exposure_Number(void)
  * Get the exposure length of each frame of the multrun currently underway. This is the requested exposure length,
  * potentially modifed by the Andor library so it works as a kinetic series exposure.
  * @return The current exposure length, in milliseconds.
+ * @see #Multrun_Data
  */
 int CCD_Multrun_Get_Exposure_Length(void)
 {
-	return Multrun_Data.Exposure_Length;
+	/* Exposure_Length is in decimal seconds, we want to return this in milliseconds. */
+	return (int)(Multrun_Data.Exposure_Length*1000.0f);
 }
 
 /**

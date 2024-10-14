@@ -182,7 +182,7 @@ struct Header {
  * <dl>
  * <dt>Exposure_Status</dt> <dd>Whether an operation is being performed to CLEAR, EXPOSE or READOUT the CCD.</dd>
  * <dt>Exposure_Number</dt> <dd>Which exposure in the multrun we are currently taking (based on the Andor series).</dd>
- * <dt>Exposure_Length</dt> <dd>The last exposure length to be set.</dd>
+ * <dt>Exposure_Length</dt> <dd>The last exposure length to be set, in decimal seconds.</dd>
  * <dt>Requested_Exposure_Length</dt> <dd>The exposure length requested, before modifications due to Andor
  *     constraints. In seconds.</dd>
  * <dt>Temperature</dt> <dd>The array temperature in degrees centigrade. </dd>
